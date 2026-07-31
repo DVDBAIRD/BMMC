@@ -34,49 +34,54 @@
 
   <!-- Header -->
   <header class="glass-header border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-      <div class="max-w-3xl">
-        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-          BMMC Showcase
-        </h1>
-        <p class="text-xs text-slate-600 font-normal mt-1 leading-relaxed">
-          The Bonniefields Museum of Memorabilia and Curiosities (BMMC) preserves and showcases historical artifacts and unique curiosities, offering visitors a nostalgic glimpse into the past through fascinating exhibits.
-        </p>
-        <p class="text-[11px] text-slate-400 font-semibold mt-1.5" id="itemCount">Loading catalog items...</p>
-      </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       
-      <!-- General Search Input -->
-      <div class="w-full md:w-80 relative self-stretch md:self-auto">
-        <input 
-          type="text" 
-          id="searchInput" 
-          placeholder="Search items, details, notes..." 
-          class="w-full pl-10 pr-10 py-2.5 bg-slate-100/80 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm transition"
-        />
-        <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
-        <button id="clearSearch" class="hidden absolute right-3 top-3 text-slate-400 hover:text-slate-600 text-xs font-bold bg-slate-200 rounded-full w-4 h-4 flex items-center justify-center">✕</button>
-      </div>
-    </div>
-
-    <!-- Filters Section (Collapsible on Mobile) -->
-    <div class="border-t border-slate-200/60 bg-slate-50/50 py-3">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Top Header Row: Main Title + Universal Toggle Button -->
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            BMMC Showcase
+          </h1>
+        </div>
         
-        <!-- Mobile Toggle Button -->
-        <div class="flex items-center justify-between sm:hidden mb-1">
-          <button id="toggleFiltersBtn" class="flex items-center gap-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 px-3 py-2 rounded-lg shadow-sm w-full justify-between">
-            <span class="flex items-center gap-2">
-              <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-              Filter Options
-            </span>
-            <span id="filterChevron" class="transition-transform duration-200 text-slate-400">▼</span>
-          </button>
+        <!-- Toggle Controls Button (Works on both Mobile & Web) -->
+        <button id="toggleControlsBtn" class="flex items-center gap-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3.5 py-2 rounded-xl transition shadow-sm">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+          </svg>
+          <span>Search & Filters</span>
+          <span id="toggleChevron" class="transition-transform duration-200 text-slate-400">▼</span>
+        </button>
+      </div>
+
+      <!-- Collapsible Container (Subtitle, Search, and Dropdowns) -->
+      <div id="collapsibleControls" class="mt-3 flex flex-col gap-3 transition-all duration-300">
+        
+        <!-- Shortened Subheading -->
+        <p class="text-xs text-slate-600 font-normal leading-relaxed">
+          The Bonniefields Museum of Memorabilia and Curiosities (BMMC) preserves historical artifacts for a nostalgic glimpse into the past.
+        </p>
+
+        <!-- Search Bar & Item Counter -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+          <p class="text-[11px] text-slate-400 font-semibold" id="itemCount">Loading catalog items...</p>
+          
+          <div class="w-full sm:w-80 relative">
+            <input 
+              type="text" 
+              id="searchInput" 
+              placeholder="Search items, details, notes..." 
+              class="w-full pl-10 pr-10 py-2 bg-slate-100/80 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-xs transition"
+            />
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <button id="clearSearch" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs font-bold bg-slate-200 rounded-full w-4 h-4 flex items-center justify-center">✕</button>
+          </div>
         </div>
 
         <!-- Filter Dropdowns Grid -->
-        <div id="filterContainer" class="hidden sm:grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 sm:pt-0">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-200/60">
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Age</label>
             <select id="filterAge" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
@@ -104,6 +109,7 @@
         </div>
 
       </div>
+
     </div>
   </header>
 
@@ -169,14 +175,14 @@
       return { title, details };
     }
 
-    // Mobile Filters Toggle
-    const toggleFiltersBtn = document.getElementById('toggleFiltersBtn');
-    const filterContainer = document.getElementById('filterContainer');
-    const filterChevron = document.getElementById('filterChevron');
+    // Universal Controls Toggle (Works on Mobile & Desktop)
+    const toggleControlsBtn = document.getElementById('toggleControlsBtn');
+    const collapsibleControls = document.getElementById('collapsibleControls');
+    const toggleChevron = document.getElementById('toggleChevron');
 
-    toggleFiltersBtn.addEventListener('click', () => {
-      filterContainer.classList.toggle('hidden');
-      filterChevron.style.transform = filterContainer.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+    toggleControlsBtn.addEventListener('click', () => {
+      collapsibleControls.classList.toggle('hidden');
+      toggleChevron.style.transform = collapsibleControls.classList.contains('hidden') ? 'rotate(180deg)' : 'rotate(0deg)';
     });
 
     // Load Data
@@ -293,10 +299,10 @@
         card.className = 'bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-200/80 overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group';
         
         card.innerHTML = `
-          <!-- Full Image Box (object-contain displays full image without cropping) -->
+          <!-- Full Image Box -->
           <div class="h-56 bg-slate-100/80 relative overflow-hidden flex items-center justify-center p-2">
             
-            <!-- Clickable Image (Opens image in new tab) -->
+            <!-- Clickable Image -->
             <a href="${img1}" target="_blank" onclick="event.stopPropagation()" title="Open full image in new tab" class="w-full h-full flex items-center justify-center relative group/img">
               <img 
                 src="${img1}" 
@@ -320,7 +326,9 @@
                 ${type ? `<span class="bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full">${type}</span>` : ''}
                 ${subcategory ? `<span class="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-100">${subcategory}</span>` : ''}
               </div>
-              <h3 class="font-bold text-slate-900 text-lg mb-1.5 line-clamp-1 group-hover:text-blue-600 transition-colors">${displayTitle}</h3>
+              
+              <!-- Card Title REDUCED BY 20% (text-sm / 14px) -->
+              <h3 class="font-bold text-slate-900 text-sm mb-1.5 line-clamp-1 group-hover:text-blue-600 transition-colors">${displayTitle}</h3>
               <p class="text-xs text-slate-500 line-clamp-2 mb-4 leading-relaxed">${details || 'Click for full details and museum notes.'}</p>
             </div>
 
@@ -365,7 +373,7 @@
 
       const modalContent = document.getElementById('modalContent');
       modalContent.innerHTML = `
-        <h2 class="text-2xl font-bold text-slate-900 mb-3">${displayTitle}</h2>
+        <h2 class="text-xl font-bold text-slate-900 mb-3">${displayTitle}</h2>
         
         <!-- Badges -->
         <div class="flex flex-wrap gap-2 text-xs mb-6">
@@ -375,7 +383,7 @@
           ${subcategory ? `<span class="bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1 rounded-full font-medium"><strong>Subcategory:</strong> ${subcategory}</span>` : ''}
         </div>
 
-        <!-- Images Comparison (Clicking image opens full view in new tab) -->
+        <!-- Images Comparison -->
         <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-6">
           ${img1 ? `
             <div>
