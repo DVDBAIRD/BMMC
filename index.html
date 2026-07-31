@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Interactive Media & 3D Catalog</title>
   
-  <!-- Tailwind CSS for modern styling -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- PapaParse for direct Google Sheets CSV fetching -->
@@ -13,15 +13,30 @@
   
   <!-- 3D Model Viewer Web Component -->
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
-</head>
-<body class="bg-gray-100 text-gray-800 font-sans min-h-screen flex flex-col">
 
-  <!-- Navigation / Header -->
-  <header class="bg-white border-b sticky top-0 z-20 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .glass-header {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- Header -->
+  <header class="glass-header border-b border-slate-200 sticky top-0 z-30 shadow-sm transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Catalog Showcase</h1>
-        <p class="text-xs text-gray-500" id="itemCount">Loading items...</p>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          Catalog Showcase
+        </h1>
+        <p class="text-xs text-slate-500 font-medium mt-0.5" id="itemCount">Loading catalog items...</p>
       </div>
       
       <!-- General Search Input -->
@@ -29,39 +44,40 @@
         <input 
           type="text" 
           id="searchInput" 
-          placeholder="Search by keywords, details, notes..." 
-          class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+          placeholder="Search heading, details, notes..." 
+          class="w-full pl-10 pr-10 py-2.5 bg-slate-100/80 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm transition"
         />
-        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
+        <button id="clearSearch" class="hidden absolute right-3 top-3 text-slate-400 hover:text-slate-600 text-xs font-bold bg-slate-200 rounded-full w-4 h-4 flex items-center justify-center">✕</button>
       </div>
     </div>
 
     <!-- Filter Dropdowns Bar -->
-    <div class="bg-gray-50 border-t py-3">
-      <div class="max-w-7xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="border-t border-slate-200/60 bg-slate-50/50 py-3">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div>
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Age</label>
-          <select id="filterAge" class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Age</label>
+          <select id="filterAge" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
             <option value="">All Ages</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Type</label>
-          <select id="filterType" class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Type</label>
+          <select id="filterType" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
             <option value="">All Types</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Category</label>
-          <select id="filterCategory" class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Category</label>
+          <select id="filterCategory" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
             <option value="">All Categories</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Subcategory</label>
-          <select id="filterSubcategory" class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Subcategory</label>
+          <select id="filterSubcategory" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
             <option value="">All Subcategories</option>
           </select>
         </div>
@@ -70,33 +86,44 @@
   </header>
 
   <!-- Main Cards Grid -->
-  <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">
-    <div id="loading" class="text-center py-20">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mb-2"></div>
-      <p class="text-gray-500 text-sm">Fetching catalog from Google Sheets...</p>
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+    <div id="loading" class="text-center py-24">
+      <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent mb-3"></div>
+      <p class="text-slate-500 text-sm font-medium">Fetching catalog from Google Sheets...</p>
     </div>
     
     <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden"></div>
   </main>
 
   <!-- Detail Pop-up Modal -->
-  <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
-      <button id="closeModal" class="absolute top-4 right-4 bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-full z-10 font-bold">
+  <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col border border-slate-100">
+      <button id="closeModal" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-full z-10 font-bold transition">
         ✕
       </button>
-      <div id="modalContent" class="p-6"></div>
+      <div id="modalContent" class="p-6 sm:p-8"></div>
     </div>
   </div>
 
   <!-- JavaScript Logic -->
   <script>
-    // 1. Direct CSV export link for your "Layup" tab (gid=1146027655)
-	const CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
+    // Direct Google CSV Export Endpoint (Layup tab, gid=1146027655)
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
 
     let allData = [];
 
-    // Helper: Finds a field regardless of variations in header names (e.g., "Image 1", "image", "Primary Image")
+    // Converts Google Drive share links into direct viewable image URLs
+    function formatImageUrl(url) {
+      if (!url) return '';
+      url = url.trim();
+      const driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+      if (driveMatch && driveMatch[1]) {
+        return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
+      }
+      return url;
+    }
+
+    // Dynamic field key getter
     function getProp(obj, possibleKeys) {
       const keys = Object.keys(obj);
       for (let p of possibleKeys) {
@@ -106,7 +133,7 @@
       return '';
     }
 
-    // 2. Load Google Sheets Data via PapaParse
+    // Load Data
     function loadCatalogData() {
       Papa.parse(CSV_URL, {
         download: true,
@@ -122,16 +149,16 @@
         },
         error: function(err) {
           document.getElementById('loading').innerHTML = `
-            <p class="text-red-500 font-semibold">Error loading spreadsheet data.</p>
-            <p class="text-xs text-gray-500 mt-1">Make sure the sheet is public ("Anyone with the link can view").</p>
+            <p class="text-red-500 font-bold text-base">Error loading spreadsheet data.</p>
+            <p class="text-xs text-slate-500 mt-1">Make sure the sheet is public ("Anyone with the link can view").</p>
           `;
         }
       });
     }
 
-    // 3. Populate Filter Dropdowns
+    // Populate Filter Dropdowns
     function populateDropdowns(data) {
-      fillSelect('filterAge', data.map(d => getProp(d, ['Age'])));
+      fillSelect('filterAge', data.map(d => getProp(d, ['1950', 'Age'])));
       fillSelect('filterType', data.map(d => getProp(d, ['Type'])));
       fillSelect('filterCategory', data.map(d => getProp(d, ['Category'])));
       fillSelect('filterSubcategory', data.map(d => getProp(d, ['Subcategory', 'Sub-category', 'Sub Category'])));
@@ -149,7 +176,7 @@
       select.addEventListener('change', filterCatalog);
     }
 
-    // 4. Filtering & Search Logic
+    // Filter Logic
     function filterCatalog() {
       const searchVal = document.getElementById('searchInput').value.toLowerCase();
       const ageVal = document.getElementById('filterAge').value;
@@ -157,8 +184,10 @@
       const catVal = document.getElementById('filterCategory').value;
       const subCatVal = document.getElementById('filterSubcategory').value;
 
+      document.getElementById('clearSearch').classList.toggle('hidden', !searchVal);
+
       const filtered = allData.filter(item => {
-        const itemAge = getProp(item, ['Age']);
+        const itemAge = getProp(item, ['1950', 'Age']);
         const itemType = getProp(item, ['Type']);
         const itemCat = getProp(item, ['Category']);
         const itemSubCat = getProp(item, ['Subcategory', 'Sub-category', 'Sub Category']);
@@ -176,8 +205,12 @@
     }
 
     document.getElementById('searchInput').addEventListener('input', filterCatalog);
+    document.getElementById('clearSearch').addEventListener('click', () => {
+      document.getElementById('searchInput').value = '';
+      filterCatalog();
+    });
 
-    // 5. Render Grid Cards
+    // Render Cards
     function renderGrid(items) {
       const grid = document.getElementById('grid');
       const itemCount = document.getElementById('itemCount');
@@ -186,45 +219,64 @@
 
       if (items.length === 0) {
         grid.innerHTML = `
-          <div class="col-span-full text-center py-12 text-gray-500">
-            No results match your selected filters.
+          <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
+            <p class="text-slate-500 font-medium">No results match your selected search or filters.</p>
           </div>`;
         return;
       }
 
       items.forEach((item, index) => {
-        const title = getProp(item, ['Title', 'Name', 'Item', 'Header']) || `Item #${index + 1}`;
-        const img1 = getProp(item, ['Image 1', 'Image', 'Image1', 'Primary Image', 'Photo']) || 'https://via.placeholder.com/400x300?text=No+Image';
+        // MAPPED EXACT COLUMNS HERE:
+        const heading = getProp(item, ['Heading', 'Title', 'Name', 'Item']) || `Item #${index + 1}`;
+        const img1Raw = getProp(item, ['DIMG', 'Image 1', 'Image']);
+        const img1 = formatImageUrl(img1Raw) || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=500&auto=format&fit=crop';
         const details = getProp(item, ['Details', 'Detail', 'Description']);
-        const category = getProp(item, ['Category']);
+        const age = getProp(item, ['1950', 'Age']);
         const type = getProp(item, ['Type']);
-        const model3D = getProp(item, ['3D Model', '3D', '3DModel', 'Model']);
-        const docLink = getProp(item, ['Document', 'Doc', 'PDF', 'Documents']);
-        const webLink = getProp(item, ['Web', 'Web Link', 'Website', 'Link', 'URL']);
+        const category = getProp(item, ['Category']);
+        const subcategory = getProp(item, ['Subcategory', 'Sub Category']);
+        const d3d = getProp(item, ['D3D', '3D Model', '3D']);
+        const ddoc = getProp(item, ['DDOC', 'Documentation', 'Doc']);
+        const dweb = getProp(item, ['DWEB', 'Web', 'Website']);
 
         const card = document.createElement('div');
-        card.className = 'bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200 overflow-hidden flex flex-col transition cursor-pointer';
+        card.className = 'bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-200/80 overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group';
         
         card.innerHTML = `
-          <div class="h-48 bg-gray-100 relative overflow-hidden">
-            <img src="${img1}" class="w-full h-full object-cover" alt="${title}" loading="lazy" onError="this.src='https://via.placeholder.com/400x300?text=Image+Unavailable'" />
+          <div class="h-52 bg-slate-100 relative overflow-hidden">
+            <img 
+              src="${img1}" 
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+              alt="${heading}" 
+              loading="lazy" 
+              onError="this.src='https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=500&auto=format&fit=crop'" 
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            ${age ? `<span class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide">${age}</span>` : ''}
           </div>
-          <div class="p-4 flex-1 flex flex-col justify-between">
+          
+          <div class="p-5 flex-1 flex flex-col justify-between">
             <div>
-              <div class="flex gap-1.5 flex-wrap text-[11px] mb-2 font-medium">
-                ${category ? `<span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">${category}</span>` : ''}
-                ${type ? `<span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded">${type}</span>` : ''}
+              <div class="flex gap-1.5 flex-wrap text-[11px] mb-2.5 font-semibold">
+                ${category ? `<span class="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-100">${category}</span>` : ''}
+                ${type ? `<span class="bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full">${type}</span>` : ''}
+                ${subcategory ? `<span class="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-100">${subcategory}</span>` : ''}
               </div>
-              <h3 class="font-bold text-gray-900 text-base mb-1 line-clamp-1">${title}</h3>
-              <p class="text-xs text-gray-600 line-clamp-2 mb-3">${details || 'Click for full details and media.'}</p>
+              <h3 class="font-bold text-slate-900 text-lg mb-1.5 line-clamp-1 group-hover:text-blue-600 transition-colors">${heading}</h3>
+              <p class="text-xs text-slate-500 line-clamp-2 mb-4 leading-relaxed">${details || 'No details provided. Click to view notes and media.'}</p>
             </div>
 
-            <div class="pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
-              <span class="text-xs font-semibold text-blue-600 hover:underline">View details →</span>
-              <div class="flex gap-1" onclick="event.stopPropagation()">
-                ${model3D ? `<a href="${model3D}" target="_blank" title="3D Model" class="bg-purple-100 text-purple-700 p-1.5 rounded hover:bg-purple-200 text-xs">3D</a>` : ''}
-                ${docLink ? `<a href="${docLink}" target="_blank" title="Document" class="bg-gray-100 text-gray-700 p-1.5 rounded hover:bg-gray-200 text-xs">Doc</a>` : ''}
-                ${webLink ? `<a href="${webLink}" target="_blank" title="Website" class="bg-blue-100 text-blue-700 p-1.5 rounded hover:bg-blue-200 text-xs">Web</a>` : ''}
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <span class="text-xs font-semibold text-blue-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                Details 
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              </span>
+              
+              <!-- Action Buttons -->
+              <div class="flex gap-1.5" onclick="event.stopPropagation()">
+                ${d3d ? `<a href="${d3d}" target="_blank" title="3D Model" class="bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold border border-purple-200 transition">3D</a>` : ''}
+                ${ddoc ? `<a href="${ddoc}" target="_blank" title="Documentation" class="bg-slate-100 text-slate-700 hover:bg-slate-800 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold transition">Doc</a>` : ''}
+                ${dweb ? `<a href="${dweb}" target="_blank" title="Website" class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold border border-blue-200 transition">Web</a>` : ''}
               </div>
             </div>
           </div>
@@ -235,79 +287,79 @@
       });
     }
 
-    // 6. Modal View (Displays Notes, Secondary Image & Links)
+    // Modal View (Notes, Second Image & Links)
     function openModal(item) {
-      const title = getProp(item, ['Title', 'Name', 'Item', 'Header']) || 'Item Details';
-      const img1 = getProp(item, ['Image 1', 'Image', 'Image1', 'Primary Image', 'Photo']);
-      const img2 = getProp(item, ['Image 2', 'Second Image', 'Image2', 'Secondary Image']);
+      const heading = getProp(item, ['Heading', 'Title', 'Name', 'Item']) || 'Item Details';
+      const img1 = formatImageUrl(getProp(item, ['DIMG', 'Image 1', 'Image']));
+      const img2 = formatImageUrl(getProp(item, ['DIMG2', 'Second Image', 'Image 2']));
       const details = getProp(item, ['Details', 'Detail', 'Description']);
       const notes = getProp(item, ['Notes', 'Note', 'Comments']);
-      const age = getProp(item, ['Age']);
+      const age = getProp(item, ['1950', 'Age']);
       const type = getProp(item, ['Type']);
       const category = getProp(item, ['Category']);
-      const subcategory = getProp(item, ['Subcategory', 'Sub-category', 'Sub Category']);
-      const model3D = getProp(item, ['3D Model', '3D', '3DModel', 'Model']);
-      const docLink = getProp(item, ['Document', 'Doc', 'PDF', 'Documents']);
-      const webLink = getProp(item, ['Web', 'Web Link', 'Website', 'Link', 'URL']);
+      const subcategory = getProp(item, ['Subcategory', 'Sub Category']);
+      const d3d = getProp(item, ['D3D', '3D Model']);
+      const ddoc = getProp(item, ['DDOC', 'Documentation', 'Doc']);
+      const dweb = getProp(item, ['DWEB', 'Web', 'Website']);
 
       const modalContent = document.getElementById('modalContent');
       modalContent.innerHTML = `
-        <h2 class="text-xl font-bold text-gray-900 mb-2">${title}</h2>
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">${heading}</h2>
         
-        <!-- Metadata Badges -->
-        <div class="flex flex-wrap gap-2 text-xs mb-4">
-          ${age ? `<span class="bg-gray-100 text-gray-700 px-2 py-1 rounded"><strong>Age:</strong> ${age}</span>` : ''}
-          ${type ? `<span class="bg-gray-100 text-gray-700 px-2 py-1 rounded"><strong>Type:</strong> ${type}</span>` : ''}
-          ${category ? `<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded"><strong>Category:</strong> ${category}</span>` : ''}
-          ${subcategory ? `<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded"><strong>Subcategory:</strong> ${subcategory}</span>` : ''}
+        <!-- Badges -->
+        <div class="flex flex-wrap gap-2 text-xs mb-6">
+          ${age ? `<span class="bg-slate-100 text-slate-800 px-3 py-1 rounded-full font-medium"><strong>Age:</strong> ${age}</span>` : ''}
+          ${type ? `<span class="bg-slate-100 text-slate-800 px-3 py-1 rounded-full font-medium"><strong>Type:</strong> ${type}</span>` : ''}
+          ${category ? `<span class="bg-blue-50 text-blue-800 border border-blue-100 px-3 py-1 rounded-full font-medium"><strong>Category:</strong> ${category}</span>` : ''}
+          ${subcategory ? `<span class="bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1 rounded-full font-medium"><strong>Subcategory:</strong> ${subcategory}</span>` : ''}
         </div>
 
-        <!-- Images Grid -->
-        <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-4">
+        <!-- Images Comparison -->
+        <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-6">
           ${img1 ? `
             <div>
-              <p class="text-xs font-semibold text-gray-500 mb-1">Primary Image</p>
-              <img src="${img1}" class="w-full h-48 object-cover rounded-lg border" />
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Primary Image (DIMG)</p>
+              <img src="${img1}" class="w-full h-56 object-cover rounded-xl border border-slate-200 shadow-sm" onError="this.src='https://via.placeholder.com/500x300?text=Image+Unavailable'" />
             </div>` : ''}
           ${img2 ? `
             <div>
-              <p class="text-xs font-semibold text-gray-500 mb-1">Secondary Image</p>
-              <img src="${img2}" class="w-full h-48 object-cover rounded-lg border" />
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Second Image (DIMG2)</p>
+              <img src="${img2}" class="w-full h-56 object-cover rounded-xl border border-slate-200 shadow-sm" onError="this.src='https://via.placeholder.com/500x300?text=Secondary+Image+Unavailable'" />
             </div>` : ''}
         </div>
 
         <!-- Details & Notes -->
         ${details ? `
-          <div class="mb-3">
-            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Details</h4>
-            <p class="text-sm text-gray-700 whitespace-pre-line bg-gray-50 p-3 rounded-lg border border-gray-100">${details}</p>
+          <div class="mb-4">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
+            <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-xl border border-slate-100">${details}</div>
           </div>` : ''}
 
         ${notes ? `
-          <div class="mb-4">
-            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Notes</h4>
-            <p class="text-sm text-gray-700 whitespace-pre-line bg-yellow-50 p-3 rounded-lg border border-yellow-100">${notes}</p>
+          <div class="mb-6">
+            <h4 class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1.5">Notes</h4>
+            <div class="text-sm text-amber-900 leading-relaxed whitespace-pre-line bg-amber-50/70 p-4 rounded-xl border border-amber-200/60">${notes}</div>
           </div>` : ''}
 
-        <!-- 3D Viewer (if link is a direct .glb / .gltf model file) -->
-        ${model3D && (model3D.endsWith('.glb') || model3D.endsWith('.gltf')) ? `
-          <div class="mb-4">
-            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Interactive 3D Model</h4>
-            <model-viewer src="${model3D}" camera-controls auto-rotate class="w-full h-64 bg-gray-100 rounded-lg border"></model-viewer>
+        <!-- Embedded 3D Viewer (Supports .glb / .gltf files) -->
+        ${d3d && (d3d.endsWith('.glb') || d3d.endsWith('.gltf')) ? `
+          <div class="mb-6">
+            <h4 class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1.5">Interactive 3D Viewer</h4>
+            <model-viewer src="${d3d}" camera-controls auto-rotate class="w-full h-72 bg-slate-900 rounded-xl overflow-hidden"></model-viewer>
           </div>` : ''}
 
-        <!-- External Link Buttons -->
-        <div class="flex flex-wrap gap-3 pt-4 border-t">
-          ${model3D ? `<a href="${model3D}" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-xs font-semibold">Open 3D Model ↗</a>` : ''}
-          ${docLink ? `<a href="${docLink}" target="_blank" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg text-xs font-semibold">Open Document ↗</a>` : ''}
-          ${webLink ? `<a href="${webLink}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold">Visit Website ↗</a>` : ''}
+        <!-- Action Links -->
+        <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
+          ${d3d ? `<a href="${d3d}" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">3D Model (D3D) ↗</a>` : ''}
+          ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">Document (DDOC) ↗</a>` : ''}
+          ${dweb ? `<a href="${dweb}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">Web Link (DWEB) ↗</a>` : ''}
         </div>
       `;
 
       document.getElementById('detailModal').classList.remove('hidden');
     }
 
-    // Modal Close Listeners
+    // Modal Close
     document.getElementById('closeModal').addEventListener('click', () => {
       document.getElementById('detailModal').classList.add('hidden');
     });
