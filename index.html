@@ -28,9 +28,6 @@
       background: rgba(255, 255, 255, 0.92);
       backdrop-filter: blur(12px);
     }
-    /* Hide scrollbar for clean horizontal collection scroll */
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
@@ -55,12 +52,12 @@
           </button>
 
           <!-- Favorites Toggle -->
-          <button id="btnFavorites" class="flex items-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-2 rounded-xl transition shadow-sm">
-            <span id="favHeartIcon">❤️</span>
+          <button id="btnFavorites" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-xl transition shadow-sm">
+            <span id="favHeartIcon">🤍</span>
             <span id="favCountText">Saved (0)</span>
           </button>
 
-          <!-- Toggle Controls Button -->
+          <!-- Universal Toggle Controls Button (Collapses everything below title) -->
           <button id="toggleControlsBtn" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-xl transition shadow-sm">
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
@@ -71,16 +68,21 @@
         </div>
       </div>
 
-      <!-- Collapsible Container (Subtitle, Search, and Dropdowns) -->
-      <div id="collapsibleControls" class="mt-3 flex flex-col gap-3 transition-all duration-300">
+      <!-- Collapsible Container (Subtitle, Collection Hubs, Search, and Dropdowns) -->
+      <div id="collapsibleControls" class="mt-3 flex flex-col gap-4 transition-all duration-300">
         
         <!-- Subheading -->
         <p class="text-xs text-slate-600 font-normal leading-relaxed">
           The Bonniefields Museum of Memorabilia and Curiosities (BMMC) preserves historical artifacts for a nostalgic glimpse into the past.
         </p>
 
+        <!-- FEATURE 1 & 2: Larger 3-Column Collection Hubs (Inside Collapsible Area) -->
+        <div id="collectionHubsSection" class="hidden pt-1">
+          <div id="hubsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+        </div>
+
         <!-- Search Bar & Item Counter -->
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-200/60">
           <p class="text-[11px] text-slate-400 font-semibold" id="itemCount">Loading catalog items...</p>
           
           <div class="w-full sm:w-80 relative">
@@ -98,7 +100,7 @@
         </div>
 
         <!-- Filter Dropdowns Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2 border-t border-slate-200/60">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Age</label>
             <select id="filterAge" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
@@ -140,25 +142,26 @@
   <!-- Main Content Area -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
     
-    <!-- FEATURE 1: Collection Hubs Section -->
-    <section id="collectionHubsSection" class="mb-10 hidden">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h2 class="text-lg font-bold text-slate-900 tracking-tight">Museum Collection Hubs</h2>
-          <p class="text-xs text-slate-500">Explore exhibits grouped by category</p>
-        </div>
-      </div>
-      
-      <!-- Horizontal Scrollable Cards -->
-      <div id="hubsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5"></div>
-    </section>
-
     <!-- Loading Spinner -->
     <div id="loading" class="text-center py-24">
       <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent mb-3"></div>
       <p class="text-slate-500 text-sm font-medium">Fetching exhibit catalog from BMMC...</p>
     </div>
     
+    <!-- FEATURE 3: Initial Prompt (Grid Hidden Until Requested) -->
+    <div id="gridPrompt" class="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300 shadow-sm hidden">
+      <div class="max-w-md mx-auto px-4">
+        <span class="text-3xl mb-2 block">🔍</span>
+        <h3 class="text-base font-bold text-slate-800">Ready to Explore Exhibits</h3>
+        <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">
+          Select a Collection Hub above or use search to display exhibit items.
+        </p>
+        <button id="btnBrowseAll" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
+          Browse All Exhibits →
+        </button>
+      </div>
+    </div>
+
     <!-- Exhibit Cards Grid -->
     <div id="gridSection">
       <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden"></div>
@@ -180,7 +183,6 @@
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
     const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
 
-    // The 10 requested Collection Hub Categories
     const HUB_CATEGORIES = [
       "War", "Photography", "Survey", "General", "General Memorabilia",
       "General Tools", "Documentation", "Household", "Household Entertainment", "Household Table"
@@ -190,6 +192,7 @@
     let currentFilteredRows = [];
     let only3DActive = false;
     let showingFavoritesOnly = false;
+    let isGridActive = false; // Controls grid visibility
     let currentSpeechUtterance = null;
 
     // Local Storage Favorites
@@ -207,12 +210,34 @@
       }
       localStorage.setItem('bMMC_favorites', JSON.stringify(favs));
       updateFavoritesBadge();
-      filterCatalog(); // Re-render grid
+      
+      if (isGridActive) {
+        filterCatalog(true); // Re-render grid
+      }
     }
 
+    // FEATURE 4: Grey Heart until selected, then Red
     function updateFavoritesBadge() {
       const favs = getFavorites();
-      document.getElementById('favCountText').textContent = `Saved (${favs.length})`;
+      const heartIcon = document.getElementById('favHeartIcon');
+      const favCountText = document.getElementById('favCountText');
+      const btnFav = document.getElementById('btnFavorites');
+
+      favCountText.textContent = `Saved (${favs.length})`;
+      
+      if (favs.length > 0) {
+        heartIcon.textContent = '❤️';
+      } else {
+        heartIcon.textContent = '🤍';
+      }
+
+      if (showingFavoritesOnly) {
+        btnFav.classList.add('bg-rose-600', 'text-white', 'border-rose-600');
+        btnFav.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200');
+      } else {
+        btnFav.classList.remove('bg-rose-600', 'text-white', 'border-rose-600');
+        btnFav.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
+      }
     }
 
     // Convert Google Drive share links to viewable image URLs
@@ -253,14 +278,14 @@
       toggleChevron.style.transform = collapsibleControls.classList.contains('hidden') ? 'rotate(180deg)' : 'rotate(0deg)';
     });
 
-    // FEATURE 4: Surprise Me Action
+    // Surprise Me Action
     document.getElementById('btnSurprise').addEventListener('click', () => {
       if (!rawRows || rawRows.length === 0) return;
       const randomIndex = Math.floor(Math.random() * rawRows.length);
       openModal(rawRows[randomIndex], randomIndex);
     });
 
-    // FEATURE 6: 3D Only Toggle
+    // 3D Only Toggle
     document.getElementById('btn3DOnly').addEventListener('click', () => {
       only3DActive = !only3DActive;
       const btn = document.getElementById('btn3DOnly');
@@ -271,21 +296,19 @@
         btn.classList.remove('bg-purple-600', 'text-white', 'border-purple-600');
         btn.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
       }
-      filterCatalog();
+      filterCatalog(true);
     });
 
-    // FEATURE 7: Favorites Toggle View
+    // Favorites Toggle View
     document.getElementById('btnFavorites').addEventListener('click', () => {
       showingFavoritesOnly = !showingFavoritesOnly;
-      const btn = document.getElementById('btnFavorites');
-      if (showingFavoritesOnly) {
-        btn.classList.add('bg-rose-600', 'text-white', 'border-rose-600');
-        btn.classList.remove('bg-rose-50', 'text-rose-700', 'border-rose-200');
-      } else {
-        btn.classList.remove('bg-rose-600', 'text-white', 'border-rose-600');
-        btn.classList.add('bg-rose-50', 'text-rose-700', 'border-rose-200');
-      }
-      filterCatalog();
+      updateFavoritesBadge();
+      filterCatalog(true);
+    });
+
+    // Browse All Button Listener
+    document.getElementById('btnBrowseAll').addEventListener('click', () => {
+      filterCatalog(true);
     });
 
     // Load Catalog Data
@@ -298,12 +321,11 @@
           rawRows = results.data.slice(1);
           
           document.getElementById('loading').classList.add('hidden');
-          document.getElementById('grid').classList.remove('hidden');
+          document.getElementById('gridPrompt').classList.remove('hidden'); // Show prompt initial state
           
           updateFavoritesBadge();
           renderCollectionHubs(rawRows);
           populateDropdowns(rawRows);
-          renderGrid(rawRows);
         },
         error: function(err) {
           document.getElementById('loading').innerHTML = `
@@ -314,38 +336,36 @@
       });
     }
 
-    // FEATURE 1: Render Collection Hubs
+    // FEATURE 1 & 2: Render Larger 3-Column Collection Hubs
     function renderCollectionHubs(rows) {
       const hubsGrid = document.getElementById('hubsGrid');
       hubsGrid.innerHTML = '';
 
       HUB_CATEGORIES.forEach(catName => {
-        // Find matching rows for category
         const matchingRows = rows.filter(r => getVal(r, 15).toLowerCase() === catName.toLowerCase());
         const count = matchingRows.length;
         
-        if (count === 0) return; // Skip empty categories
+        if (count === 0) return;
 
-        // Get first item's image as preview thumbnail
         const firstImgRaw = matchingRows.find(r => getVal(r, 20)) ? getVal(matchingRows.find(r => getVal(r, 20)), 20) : '';
         const previewImg = formatImageUrl(firstImgRaw) || NO_IMAGE_SVG;
 
         const hubCard = document.createElement('div');
-        hubCard.className = 'bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer flex flex-col group';
+        hubCard.className = 'bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm hover:shadow-md transition duration-300 cursor-pointer flex flex-col group';
         hubCard.innerHTML = `
-          <div class="h-24 bg-slate-100 relative overflow-hidden flex items-center justify-center p-1">
+          <div class="h-36 bg-slate-100/90 relative overflow-hidden flex items-center justify-center p-2">
             <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" />
-            <span class="absolute top-2 right-2 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">${count}</span>
+            <span class="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-0.5 rounded-full">${count} Exhibits</span>
           </div>
-          <div class="p-2.5 flex-1 flex flex-col justify-between">
-            <h3 class="font-bold text-slate-800 text-xs group-hover:text-blue-600 transition-colors line-clamp-1">${catName}</h3>
-            <span class="text-[10px] text-blue-600 font-semibold mt-1">View Collection →</span>
+          <div class="p-4 flex-1 flex flex-col justify-between">
+            <h3 class="font-bold text-slate-900 text-sm group-hover:text-blue-600 transition-colors line-clamp-1">${catName}</h3>
+            <span class="text-xs text-blue-600 font-semibold mt-2 flex items-center gap-1">Explore Collection →</span>
           </div>
         `;
 
         hubCard.addEventListener('click', () => {
           document.getElementById('filterCategory').value = catName;
-          filterCatalog();
+          filterCatalog(true); // Force reveal grid
           document.getElementById('gridSection').scrollIntoView({ behavior: 'smooth' });
         });
 
@@ -372,11 +392,11 @@
         opt.textContent = val;
         select.appendChild(opt);
       });
-      select.addEventListener('change', filterCatalog);
+      select.addEventListener('change', () => filterCatalog(true));
     }
 
     // Filter Logic
-    function filterCatalog() {
+    function filterCatalog(forceShowGrid = false) {
       const searchVal = document.getElementById('searchInput').value.toLowerCase();
       const ageVal = document.getElementById('filterAge').value;
       const typeVal = document.getElementById('filterType').value;
@@ -385,6 +405,18 @@
       const favs = getFavorites();
 
       document.getElementById('clearSearch').classList.toggle('hidden', !searchVal);
+
+      const isFiltering = searchVal || ageVal || typeVal || catVal || subCatVal || only3DActive || showingFavoritesOnly;
+
+      if (isFiltering || forceShowGrid) {
+        isGridActive = true;
+        document.getElementById('gridPrompt').classList.add('hidden');
+        document.getElementById('grid').classList.remove('hidden');
+      } else if (!isGridActive) {
+        document.getElementById('gridPrompt').classList.remove('hidden');
+        document.getElementById('grid').classList.add('hidden');
+        return;
+      }
 
       currentFilteredRows = rawRows.map((row, index) => ({ row, originalIndex: index })).filter(({ row, originalIndex }) => {
         const itemAge = getVal(row, 13);
@@ -407,10 +439,10 @@
       renderGrid(currentFilteredRows);
     }
 
-    document.getElementById('searchInput').addEventListener('input', filterCatalog);
+    document.getElementById('searchInput').addEventListener('input', () => filterCatalog(true));
     document.getElementById('clearSearch').addEventListener('click', () => {
       document.getElementById('searchInput').value = '';
-      filterCatalog();
+      filterCatalog(true);
     });
 
     // Render Cards Grid
@@ -430,7 +462,7 @@
         return;
       }
 
-      items.forEach(({ row, originalIndex }, displayIndex) => {
+      items.forEach(({ row, originalIndex }) => {
         const rawContent = getVal(row, 2) || getVal(row, 0);
         const { title, details } = parseTitleAndDetails(rawContent);
         const displayTitle = title || `Exhibit Item #${originalIndex + 1}`;
@@ -465,13 +497,13 @@
               />
             </a>
 
-            <!-- Heart Favorite Button -->
+            <!-- Heart Favorite Button (Grey until selected, then Red) -->
             <button 
               onclick="toggleFavorite(${originalIndex}, event)" 
               title="${isFav ? 'Remove from favorites' : 'Save to favorites'}"
-              class="absolute top-3 right-3 p-1.5 rounded-full backdrop-blur-md transition shadow-sm ${isFav ? 'bg-rose-500 text-white' : 'bg-white/80 hover:bg-white text-slate-400 hover:text-rose-500'}"
+              class="absolute top-3 right-3 p-1.5 rounded-full backdrop-blur-md transition shadow-sm ${isFav ? 'bg-rose-500 text-white' : 'bg-white/90 hover:bg-white text-slate-400 hover:text-rose-500'}"
             >
-              ❤️
+              ${isFav ? '❤️' : '🤍'}
             </button>
 
             ${age ? `<span class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide pointer-events-none">${age}</span>` : ''}
@@ -511,7 +543,7 @@
       });
     }
 
-    // FEATURE 5: Speech Audio Guide Narrator
+    // Speech Audio Guide Narrator
     function speakAudioGuide(title, details, notes) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -573,13 +605,13 @@
           <h2 class="text-xl font-bold text-slate-900">${displayTitle}</h2>
           <button 
             onclick="toggleFavorite(${originalIndex}, event)" 
-            class="px-3 py-1 rounded-full text-xs font-bold border transition flex items-center gap-1 ${isFav ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-100 text-slate-700 border-slate-200'}"
+            class="px-3 py-1 rounded-full text-xs font-bold border transition flex items-center gap-1 ${isFav ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'}"
           >
-            ❤️ ${isFav ? 'Saved' : 'Save'}
+            ${isFav ? '❤️ Saved' : '🤍 Save'}
           </button>
         </div>
 
-        <!-- FEATURE 5: Audio Guide Button -->
+        <!-- Audio Guide Button -->
         <div class="mb-4">
           <button 
             id="btnAudioGuide" 
