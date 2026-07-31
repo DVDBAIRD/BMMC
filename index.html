@@ -30,7 +30,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased relative">
 
   <!-- Header -->
   <header class="glass-header border-b border-slate-200 sticky top-0 z-30 shadow-sm">
@@ -46,6 +46,11 @@
         
         <!-- Action Buttons Bar -->
         <div class="flex flex-wrap items-center gap-2">
+          <!-- Permanent Browse All Button -->
+          <button id="btnBrowseAllHeader" class="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-2 rounded-xl transition shadow-sm">
+            <span>🌐 Browse All Exhibits</span>
+          </button>
+
           <!-- Surprise Me Button -->
           <button id="btnSurprise" class="flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-2 rounded-xl transition shadow-sm">
             <span>✨ Surprise Me!</span>
@@ -57,7 +62,7 @@
             <span id="favCountText">Saved (0)</span>
           </button>
 
-          <!-- Universal Toggle Controls Button (Collapses everything below title) -->
+          <!-- Universal Toggle Controls Button -->
           <button id="toggleControlsBtn" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-xl transition shadow-sm">
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
@@ -68,21 +73,16 @@
         </div>
       </div>
 
-      <!-- Collapsible Container (Subtitle, Collection Hubs, Search, and Dropdowns) -->
-      <div id="collapsibleControls" class="mt-3 flex flex-col gap-4 transition-all duration-300">
+      <!-- Collapsible Container (Subtitle, Search, Dropdowns & Hubs) -->
+      <div id="collapsibleControls" class="mt-3 flex flex-col gap-3.5 transition-all duration-300">
         
         <!-- Subheading -->
         <p class="text-xs text-slate-600 font-normal leading-relaxed">
           The Bonniefields Museum of Memorabilia and Curiosities (BMMC) preserves historical artifacts for a nostalgic glimpse into the past.
         </p>
 
-        <!-- FEATURE 1 & 2: Larger 3-Column Collection Hubs (Inside Collapsible Area) -->
-        <div id="collectionHubsSection" class="hidden pt-1">
-          <div id="hubsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
-        </div>
-
         <!-- Search Bar & Item Counter -->
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-200/60">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1 border-t border-slate-200/60">
           <p class="text-[11px] text-slate-400 font-semibold" id="itemCount">Loading catalog items...</p>
           
           <div class="w-full sm:w-80 relative">
@@ -134,6 +134,11 @@
           </div>
         </div>
 
+        <!-- 6 Collection Hubs: Placed BELOW Filters (6 Across 1 Row on Web: lg:grid-cols-6) -->
+        <div id="collectionHubsSection" class="hidden pt-2 border-t border-slate-200/60">
+          <div id="hubsGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5"></div>
+        </div>
+
       </div>
 
     </div>
@@ -148,7 +153,7 @@
       <p class="text-slate-500 text-sm font-medium">Fetching exhibit catalog from BMMC...</p>
     </div>
     
-    <!-- FEATURE 3: Initial Prompt (Grid Hidden Until Requested) -->
+    <!-- Initial Prompt (Grid Hidden Until Requested) -->
     <div id="gridPrompt" class="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300 shadow-sm hidden">
       <div class="max-w-md mx-auto px-4">
         <span class="text-3xl mb-2 block">🔍</span>
@@ -156,7 +161,7 @@
         <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">
           Select a Collection Hub above or use search to display exhibit items.
         </p>
-        <button id="btnBrowseAll" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
+        <button id="btnBrowseAllPrompt" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
           Browse All Exhibits →
         </button>
       </div>
@@ -167,6 +172,11 @@
       <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden"></div>
     </div>
   </main>
+
+  <!-- Floating Jump-to-Exhibits Pill (Mobile Only) -->
+  <button id="floatingJumpBtn" class="sm:hidden fixed bottom-5 right-5 z-40 bg-blue-600 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-lg flex items-center gap-1.5 hidden">
+    <span>⬇️ View Exhibits</span>
+  </button>
 
   <!-- Detail Pop-up Modal -->
   <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity">
@@ -183,16 +193,16 @@
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
     const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
 
-    const HUB_CATEGORIES = [
-      "War", "Photography", "Survey", "General", "General Memorabilia",
-      "General Tools", "Documentation", "Household", "Household Entertainment", "Household Table"
+    // Top 6 Main Collection Hub Categories
+    const MAIN_6_HUB_CATEGORIES = [
+      "War", "Photography", "Survey", "General", "Documentation", "Household"
     ];
 
     let rawRows = [];
     let currentFilteredRows = [];
     let only3DActive = false;
     let showingFavoritesOnly = false;
-    let isGridActive = false; // Controls grid visibility
+    let isGridActive = false;
     let currentSpeechUtterance = null;
 
     // Local Storage Favorites
@@ -212,11 +222,10 @@
       updateFavoritesBadge();
       
       if (isGridActive) {
-        filterCatalog(true); // Re-render grid
+        filterCatalog(true);
       }
     }
 
-    // FEATURE 4: Grey Heart until selected, then Red
     function updateFavoritesBadge() {
       const favs = getFavorites();
       const heartIcon = document.getElementById('favHeartIcon');
@@ -224,12 +233,7 @@
       const btnFav = document.getElementById('btnFavorites');
 
       favCountText.textContent = `Saved (${favs.length})`;
-      
-      if (favs.length > 0) {
-        heartIcon.textContent = '❤️';
-      } else {
-        heartIcon.textContent = '🤍';
-      }
+      heartIcon.textContent = favs.length > 0 ? '❤️' : '🤍';
 
       if (showingFavoritesOnly) {
         btnFav.classList.add('bg-rose-600', 'text-white', 'border-rose-600');
@@ -240,7 +244,6 @@
       }
     }
 
-    // Convert Google Drive share links to viewable image URLs
     function formatImageUrl(url) {
       if (!url) return '';
       url = url.trim();
@@ -278,7 +281,34 @@
       toggleChevron.style.transform = collapsibleControls.classList.contains('hidden') ? 'rotate(180deg)' : 'rotate(0deg)';
     });
 
-    // Surprise Me Action
+    // BROWSE ALL EXHIBITS ACTION
+    function browseAllExhibits() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('filterAge').value = '';
+      document.getElementById('filterType').value = '';
+      document.getElementById('filterCategory').value = '';
+      document.getElementById('filterSubcategory').value = '';
+      only3DActive = false;
+      showingFavoritesOnly = false;
+      
+      document.getElementById('btn3DOnly').classList.remove('bg-purple-600', 'text-white', 'border-purple-600');
+      document.getElementById('btn3DOnly').classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+      
+      updateFavoritesBadge();
+      filterCatalog(true);
+
+      // On mobile, auto-collapse controls and smooth scroll
+      if (window.innerWidth < 640) {
+        collapsibleControls.classList.add('hidden');
+        toggleChevron.style.transform = 'rotate(180deg)';
+      }
+      document.getElementById('gridSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    document.getElementById('btnBrowseAllHeader').addEventListener('click', browseAllExhibits);
+    document.getElementById('btnBrowseAllPrompt').addEventListener('click', browseAllExhibits);
+
+    // Surprise Me
     document.getElementById('btnSurprise').addEventListener('click', () => {
       if (!rawRows || rawRows.length === 0) return;
       const randomIndex = Math.floor(Math.random() * rawRows.length);
@@ -299,19 +329,19 @@
       filterCatalog(true);
     });
 
-    // Favorites Toggle View
+    // Favorites Toggle
     document.getElementById('btnFavorites').addEventListener('click', () => {
       showingFavoritesOnly = !showingFavoritesOnly;
       updateFavoritesBadge();
       filterCatalog(true);
     });
 
-    // Browse All Button Listener
-    document.getElementById('btnBrowseAll').addEventListener('click', () => {
-      filterCatalog(true);
+    // Floating Mobile Jump Listener
+    document.getElementById('floatingJumpBtn').addEventListener('click', () => {
+      document.getElementById('gridSection').scrollIntoView({ behavior: 'smooth' });
     });
 
-    // Load Catalog Data
+    // Load Data
     function loadCatalogData() {
       Papa.parse(CSV_URL, {
         download: true,
@@ -321,7 +351,7 @@
           rawRows = results.data.slice(1);
           
           document.getElementById('loading').classList.add('hidden');
-          document.getElementById('gridPrompt').classList.remove('hidden'); // Show prompt initial state
+          document.getElementById('gridPrompt').classList.remove('hidden');
           
           updateFavoritesBadge();
           renderCollectionHubs(rawRows);
@@ -336,36 +366,41 @@
       });
     }
 
-    // FEATURE 1 & 2: Render Larger 3-Column Collection Hubs
+    // Render 6 Collection Hubs Across 1 Row Below Filters
     function renderCollectionHubs(rows) {
       const hubsGrid = document.getElementById('hubsGrid');
       hubsGrid.innerHTML = '';
 
-      HUB_CATEGORIES.forEach(catName => {
-        const matchingRows = rows.filter(r => getVal(r, 15).toLowerCase() === catName.toLowerCase());
+      MAIN_6_HUB_CATEGORIES.forEach(catName => {
+        const matchingRows = rows.filter(r => getVal(r, 15).toLowerCase().includes(catName.toLowerCase()));
         const count = matchingRows.length;
-        
         if (count === 0) return;
 
         const firstImgRaw = matchingRows.find(r => getVal(r, 20)) ? getVal(matchingRows.find(r => getVal(r, 20)), 20) : '';
         const previewImg = formatImageUrl(firstImgRaw) || NO_IMAGE_SVG;
 
         const hubCard = document.createElement('div');
-        hubCard.className = 'bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm hover:shadow-md transition duration-300 cursor-pointer flex flex-col group';
+        hubCard.className = 'bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition duration-300 cursor-pointer flex flex-col group';
         hubCard.innerHTML = `
-          <div class="h-36 bg-slate-100/90 relative overflow-hidden flex items-center justify-center p-2">
+          <div class="h-20 bg-slate-100/90 relative overflow-hidden flex items-center justify-center p-1.5">
             <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" />
-            <span class="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-0.5 rounded-full">${count} Exhibits</span>
+            <span class="absolute top-1.5 right-1.5 bg-slate-900/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">${count}</span>
           </div>
-          <div class="p-4 flex-1 flex flex-col justify-between">
-            <h3 class="font-bold text-slate-900 text-sm group-hover:text-blue-600 transition-colors line-clamp-1">${catName}</h3>
-            <span class="text-xs text-blue-600 font-semibold mt-2 flex items-center gap-1">Explore Collection →</span>
+          <div class="p-2 flex-1 flex flex-col justify-between">
+            <h3 class="font-bold text-slate-900 text-xs group-hover:text-blue-600 transition-colors line-clamp-1">${catName}</h3>
+            <span class="text-[10px] text-blue-600 font-semibold mt-0.5 flex items-center gap-0.5">Explore →</span>
           </div>
         `;
 
         hubCard.addEventListener('click', () => {
           document.getElementById('filterCategory').value = catName;
-          filterCatalog(true); // Force reveal grid
+          filterCatalog(true);
+          
+          // On mobile, auto-collapse header and smooth scroll to results
+          if (window.innerWidth < 640) {
+            collapsibleControls.classList.add('hidden');
+            toggleChevron.style.transform = 'rotate(180deg)';
+          }
           document.getElementById('gridSection').scrollIntoView({ behavior: 'smooth' });
         });
 
@@ -392,7 +427,14 @@
         opt.textContent = val;
         select.appendChild(opt);
       });
-      select.addEventListener('change', () => filterCatalog(true));
+      select.addEventListener('change', () => {
+        filterCatalog(true);
+        if (window.innerWidth < 640) {
+          collapsibleControls.classList.add('hidden');
+          toggleChevron.style.transform = 'rotate(180deg)';
+        }
+        document.getElementById('gridSection').scrollIntoView({ behavior: 'smooth' });
+      });
     }
 
     // Filter Logic
@@ -412,9 +454,11 @@
         isGridActive = true;
         document.getElementById('gridPrompt').classList.add('hidden');
         document.getElementById('grid').classList.remove('hidden');
+        document.getElementById('floatingJumpBtn').classList.remove('hidden');
       } else if (!isGridActive) {
         document.getElementById('gridPrompt').classList.remove('hidden');
         document.getElementById('grid').classList.add('hidden');
+        document.getElementById('floatingJumpBtn').classList.add('hidden');
         return;
       }
 
@@ -428,7 +472,7 @@
         const fullTextMatch = row.join(' ').toLowerCase().includes(searchVal);
         const ageMatch = !ageVal || itemAge === ageVal;
         const typeMatch = !typeVal || itemType === typeVal;
-        const catMatch = !catVal || itemCat === catVal;
+        const catMatch = !catVal || itemCat.toLowerCase().includes(catVal.toLowerCase());
         const subCatMatch = !subCatVal || itemSubCat === subCatVal;
         const match3D = !only3DActive || has3D;
         const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
@@ -467,15 +511,15 @@
         const { title, details } = parseTitleAndDetails(rawContent);
         const displayTitle = title || `Exhibit Item #${originalIndex + 1}`;
 
-        const age = getVal(row, 13);                           // Column N
-        const type = getVal(row, 14);                          // Column O
-        const category = getVal(row, 15);                      // Column P
-        const subcategory = getVal(row, 16);                   // Column Q
-        const d3d = getVal(row, 17);                           // Column R
-        const ddoc = getVal(row, 18);                          // Column S
-        const dweb = getVal(row, 19);                          // Column T
+        const age = getVal(row, 13);
+        const type = getVal(row, 14);
+        const category = getVal(row, 15);
+        const subcategory = getVal(row, 16);
+        const d3d = getVal(row, 17);
+        const ddoc = getVal(row, 18);
+        const dweb = getVal(row, 19);
         
-        const img1Raw = getVal(row, 20);                       // Column U: DIMG
+        const img1Raw = getVal(row, 20);
         const img1 = formatImageUrl(img1Raw) || NO_IMAGE_SVG;
         const isFav = favs.includes(originalIndex);
 
@@ -483,10 +527,7 @@
         card.className = 'bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-200/80 overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group relative';
         
         card.innerHTML = `
-          <!-- Full Image Box -->
           <div class="h-56 bg-slate-100/80 relative overflow-hidden flex items-center justify-center p-2">
-            
-            <!-- Clickable Image -->
             <a href="${img1}" target="_blank" onclick="event.stopPropagation()" title="Open full image in new tab" class="w-full h-full flex items-center justify-center relative group/img">
               <img 
                 src="${img1}" 
@@ -497,7 +538,7 @@
               />
             </a>
 
-            <!-- Heart Favorite Button (Grey until selected, then Red) -->
+            <!-- Heart Button (Grey until selected, then Red) -->
             <button 
               onclick="toggleFavorite(${originalIndex}, event)" 
               title="${isFav ? 'Remove from favorites' : 'Save to favorites'}"
@@ -517,7 +558,6 @@
                 ${subcategory ? `<span class="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-100">${subcategory}</span>` : ''}
               </div>
               
-              <!-- Title (20% Smaller) -->
               <h3 class="font-bold text-slate-900 text-sm mb-1.5 line-clamp-1 group-hover:text-blue-600 transition-colors">${displayTitle}</h3>
               <p class="text-xs text-slate-500 line-clamp-2 mb-4 leading-relaxed">${details || 'Click for full details and museum notes.'}</p>
             </div>
@@ -528,7 +568,6 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </span>
               
-              <!-- Action Links -->
               <div class="flex gap-1.5" onclick="event.stopPropagation()">
                 ${d3d ? `<a href="${d3d}" target="_blank" title="3D Model" class="bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold border border-purple-200 transition">3D</a>` : ''}
                 ${ddoc ? `<a href="${ddoc}" target="_blank" title="Documentation" class="bg-slate-100 text-slate-700 hover:bg-slate-800 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold transition">Doc</a>` : ''}
@@ -543,7 +582,7 @@
       });
     }
 
-    // Speech Audio Guide Narrator
+    // Audio Guide
     function speakAudioGuide(title, details, notes) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -585,17 +624,17 @@
       const { title, details } = parseTitleAndDetails(rawContent);
       const displayTitle = title || 'Exhibit Item Details';
 
-      const notes = getVal(row, 4);                                       // Column E (4)
-      const age = getVal(row, 13);                                        // Column N (13)
-      const type = getVal(row, 14);                                       // Column O (14)
-      const category = getVal(row, 15);                                   // Column P (15)
-      const subcategory = getVal(row, 16);                                // Column Q (16)
-      const d3d = getVal(row, 17);                                        // Column R (17)
-      const ddoc = getVal(row, 18);                                       // Column S (18)
-      const dweb = getVal(row, 19);                                       // Column T (19)
+      const notes = getVal(row, 4);
+      const age = getVal(row, 13);
+      const type = getVal(row, 14);
+      const category = getVal(row, 15);
+      const subcategory = getVal(row, 16);
+      const d3d = getVal(row, 17);
+      const ddoc = getVal(row, 18);
+      const dweb = getVal(row, 19);
       
-      const img1 = formatImageUrl(getVal(row, 20));                      // Column U (20)
-      const img2 = formatImageUrl(getVal(row, 21));                      // Column V (21)
+      const img1 = formatImageUrl(getVal(row, 20));
+      const img2 = formatImageUrl(getVal(row, 21));
       const favs = getFavorites();
       const isFav = favs.includes(originalIndex);
 
@@ -611,7 +650,6 @@
           </button>
         </div>
 
-        <!-- Audio Guide Button -->
         <div class="mb-4">
           <button 
             id="btnAudioGuide" 
@@ -622,7 +660,6 @@
           </button>
         </div>
         
-        <!-- Badges -->
         <div class="flex flex-wrap gap-2 text-xs mb-6">
           ${age ? `<span class="bg-slate-100 text-slate-800 px-3 py-1 rounded-full font-medium"><strong>Age:</strong> ${age}</span>` : ''}
           ${type ? `<span class="bg-slate-100 text-slate-800 px-3 py-1 rounded-full font-medium"><strong>Type:</strong> ${type}</span>` : ''}
@@ -630,7 +667,6 @@
           ${subcategory ? `<span class="bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1 rounded-full font-medium"><strong>Subcategory:</strong> ${subcategory}</span>` : ''}
         </div>
 
-        <!-- Images Comparison -->
         <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-6">
           ${img1 ? `
             <div>
@@ -650,7 +686,6 @@
             </div>` : ''}
         </div>
 
-        <!-- Details & Notes -->
         ${details ? `
           <div class="mb-4">
             <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
@@ -663,14 +698,12 @@
             <div class="text-sm text-amber-900 leading-relaxed whitespace-pre-line bg-amber-50/70 p-4 rounded-xl border border-amber-200/60">${notes}</div>
           </div>` : ''}
 
-        <!-- Embedded 3D Viewer -->
         ${d3d && (d3d.endsWith('.glb') || d3d.endsWith('.gltf')) ? `
           <div class="mb-6">
             <h4 class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1.5">Interactive 3D Viewer</h4>
             <model-viewer src="${d3d}" camera-controls auto-rotate class="w-full h-72 bg-slate-900 rounded-xl overflow-hidden"></model-viewer>
           </div>` : ''}
 
-        <!-- Action Links -->
         <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
           ${d3d ? `<a href="${d3d}" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">3D Model (D3D) ↗</a>` : ''}
           ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">Document (DDOC) ↗</a>` : ''}
@@ -682,19 +715,4 @@
     }
 
     // Modal Close
-    document.getElementById('closeModal').addEventListener('click', () => {
-      stopAudioGuide();
-      document.getElementById('detailModal').classList.add('hidden');
-    });
-    document.getElementById('detailModal').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('detailModal')) {
-        stopAudioGuide();
-        document.getElementById('detailModal').classList.add('hidden');
-      }
-    });
-
-    // Start App
-    loadCatalogData();
-  </script>
-</body>
-</html>
+    document.getElementById('closeModal').addEventListener('click', ()
