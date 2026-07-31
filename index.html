@@ -28,6 +28,9 @@
       background: rgba(255, 255, 255, 0.92);
       backdrop-filter: blur(12px);
     }
+    /* Hide scrollbar for clean horizontal collection scroll */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
@@ -36,28 +39,42 @@
   <header class="glass-header border-b border-slate-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       
-      <!-- Top Header Row: Main Title + Universal Toggle Button -->
-      <div class="flex items-center justify-between gap-4">
+      <!-- Top Header Row: Main Title + Quick Action Buttons -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             BMMC Showcase
           </h1>
         </div>
         
-        <!-- Toggle Controls Button (Works on both Mobile & Web) -->
-        <button id="toggleControlsBtn" class="flex items-center gap-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3.5 py-2 rounded-xl transition shadow-sm">
-          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
-          </svg>
-          <span>Search & Filters</span>
-          <span id="toggleChevron" class="transition-transform duration-200 text-slate-400">▼</span>
-        </button>
+        <!-- Action Buttons Bar -->
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Surprise Me Button -->
+          <button id="btnSurprise" class="flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-2 rounded-xl transition shadow-sm">
+            <span>✨ Surprise Me!</span>
+          </button>
+
+          <!-- Favorites Toggle -->
+          <button id="btnFavorites" class="flex items-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-2 rounded-xl transition shadow-sm">
+            <span id="favHeartIcon">❤️</span>
+            <span id="favCountText">Saved (0)</span>
+          </button>
+
+          <!-- Toggle Controls Button -->
+          <button id="toggleControlsBtn" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-xl transition shadow-sm">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+            </svg>
+            <span>Search & Filters</span>
+            <span id="toggleChevron" class="transition-transform duration-200 text-slate-400">▼</span>
+          </button>
+        </div>
       </div>
 
       <!-- Collapsible Container (Subtitle, Search, and Dropdowns) -->
       <div id="collapsibleControls" class="mt-3 flex flex-col gap-3 transition-all duration-300">
         
-        <!-- Shortened Subheading -->
+        <!-- Subheading -->
         <p class="text-xs text-slate-600 font-normal leading-relaxed">
           The Bonniefields Museum of Memorabilia and Curiosities (BMMC) preserves historical artifacts for a nostalgic glimpse into the past.
         </p>
@@ -81,7 +98,7 @@
         </div>
 
         <!-- Filter Dropdowns Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-200/60">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2 border-t border-slate-200/60">
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Age</label>
             <select id="filterAge" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
@@ -106,6 +123,13 @@
               <option value="">All Subcategories</option>
             </select>
           </div>
+          
+          <!-- 3D Models Only Toggle -->
+          <div class="col-span-2 sm:col-span-1 flex items-end">
+            <button id="btn3DOnly" class="w-full p-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-sm h-[34px]">
+              <span>🕶️ 3D Models Only</span>
+            </button>
+          </div>
         </div>
 
       </div>
@@ -113,14 +137,32 @@
     </div>
   </header>
 
-  <!-- Main Cards Grid -->
+  <!-- Main Content Area -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+    
+    <!-- FEATURE 1: Collection Hubs Section -->
+    <section id="collectionHubsSection" class="mb-10 hidden">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 tracking-tight">Museum Collection Hubs</h2>
+          <p class="text-xs text-slate-500">Explore exhibits grouped by category</p>
+        </div>
+      </div>
+      
+      <!-- Horizontal Scrollable Cards -->
+      <div id="hubsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5"></div>
+    </section>
+
+    <!-- Loading Spinner -->
     <div id="loading" class="text-center py-24">
       <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent mb-3"></div>
       <p class="text-slate-500 text-sm font-medium">Fetching exhibit catalog from BMMC...</p>
     </div>
     
-    <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden"></div>
+    <!-- Exhibit Cards Grid -->
+    <div id="gridSection">
+      <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden"></div>
+    </div>
   </main>
 
   <!-- Detail Pop-up Modal -->
@@ -136,12 +178,44 @@
   <!-- JavaScript Logic -->
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
-
     const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
 
-    let rawRows = [];
+    // The 10 requested Collection Hub Categories
+    const HUB_CATEGORIES = [
+      "War", "Photography", "Survey", "General", "General Memorabilia",
+      "General Tools", "Documentation", "Household", "Household Entertainment", "Household Table"
+    ];
 
-    // Converts Google Drive share links into direct viewable image URLs
+    let rawRows = [];
+    let currentFilteredRows = [];
+    let only3DActive = false;
+    let showingFavoritesOnly = false;
+    let currentSpeechUtterance = null;
+
+    // Local Storage Favorites
+    function getFavorites() {
+      return JSON.parse(localStorage.getItem('bMMC_favorites') || '[]');
+    }
+
+    function toggleFavorite(rowIndex, event) {
+      if (event) event.stopPropagation();
+      let favs = getFavorites();
+      if (favs.includes(rowIndex)) {
+        favs = favs.filter(i => i !== rowIndex);
+      } else {
+        favs.push(rowIndex);
+      }
+      localStorage.setItem('bMMC_favorites', JSON.stringify(favs));
+      updateFavoritesBadge();
+      filterCatalog(); // Re-render grid
+    }
+
+    function updateFavoritesBadge() {
+      const favs = getFavorites();
+      document.getElementById('favCountText').textContent = `Saved (${favs.length})`;
+    }
+
+    // Convert Google Drive share links to viewable image URLs
     function formatImageUrl(url) {
       if (!url) return '';
       url = url.trim();
@@ -154,28 +228,22 @@
       return url;
     }
 
-    // Helper to safely get value at column index
     function getVal(row, colIndex) {
       if (!row || colIndex >= row.length) return '';
       return (row[colIndex] || '').trim();
     }
 
-    // Helper: Separates Title (Line 1) and Details (Line 2+ starting with '#')
     function parseTitleAndDetails(rawText) {
       if (!rawText) return { title: '', details: '' };
-      
       const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
       if (lines.length === 0) return { title: '', details: '' };
 
       let title = lines[0].replace(/^#\s*/, '');
-      let details = lines.slice(1)
-        .map(line => line.replace(/^#\s*/, ''))
-        .join('\n');
-
+      let details = lines.slice(1).map(line => line.replace(/^#\s*/, '')).join('\n');
       return { title, details };
     }
 
-    // Universal Controls Toggle (Works on Mobile & Desktop)
+    // Universal Controls Toggle
     const toggleControlsBtn = document.getElementById('toggleControlsBtn');
     const collapsibleControls = document.getElementById('collapsibleControls');
     const toggleChevron = document.getElementById('toggleChevron');
@@ -185,18 +253,55 @@
       toggleChevron.style.transform = collapsibleControls.classList.contains('hidden') ? 'rotate(180deg)' : 'rotate(0deg)';
     });
 
-    // Load Data
+    // FEATURE 4: Surprise Me Action
+    document.getElementById('btnSurprise').addEventListener('click', () => {
+      if (!rawRows || rawRows.length === 0) return;
+      const randomIndex = Math.floor(Math.random() * rawRows.length);
+      openModal(rawRows[randomIndex], randomIndex);
+    });
+
+    // FEATURE 6: 3D Only Toggle
+    document.getElementById('btn3DOnly').addEventListener('click', () => {
+      only3DActive = !only3DActive;
+      const btn = document.getElementById('btn3DOnly');
+      if (only3DActive) {
+        btn.classList.add('bg-purple-600', 'text-white', 'border-purple-600');
+        btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+      } else {
+        btn.classList.remove('bg-purple-600', 'text-white', 'border-purple-600');
+        btn.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+      }
+      filterCatalog();
+    });
+
+    // FEATURE 7: Favorites Toggle View
+    document.getElementById('btnFavorites').addEventListener('click', () => {
+      showingFavoritesOnly = !showingFavoritesOnly;
+      const btn = document.getElementById('btnFavorites');
+      if (showingFavoritesOnly) {
+        btn.classList.add('bg-rose-600', 'text-white', 'border-rose-600');
+        btn.classList.remove('bg-rose-50', 'text-rose-700', 'border-rose-200');
+      } else {
+        btn.classList.remove('bg-rose-600', 'text-white', 'border-rose-600');
+        btn.classList.add('bg-rose-50', 'text-rose-700', 'border-rose-200');
+      }
+      filterCatalog();
+    });
+
+    // Load Catalog Data
     function loadCatalogData() {
       Papa.parse(CSV_URL, {
         download: true,
         header: false,
         skipEmptyLines: true,
         complete: function(results) {
-          rawRows = results.data.slice(1); // Skip header row
+          rawRows = results.data.slice(1);
           
           document.getElementById('loading').classList.add('hidden');
           document.getElementById('grid').classList.remove('hidden');
           
+          updateFavoritesBadge();
+          renderCollectionHubs(rawRows);
           populateDropdowns(rawRows);
           renderGrid(rawRows);
         },
@@ -209,12 +314,53 @@
       });
     }
 
-    // Populate Filter Dropdowns
+    // FEATURE 1: Render Collection Hubs
+    function renderCollectionHubs(rows) {
+      const hubsGrid = document.getElementById('hubsGrid');
+      hubsGrid.innerHTML = '';
+
+      HUB_CATEGORIES.forEach(catName => {
+        // Find matching rows for category
+        const matchingRows = rows.filter(r => getVal(r, 15).toLowerCase() === catName.toLowerCase());
+        const count = matchingRows.length;
+        
+        if (count === 0) return; // Skip empty categories
+
+        // Get first item's image as preview thumbnail
+        const firstImgRaw = matchingRows.find(r => getVal(r, 20)) ? getVal(matchingRows.find(r => getVal(r, 20)), 20) : '';
+        const previewImg = formatImageUrl(firstImgRaw) || NO_IMAGE_SVG;
+
+        const hubCard = document.createElement('div');
+        hubCard.className = 'bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer flex flex-col group';
+        hubCard.innerHTML = `
+          <div class="h-24 bg-slate-100 relative overflow-hidden flex items-center justify-center p-1">
+            <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" />
+            <span class="absolute top-2 right-2 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">${count}</span>
+          </div>
+          <div class="p-2.5 flex-1 flex flex-col justify-between">
+            <h3 class="font-bold text-slate-800 text-xs group-hover:text-blue-600 transition-colors line-clamp-1">${catName}</h3>
+            <span class="text-[10px] text-blue-600 font-semibold mt-1">View Collection →</span>
+          </div>
+        `;
+
+        hubCard.addEventListener('click', () => {
+          document.getElementById('filterCategory').value = catName;
+          filterCatalog();
+          document.getElementById('gridSection').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        hubsGrid.appendChild(hubCard);
+      });
+
+      document.getElementById('collectionHubsSection').classList.remove('hidden');
+    }
+
+    // Populate Dropdowns
     function populateDropdowns(rows) {
-      fillSelect('filterAge', rows.map(r => getVal(r, 13)));        // Column N (13): Age (1950)
-      fillSelect('filterType', rows.map(r => getVal(r, 14)));       // Column O (14): Type
-      fillSelect('filterCategory', rows.map(r => getVal(r, 15)));   // Column P (15): Category
-      fillSelect('filterSubcategory', rows.map(r => getVal(r, 16)));// Column Q (16): Subcategory
+      fillSelect('filterAge', rows.map(r => getVal(r, 13)));
+      fillSelect('filterType', rows.map(r => getVal(r, 14)));
+      fillSelect('filterCategory', rows.map(r => getVal(r, 15)));
+      fillSelect('filterSubcategory', rows.map(r => getVal(r, 16)));
     }
 
     function fillSelect(elementId, values) {
@@ -236,25 +382,29 @@
       const typeVal = document.getElementById('filterType').value;
       const catVal = document.getElementById('filterCategory').value;
       const subCatVal = document.getElementById('filterSubcategory').value;
+      const favs = getFavorites();
 
       document.getElementById('clearSearch').classList.toggle('hidden', !searchVal);
 
-      const filtered = rawRows.filter(row => {
+      currentFilteredRows = rawRows.map((row, index) => ({ row, originalIndex: index })).filter(({ row, originalIndex }) => {
         const itemAge = getVal(row, 13);
         const itemType = getVal(row, 14);
         const itemCat = getVal(row, 15);
         const itemSubCat = getVal(row, 16);
+        const has3D = getVal(row, 17) !== '';
 
         const fullTextMatch = row.join(' ').toLowerCase().includes(searchVal);
         const ageMatch = !ageVal || itemAge === ageVal;
         const typeMatch = !typeVal || itemType === typeVal;
         const catMatch = !catVal || itemCat === catVal;
         const subCatMatch = !subCatVal || itemSubCat === subCatVal;
+        const match3D = !only3DActive || has3D;
+        const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
 
-        return fullTextMatch && ageMatch && typeMatch && catMatch && subCatMatch;
+        return fullTextMatch && ageMatch && typeMatch && catMatch && subCatMatch && match3D && matchFav;
       });
 
-      renderGrid(filtered);
+      renderGrid(currentFilteredRows);
     }
 
     document.getElementById('searchInput').addEventListener('input', filterCatalog);
@@ -264,25 +414,26 @@
     });
 
     // Render Cards Grid
-    function renderGrid(rows) {
+    function renderGrid(items) {
       const grid = document.getElementById('grid');
       const itemCount = document.getElementById('itemCount');
+      const favs = getFavorites();
+      
       grid.innerHTML = '';
-      itemCount.textContent = `Showing ${rows.length} item${rows.length === 1 ? '' : 's'}`;
+      itemCount.textContent = `Showing ${items.length} item${items.length === 1 ? '' : 's'}`;
 
-      if (rows.length === 0) {
+      if (items.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
-            <p class="text-slate-500 font-medium">No exhibit results match your selected search or filters.</p>
+            <p class="text-slate-500 font-medium">No exhibit results match your selected filters.</p>
           </div>`;
         return;
       }
 
-      rows.forEach((row, index) => {
-        // Parse Title & Details from Column C (Index 2)
+      items.forEach(({ row, originalIndex }, displayIndex) => {
         const rawContent = getVal(row, 2) || getVal(row, 0);
         const { title, details } = parseTitleAndDetails(rawContent);
-        const displayTitle = title || `Exhibit Item #${index + 1}`;
+        const displayTitle = title || `Exhibit Item #${originalIndex + 1}`;
 
         const age = getVal(row, 13);                           // Column N
         const type = getVal(row, 14);                          // Column O
@@ -294,9 +445,10 @@
         
         const img1Raw = getVal(row, 20);                       // Column U: DIMG
         const img1 = formatImageUrl(img1Raw) || NO_IMAGE_SVG;
+        const isFav = favs.includes(originalIndex);
 
         const card = document.createElement('div');
-        card.className = 'bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-200/80 overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group';
+        card.className = 'bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-200/80 overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group relative';
         
         card.innerHTML = `
           <!-- Full Image Box -->
@@ -311,10 +463,16 @@
                 loading="lazy" 
                 onError="this.src='${NO_IMAGE_SVG}'" 
               />
-              <span class="absolute bottom-2 right-2 bg-slate-900/70 hover:bg-slate-900 text-white p-1.5 rounded-lg text-[10px] font-medium opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center gap-1 shadow-md">
-                🔍 Open Image ↗
-              </span>
             </a>
+
+            <!-- Heart Favorite Button -->
+            <button 
+              onclick="toggleFavorite(${originalIndex}, event)" 
+              title="${isFav ? 'Remove from favorites' : 'Save to favorites'}"
+              class="absolute top-3 right-3 p-1.5 rounded-full backdrop-blur-md transition shadow-sm ${isFav ? 'bg-rose-500 text-white' : 'bg-white/80 hover:bg-white text-slate-400 hover:text-rose-500'}"
+            >
+              ❤️
+            </button>
 
             ${age ? `<span class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide pointer-events-none">${age}</span>` : ''}
           </div>
@@ -327,7 +485,7 @@
                 ${subcategory ? `<span class="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-100">${subcategory}</span>` : ''}
               </div>
               
-              <!-- Card Title REDUCED BY 20% (text-sm / 14px) -->
+              <!-- Title (20% Smaller) -->
               <h3 class="font-bold text-slate-900 text-sm mb-1.5 line-clamp-1 group-hover:text-blue-600 transition-colors">${displayTitle}</h3>
               <p class="text-xs text-slate-500 line-clamp-2 mb-4 leading-relaxed">${details || 'Click for full details and museum notes.'}</p>
             </div>
@@ -348,32 +506,89 @@
           </div>
         `;
 
-        card.addEventListener('click', () => openModal(row));
+        card.addEventListener('click', () => openModal(row, originalIndex));
         grid.appendChild(card);
       });
     }
 
+    // FEATURE 5: Speech Audio Guide Narrator
+    function speakAudioGuide(title, details, notes) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        
+        const textToSpeak = `Exhibit: ${title}. ${details ? 'Details: ' + details + '.' : ''} ${notes ? 'Museum Notes: ' + notes + '.' : ''}`;
+        currentSpeechUtterance = new SpeechSynthesisUtterance(textToSpeak);
+        currentSpeechUtterance.rate = 0.95;
+        
+        const btn = document.getElementById('btnAudioGuide');
+        btn.innerHTML = '⏹️ Stop Audio Guide';
+        btn.onclick = stopAudioGuide;
+
+        currentSpeechUtterance.onend = () => {
+          btn.innerHTML = '🔊 Listen to Audio Guide';
+          btn.onclick = () => speakAudioGuide(title, details, notes);
+        };
+
+        window.speechSynthesis.speak(currentSpeechUtterance);
+      } else {
+        alert('Speech Synthesis is not supported in this browser.');
+      }
+    }
+
+    function stopAudioGuide() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const btn = document.getElementById('btnAudioGuide');
+        if (btn) {
+          btn.innerHTML = '🔊 Listen to Audio Guide';
+        }
+      }
+    }
+
     // Modal View
-    function openModal(row) {
+    function openModal(row, originalIndex) {
+      stopAudioGuide();
+      
       const rawContent = getVal(row, 2) || getVal(row, 0);
       const { title, details } = parseTitleAndDetails(rawContent);
       const displayTitle = title || 'Exhibit Item Details';
 
-      const notes = getVal(row, 4);                                       // Column E (4): Notes
-      const age = getVal(row, 13);                                        // Column N (13): Age (1950)
-      const type = getVal(row, 14);                                       // Column O (14): Type
-      const category = getVal(row, 15);                                   // Column P (15): Category
-      const subcategory = getVal(row, 16);                                // Column Q (16): Subcategory
-      const d3d = getVal(row, 17);                                        // Column R (17): D3D Link
-      const ddoc = getVal(row, 18);                                       // Column S (18): DDOC Link
-      const dweb = getVal(row, 19);                                       // Column T (19): DWEB Link
+      const notes = getVal(row, 4);                                       // Column E (4)
+      const age = getVal(row, 13);                                        // Column N (13)
+      const type = getVal(row, 14);                                       // Column O (14)
+      const category = getVal(row, 15);                                   // Column P (15)
+      const subcategory = getVal(row, 16);                                // Column Q (16)
+      const d3d = getVal(row, 17);                                        // Column R (17)
+      const ddoc = getVal(row, 18);                                       // Column S (18)
+      const dweb = getVal(row, 19);                                       // Column T (19)
       
-      const img1 = formatImageUrl(getVal(row, 20));                      // Column U (20): DIMG
-      const img2 = formatImageUrl(getVal(row, 21));                      // Column V (21): DIMG2
+      const img1 = formatImageUrl(getVal(row, 20));                      // Column U (20)
+      const img2 = formatImageUrl(getVal(row, 21));                      // Column V (21)
+      const favs = getFavorites();
+      const isFav = favs.includes(originalIndex);
 
       const modalContent = document.getElementById('modalContent');
       modalContent.innerHTML = `
-        <h2 class="text-xl font-bold text-slate-900 mb-3">${displayTitle}</h2>
+        <div class="flex items-start justify-between gap-4 mb-3 pr-8">
+          <h2 class="text-xl font-bold text-slate-900">${displayTitle}</h2>
+          <button 
+            onclick="toggleFavorite(${originalIndex}, event)" 
+            class="px-3 py-1 rounded-full text-xs font-bold border transition flex items-center gap-1 ${isFav ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-100 text-slate-700 border-slate-200'}"
+          >
+            ❤️ ${isFav ? 'Saved' : 'Save'}
+          </button>
+        </div>
+
+        <!-- FEATURE 5: Audio Guide Button -->
+        <div class="mb-4">
+          <button 
+            id="btnAudioGuide" 
+            onclick="speakAudioGuide('${displayTitle.replace(/'/g, "\\'")}', '${details.replace(/'/g, "\\'").replace(/\n/g, ' ')}', '${notes.replace(/'/g, "\\'").replace(/\n/g, ' ')}')"
+            class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm"
+          >
+            🔊 Listen to Audio Guide
+          </button>
+        </div>
         
         <!-- Badges -->
         <div class="flex flex-wrap gap-2 text-xs mb-6">
@@ -416,7 +631,7 @@
             <div class="text-sm text-amber-900 leading-relaxed whitespace-pre-line bg-amber-50/70 p-4 rounded-xl border border-amber-200/60">${notes}</div>
           </div>` : ''}
 
-        <!-- Embedded 3D Viewer (Supports .glb / .gltf files) -->
+        <!-- Embedded 3D Viewer -->
         ${d3d && (d3d.endsWith('.glb') || d3d.endsWith('.gltf')) ? `
           <div class="mb-6">
             <h4 class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1.5">Interactive 3D Viewer</h4>
@@ -436,10 +651,12 @@
 
     // Modal Close
     document.getElementById('closeModal').addEventListener('click', () => {
+      stopAudioGuide();
       document.getElementById('detailModal').classList.add('hidden');
     });
     document.getElementById('detailModal').addEventListener('click', (e) => {
       if (e.target === document.getElementById('detailModal')) {
+        stopAudioGuide();
         document.getElementById('detailModal').classList.add('hidden');
       }
     });
