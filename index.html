@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Interactive Media & 3D Catalog</title>
   
+  <!-- Inline Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -107,15 +110,17 @@
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
 
-    // Reliable inline SVG image (100% offline-proof, eliminates 502 errors)
+    // Inline SVG image placeholder (eliminates 502/404 errors)
     const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
 
-    let allData = [];
+    let rawRows = [];
 
     // Converts Google Drive share links into direct viewable image URLs
     function formatImageUrl(url) {
       if (!url) return '';
       url = url.trim();
+      if (!url.startsWith('http://') && !url.startsWith('https://')) return '';
+      
       const driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
       if (driveMatch && driveMatch[1]) {
         return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
@@ -123,40 +128,27 @@
       return url;
     }
 
-    // Substring Property Finder (Handles CSV column artifacts like "_1,Notes" or "_2,1950")
-    function getProp(obj, possibleKeys) {
-      if (!obj) return '';
-      const keys = Object.keys(obj);
-      
-      for (let p of possibleKeys) {
-        const cleanTarget = p.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-        
-        const foundKey = keys.find(k => {
-          const cleanKey = k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-          return cleanKey === cleanTarget || cleanKey.includes(cleanTarget);
-        });
-
-        if (foundKey && obj[foundKey] !== undefined && obj[foundKey] !== null) {
-          const val = String(obj[foundKey]).trim();
-          if (val !== '') return val;
-        }
-      }
-      return '';
+    // Helper to safely get value at column index
+    function getVal(row, colIndex) {
+      if (!row || colIndex >= row.length) return '';
+      return (row[colIndex] || '').trim();
     }
 
-    // Load Data
+    // Load Data using Raw Array Indexing (header: false)
     function loadCatalogData() {
       Papa.parse(CSV_URL, {
         download: true,
-        header: true,
+        header: false, // Bypasses text headers; uses exact column indexes
         skipEmptyLines: true,
         complete: function(results) {
-          allData = results.data;
+          // Remove Row 0 (Header Row)
+          rawRows = results.data.slice(1);
+          
           document.getElementById('loading').classList.add('hidden');
           document.getElementById('grid').classList.remove('hidden');
           
-          populateDropdowns(allData);
-          renderGrid(allData);
+          populateDropdowns(rawRows);
+          renderGrid(rawRows);
         },
         error: function(err) {
           document.getElementById('loading').innerHTML = `
@@ -167,12 +159,12 @@
       });
     }
 
-    // Populate Filter Dropdowns
-    function populateDropdowns(data) {
-      fillSelect('filterAge', data.map(d => getProp(d, ['1950', 'Age'])));
-      fillSelect('filterType', data.map(d => getProp(d, ['Type'])));
-      fillSelect('filterCategory', data.map(d => getProp(d, ['Category'])));
-      fillSelect('filterSubcategory', data.map(d => getProp(d, ['Subcategory', 'Sub Category'])));
+    // Populate Filter Dropdowns using exact column positions
+    function populateDropdowns(rows) {
+      fillSelect('filterAge', rows.map(r => getVal(r, 13)));        // Column N (Index 13): Age (1950)
+      fillSelect('filterType', rows.map(r => getVal(r, 14)));       // Column O (Index 14): Type
+      fillSelect('filterCategory', rows.map(r => getVal(r, 15)));   // Column P (Index 15): Category
+      fillSelect('filterSubcategory', rows.map(r => getVal(r, 16)));// Column Q (Index 16): Subcategory
     }
 
     function fillSelect(elementId, values) {
@@ -197,13 +189,13 @@
 
       document.getElementById('clearSearch').classList.toggle('hidden', !searchVal);
 
-      const filtered = allData.filter(item => {
-        const itemAge = getProp(item, ['1950', 'Age']);
-        const itemType = getProp(item, ['Type']);
-        const itemCat = getProp(item, ['Category']);
-        const itemSubCat = getProp(item, ['Subcategory', 'Sub Category']);
+      const filtered = rawRows.filter(row => {
+        const itemAge = getVal(row, 13);
+        const itemType = getVal(row, 14);
+        const itemCat = getVal(row, 15);
+        const itemSubCat = getVal(row, 16);
 
-        const fullTextMatch = JSON.stringify(item).toLowerCase().includes(searchVal);
+        const fullTextMatch = row.join(' ').toLowerCase().includes(searchVal);
         const ageMatch = !ageVal || itemAge === ageVal;
         const typeMatch = !typeVal || itemType === typeVal;
         const catMatch = !catVal || itemCat === catVal;
@@ -221,14 +213,14 @@
       filterCatalog();
     });
 
-    // Render Cards
-    function renderGrid(items) {
+    // Render Cards Grid
+    function renderGrid(rows) {
       const grid = document.getElementById('grid');
       const itemCount = document.getElementById('itemCount');
       grid.innerHTML = '';
-      itemCount.textContent = `Showing ${items.length} item${items.length === 1 ? '' : 's'}`;
+      itemCount.textContent = `Showing ${rows.length} item${rows.length === 1 ? '' : 's'}`;
 
-      if (items.length === 0) {
+      if (rows.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
             <p class="text-slate-500 font-medium">No results match your selected search or filters.</p>
@@ -236,19 +228,20 @@
         return;
       }
 
-      items.forEach((item, index) => {
-        // MATCHED KEYS AGAINST YOUR CONSOLE OUTPUT:
-        const heading = getProp(item, ['Image', 'Heading', 'Title', 'Name']) || `Item #${index + 1}`;
-        const img1Raw = getProp(item, ['DIMG', 'IMG', 'Primary Image']);
+      rows.forEach((row, index) => {
+        // EXACT UPDATED INDEX MAPPINGS:
+        const heading = getVal(row, 2) || getVal(row, 0) || `Item #${index + 1}`; // Column C (Index 2): Heading/Details
+        const details = getVal(row, 2);                                         // Column C (Index 2): Details
+        const age = getVal(row, 13);                                            // Column N (Index 13): Age (1950)
+        const type = getVal(row, 14);                                           // Column O (Index 14): Type
+        const category = getVal(row, 15);                                       // Column P (Index 15): Category
+        const subcategory = getVal(row, 16);                                    // Column Q (Index 16): Subcategory
+        const d3d = getVal(row, 17);                                            // Column R (Index 17): D3D Link
+        const ddoc = getVal(row, 18);                                           // Column S (Index 18): DDOC Link
+        const dweb = getVal(row, 19);                                           // Column T (Index 19): DWEB Link
+        
+        const img1Raw = getVal(row, 20);                                        // Column U (Index 20): DIMG
         const img1 = formatImageUrl(img1Raw) || NO_IMAGE_SVG;
-        const details = getProp(item, ['Details', 'Detail', 'Description']);
-        const age = getProp(item, ['1950', 'Age']);
-        const type = getProp(item, ['Type']);
-        const category = getProp(item, ['Category']);
-        const subcategory = getProp(item, ['Subcategory', 'Sub Category']);
-        const d3d = getProp(item, ['D3D', '3D']);
-        const ddoc = getProp(item, ['DDOC', 'Doc']);
-        const dweb = getProp(item, ['DWEB', 'Web']);
 
         const card = document.createElement('div');
         card.className = 'bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-200/80 overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group';
@@ -283,7 +276,7 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </span>
               
-              <!-- Action Buttons -->
+              <!-- Action Links -->
               <div class="flex gap-1.5" onclick="event.stopPropagation()">
                 ${d3d ? `<a href="${d3d}" target="_blank" title="3D Model" class="bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold border border-purple-200 transition">3D</a>` : ''}
                 ${ddoc ? `<a href="${ddoc}" target="_blank" title="Documentation" class="bg-slate-100 text-slate-700 hover:bg-slate-800 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold transition">Doc</a>` : ''}
@@ -293,25 +286,26 @@
           </div>
         `;
 
-        card.addEventListener('click', () => openModal(item));
+        card.addEventListener('click', () => openModal(row));
         grid.appendChild(card);
       });
     }
 
     // Modal View
-    function openModal(item) {
-      const heading = getProp(item, ['Image', 'Heading', 'Title', 'Name']) || 'Item Details';
-      const img1 = formatImageUrl(getProp(item, ['DIMG', 'IMG', 'Primary Image']));
-      const img2 = formatImageUrl(getProp(item, ['DIMG2', '2nd Image', 'IMG2']));
-      const details = getProp(item, ['Details', 'Detail', 'Description']);
-      const notes = getProp(item, ['Notes', 'Note', 'Comments']);
-      const age = getProp(item, ['1950', 'Age']);
-      const type = getProp(item, ['Type']);
-      const category = getProp(item, ['Category']);
-      const subcategory = getProp(item, ['Subcategory', 'Sub Category']);
-      const d3d = getProp(item, ['D3D', '3D']);
-      const ddoc = getProp(item, ['DDOC', 'Doc']);
-      const dweb = getProp(item, ['DWEB', 'Web']);
+    function openModal(row) {
+      const heading = getVal(row, 2) || getVal(row, 0) || 'Item Details'; // Column C (Index 2): Heading/Details
+      const details = getVal(row, 2);                                     // Column C (Index 2): Details
+      const notes = getVal(row, 4);                                       // Column E (Index 4): Notes
+      const age = getVal(row, 13);                                        // Column N (Index 13): Age (1950)
+      const type = getVal(row, 14);                                       // Column O (Index 14): Type
+      const category = getVal(row, 15);                                   // Column P (Index 15): Category
+      const subcategory = getVal(row, 16);                                // Column Q (Index 16): Subcategory
+      const d3d = getVal(row, 17);                                        // Column R (Index 17): D3D Link
+      const ddoc = getVal(row, 18);                                       // Column S (Index 18): DDOC Link
+      const dweb = getVal(row, 19);                                       // Column T (Index 19): DWEB Link
+      
+      const img1 = formatImageUrl(getVal(row, 20));                      // Column U (Index 20): DIMG
+      const img2 = formatImageUrl(getVal(row, 21));                      // Column V (Index 21): DIMG2
 
       const modalContent = document.getElementById('modalContent');
       modalContent.innerHTML = `
