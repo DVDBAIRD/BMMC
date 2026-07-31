@@ -22,7 +22,7 @@
   <style>
     body { font-family: 'Inter', sans-serif; }
     .glass-header {
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.9);
       backdrop-filter: blur(12px);
     }
   </style>
@@ -30,13 +30,11 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
 
   <!-- Header -->
-  <header class="glass-header border-b border-slate-200 sticky top-0 z-30 shadow-sm transition-all">
+  <header class="glass-header border-b border-slate-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-          Catalog Showcase
-        </h1>
-        <p class="text-xs text-slate-500 font-medium mt-0.5" id="itemCount">Loading catalog items...</p>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Catalog Showcase</h1>
+        <p class="text-xs text-slate-500 font-medium mt-0.5" id="itemCount">Loading items...</p>
       </div>
       
       <!-- General Search Input -->
@@ -107,8 +105,10 @@
 
   <!-- JavaScript Logic -->
   <script>
-    // Direct Google CSV Export Endpoint (Layup tab, gid=1146027655)
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
+
+    // Reliable inline SVG image (100% offline-proof, eliminates 502 errors)
+    const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
 
     let allData = [];
 
@@ -123,12 +123,23 @@
       return url;
     }
 
-    // Dynamic field key getter
+    // Substring Property Finder (Handles CSV column artifacts like "_1,Notes" or "_2,1950")
     function getProp(obj, possibleKeys) {
+      if (!obj) return '';
       const keys = Object.keys(obj);
+      
       for (let p of possibleKeys) {
-        const found = keys.find(k => k.trim().toLowerCase() === p.toLowerCase());
-        if (found && obj[found]) return obj[found].trim();
+        const cleanTarget = p.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        
+        const foundKey = keys.find(k => {
+          const cleanKey = k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+          return cleanKey === cleanTarget || cleanKey.includes(cleanTarget);
+        });
+
+        if (foundKey && obj[foundKey] !== undefined && obj[foundKey] !== null) {
+          const val = String(obj[foundKey]).trim();
+          if (val !== '') return val;
+        }
       }
       return '';
     }
@@ -161,7 +172,7 @@
       fillSelect('filterAge', data.map(d => getProp(d, ['1950', 'Age'])));
       fillSelect('filterType', data.map(d => getProp(d, ['Type'])));
       fillSelect('filterCategory', data.map(d => getProp(d, ['Category'])));
-      fillSelect('filterSubcategory', data.map(d => getProp(d, ['Subcategory', 'Sub-category', 'Sub Category'])));
+      fillSelect('filterSubcategory', data.map(d => getProp(d, ['Subcategory', 'Sub Category'])));
     }
 
     function fillSelect(elementId, values) {
@@ -190,7 +201,7 @@
         const itemAge = getProp(item, ['1950', 'Age']);
         const itemType = getProp(item, ['Type']);
         const itemCat = getProp(item, ['Category']);
-        const itemSubCat = getProp(item, ['Subcategory', 'Sub-category', 'Sub Category']);
+        const itemSubCat = getProp(item, ['Subcategory', 'Sub Category']);
 
         const fullTextMatch = JSON.stringify(item).toLowerCase().includes(searchVal);
         const ageMatch = !ageVal || itemAge === ageVal;
@@ -226,18 +237,18 @@
       }
 
       items.forEach((item, index) => {
-        // MAPPED EXACT COLUMNS HERE:
-        const heading = getProp(item, ['Heading', 'Title', 'Name', 'Item']) || `Item #${index + 1}`;
-        const img1Raw = getProp(item, ['DIMG', 'Image 1', 'Image']);
-        const img1 = formatImageUrl(img1Raw) || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=500&auto=format&fit=crop';
+        // MATCHED KEYS AGAINST YOUR CONSOLE OUTPUT:
+        const heading = getProp(item, ['Image', 'Heading', 'Title', 'Name']) || `Item #${index + 1}`;
+        const img1Raw = getProp(item, ['DIMG', 'IMG', 'Primary Image']);
+        const img1 = formatImageUrl(img1Raw) || NO_IMAGE_SVG;
         const details = getProp(item, ['Details', 'Detail', 'Description']);
         const age = getProp(item, ['1950', 'Age']);
         const type = getProp(item, ['Type']);
         const category = getProp(item, ['Category']);
         const subcategory = getProp(item, ['Subcategory', 'Sub Category']);
-        const d3d = getProp(item, ['D3D', '3D Model', '3D']);
-        const ddoc = getProp(item, ['DDOC', 'Documentation', 'Doc']);
-        const dweb = getProp(item, ['DWEB', 'Web', 'Website']);
+        const d3d = getProp(item, ['D3D', '3D']);
+        const ddoc = getProp(item, ['DDOC', 'Doc']);
+        const dweb = getProp(item, ['DWEB', 'Web']);
 
         const card = document.createElement('div');
         card.className = 'bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-200/80 overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group';
@@ -249,7 +260,7 @@
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
               alt="${heading}" 
               loading="lazy" 
-              onError="this.src='https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=500&auto=format&fit=crop'" 
+              onError="this.src='${NO_IMAGE_SVG}'" 
             />
             <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             ${age ? `<span class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide">${age}</span>` : ''}
@@ -287,20 +298,20 @@
       });
     }
 
-    // Modal View (Notes, Second Image & Links)
+    // Modal View
     function openModal(item) {
-      const heading = getProp(item, ['Heading', 'Title', 'Name', 'Item']) || 'Item Details';
-      const img1 = formatImageUrl(getProp(item, ['DIMG', 'Image 1', 'Image']));
-      const img2 = formatImageUrl(getProp(item, ['DIMG2', 'Second Image', 'Image 2']));
+      const heading = getProp(item, ['Image', 'Heading', 'Title', 'Name']) || 'Item Details';
+      const img1 = formatImageUrl(getProp(item, ['DIMG', 'IMG', 'Primary Image']));
+      const img2 = formatImageUrl(getProp(item, ['DIMG2', '2nd Image', 'IMG2']));
       const details = getProp(item, ['Details', 'Detail', 'Description']);
       const notes = getProp(item, ['Notes', 'Note', 'Comments']);
       const age = getProp(item, ['1950', 'Age']);
       const type = getProp(item, ['Type']);
       const category = getProp(item, ['Category']);
       const subcategory = getProp(item, ['Subcategory', 'Sub Category']);
-      const d3d = getProp(item, ['D3D', '3D Model']);
-      const ddoc = getProp(item, ['DDOC', 'Documentation', 'Doc']);
-      const dweb = getProp(item, ['DWEB', 'Web', 'Website']);
+      const d3d = getProp(item, ['D3D', '3D']);
+      const ddoc = getProp(item, ['DDOC', 'Doc']);
+      const dweb = getProp(item, ['DWEB', 'Web']);
 
       const modalContent = document.getElementById('modalContent');
       modalContent.innerHTML = `
@@ -319,12 +330,12 @@
           ${img1 ? `
             <div>
               <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Primary Image (DIMG)</p>
-              <img src="${img1}" class="w-full h-56 object-cover rounded-xl border border-slate-200 shadow-sm" onError="this.src='https://via.placeholder.com/500x300?text=Image+Unavailable'" />
+              <img src="${img1}" class="w-full h-56 object-cover rounded-xl border border-slate-200 shadow-sm" onError="this.src='${NO_IMAGE_SVG}'" />
             </div>` : ''}
           ${img2 ? `
             <div>
               <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Second Image (DIMG2)</p>
-              <img src="${img2}" class="w-full h-56 object-cover rounded-xl border border-slate-200 shadow-sm" onError="this.src='https://via.placeholder.com/500x300?text=Secondary+Image+Unavailable'" />
+              <img src="${img2}" class="w-full h-56 object-cover rounded-xl border border-slate-200 shadow-sm" onError="this.src='${NO_IMAGE_SVG}'" />
             </div>` : ''}
         </div>
 
