@@ -24,7 +24,7 @@
 
   <style>
     body { font-family: 'Inter', sans-serif; }
-    /* 100% Solid Opaque Header Background so images never bleed behind it */
+    /* 100% Solid Opaque Header Background */
     .solid-header {
       background-color: #ffffff;
     }
@@ -32,8 +32,8 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased relative">
 
-  <!-- Header (Solid Opaque White, Z-30 Shadow) -->
-  <header class="solid-header border-b border-slate-200 sticky top-0 z-30 shadow-md">
+  <!-- Header (Solid Opaque White, Sticky Top) -->
+  <header id="mainHeader" class="solid-header border-b border-slate-200 sticky top-0 z-30 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       
       <!-- Top Header Row: Main Title + Quick Action Buttons -->
@@ -173,7 +173,7 @@
     </div>
   </main>
 
-  <!-- Floating Mobile Jump Pill (Collapses filters AND scrolls to grid) -->
+  <!-- Floating Mobile Jump Pill -->
   <button id="floatingJumpBtn" class="sm:hidden fixed bottom-5 right-5 z-40 bg-blue-600 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-lg flex items-center gap-1.5 hidden">
     <span>⬇️ View Exhibits</span>
   </button>
@@ -207,6 +207,17 @@
     function getVal(row, colIndex) {
       if (!row || !Array.isArray(row) || colIndex >= row.length || row[colIndex] == null) return '';
       return String(row[colIndex]).trim();
+    }
+
+    // Dynamic Scroll Offset Function (Positioned right below bottom edge of sticky header)
+    function scrollToGrid() {
+      const header = document.getElementById('mainHeader');
+      const headerHeight = header ? header.offsetHeight : 100;
+      const gridElem = document.getElementById('gridSection');
+      if (!gridElem) return;
+
+      const targetPos = gridElem.getBoundingClientRect().top + window.pageYOffset - headerHeight - 16;
+      window.scrollTo({ top: Math.max(0, targetPos), behavior: 'smooth' });
     }
 
     function getFavorites() {
@@ -308,7 +319,7 @@
         collapsibleControls.classList.add('hidden');
         if (toggleChevron) toggleChevron.style.transform = 'rotate(180deg)';
       }
-      document.getElementById('gridSection').scrollIntoView({ behavior: 'smooth' });
+      scrollToGrid();
     }
 
     document.getElementById('btnBrowseAllHeader').addEventListener('click', browseAllExhibits);
@@ -342,13 +353,13 @@
       filterCatalog(true);
     });
 
-    // Floating Mobile Jump Listener (Collapses filter header AND scrolls to grid)
+    // Floating Mobile Jump Listener
     document.getElementById('floatingJumpBtn').addEventListener('click', () => {
       if (collapsibleControls) {
         collapsibleControls.classList.add('hidden');
         if (toggleChevron) toggleChevron.style.transform = 'rotate(180deg)';
       }
-      document.getElementById('gridSection').scrollIntoView({ behavior: 'smooth' });
+      scrollToGrid();
     });
 
     // Load Data
@@ -420,7 +431,7 @@
             collapsibleControls.classList.add('hidden');
             if (toggleChevron) toggleChevron.style.transform = 'rotate(180deg)';
           }
-          document.getElementById('gridSection').scrollIntoView({ behavior: 'smooth' });
+          scrollToGrid();
         });
 
         hubsGrid.appendChild(hubCard);
@@ -453,7 +464,7 @@
           collapsibleControls.classList.add('hidden');
           if (toggleChevron) toggleChevron.style.transform = 'rotate(180deg)';
         }
-        document.getElementById('gridSection').scrollIntoView({ behavior: 'smooth' });
+        scrollToGrid();
       });
     }
 
@@ -509,10 +520,14 @@
       filterCatalog(true);
     });
 
-    // AUDIO NARRATOR (Reads ONLY Museum Notes, Column E / Index 4)
-    function speakAudioGuide(notes, event) {
+    // AUDIO NARRATOR (Reads ONLY Museum Notes by Row Index to avoid string escaping bugs)
+    function speakAudioGuide(originalIndex, event) {
       if (event) event.stopPropagation(); // Prevents opening modal when speaker icon clicked on card
 
+      const row = rawRows[originalIndex];
+      if (!row) return;
+
+      const notes = getVal(row, 4); // Column E (4): Museum Notes
       if (!notes || notes.trim() === '') {
         alert('No Museum Notes available for audio narration on this exhibit.');
         return;
@@ -526,16 +541,16 @@
         currentSpeechUtterance = new SpeechSynthesisUtterance(textToSpeak);
         currentSpeechUtterance.rate = 0.95;
         
-        const btn = document.getElementById('btnAudioGuide');
-        if (btn) {
-          btn.innerHTML = '⏹️ Stop Audio Guide';
-          btn.onclick = stopAudioGuide;
+        const btnModal = document.getElementById('btnAudioGuide');
+        if (btnModal) {
+          btnModal.innerHTML = '⏹️ Stop Audio Guide';
+          btnModal.onclick = stopAudioGuide;
         }
 
         currentSpeechUtterance.onend = () => {
-          if (btn) {
-            btn.innerHTML = '🔊 Listen to Museum Notes';
-            btn.onclick = () => speakAudioGuide(notes);
+          if (btnModal) {
+            btnModal.innerHTML = '🔊 Listen to Museum Notes';
+            btnModal.onclick = () => speakAudioGuide(originalIndex);
           }
         };
 
@@ -548,9 +563,9 @@
     function stopAudioGuide() {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        const btn = document.getElementById('btnAudioGuide');
-        if (btn) {
-          btn.innerHTML = '🔊 Listen to Museum Notes';
+        const btnModal = document.getElementById('btnAudioGuide');
+        if (btnModal) {
+          btnModal.innerHTML = '🔊 Listen to Museum Notes';
         }
       }
     }
@@ -577,16 +592,16 @@
         const { title, details } = parseTitleAndDetails(rawContent);
         const displayTitle = title || `Exhibit Item #${originalIndex + 1}`;
 
-        const notes = getVal(row, 4);                          // Column E (4): Notes
-        const age = getVal(row, 13);                           // Column N
-        const type = getVal(row, 14);                          // Column O
-        const category = getVal(row, 15);                      // Column P
-        const subcategory = getVal(row, 16);                   // Column Q
-        const d3d = getVal(row, 17);                           // Column R
-        const ddoc = getVal(row, 18);                          // Column S
-        const dweb = getVal(row, 19);                          // Column T
+        const notes = getVal(row, 4);                          // Column E (4): Museum Notes
+        const age = getVal(row, 13);
+        const type = getVal(row, 14);
+        const category = getVal(row, 15);
+        const subcategory = getVal(row, 16);
+        const d3d = getVal(row, 17);
+        const ddoc = getVal(row, 18);
+        const dweb = getVal(row, 19);
         
-        const img1Raw = getVal(row, 20);                       // Column U: DIMG
+        const img1Raw = getVal(row, 20);
         const img1 = formatImageUrl(img1Raw) || NO_IMAGE_SVG;
         const isFav = favs.includes(originalIndex);
 
@@ -617,9 +632,9 @@
             <!-- Audio Speaker Button (Below Heart Button) -->
             ${notes ? `
               <button 
-                onclick="speakAudioGuide('${notes.replace(/'/g, "\\'").replace(/\n/g, ' ')}', event)" 
+                onclick="speakAudioGuide(${originalIndex}, event)" 
                 title="Listen to Museum Notes"
-                class="absolute top-12 right-3 p-1.5 rounded-full bg-white/90 hover:bg-white text-blue-600 hover:text-blue-700 backdrop-blur-md transition shadow-sm"
+                class="absolute top-12 right-3 p-1.5 rounded-full bg-white/90 hover:bg-white text-blue-600 hover:text-blue-700 backdrop-blur-md transition shadow-sm text-xs font-bold"
               >
                 🔊
               </button>
@@ -698,7 +713,7 @@
           <div class="mb-4">
             <button 
               id="btnAudioGuide" 
-              onclick="speakAudioGuide('${notes.replace(/'/g, "\\'").replace(/\n/g, ' ')}')"
+              onclick="speakAudioGuide(${originalIndex})"
               class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm"
             >
               🔊 Listen to Museum Notes
@@ -750,10 +765,11 @@
             <model-viewer src="${d3d}" camera-controls auto-rotate class="w-full h-72 bg-slate-900 rounded-xl overflow-hidden"></model-viewer>
           </div>` : ''}
 
+        <!-- Clean Link Button Labels: 3D Model ↗, Documentation ↗, Web Link ↗ -->
         <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
-          ${d3d ? `<a href="${d3d}" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">3D Model (D3D) ↗</a>` : ''}
-          ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">Document (DDOC) ↗</a>` : ''}
-          ${dweb ? `<a href="${dweb}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">Web Link (DWEB) ↗</a>` : ''}
+          ${d3d ? `<a href="${d3d}" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">3D Model ↗</a>` : ''}
+          ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">Documentation ↗</a>` : ''}
+          ${dweb ? `<a href="${dweb}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">Web Link ↗</a>` : ''}
         </div>
       `;
 
