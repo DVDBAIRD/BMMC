@@ -203,13 +203,80 @@
     let showingFavoritesOnly = false;
     let isGridActive = false;
     let currentSpeechUtterance = null;
+    let availableVoices = [];
+
+    // Detect & Load High Quality Natural Voices
+    function loadVoices() {
+      if (!('speechSynthesis' in window)) return;
+      
+      const voices = speechSynthesis.getVoices();
+      availableVoices = voices.filter(v => v.lang.startsWith('en'));
+
+      // Sort to prioritize "Natural", "Neural", "Enhanced", "Google", "Siri", or "Premium" voices
+      const highQualityKeywords = ['natural', 'neural', 'enhanced', 'premium', 'google', 'online', 'siri', 'edge'];
+
+      availableVoices.sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        const aScore = highQualityKeywords.some(k => aName.includes(k)) ? 1 : 0;
+        const bScore = highQualityKeywords.some(k => bName.includes(k)) ? 1 : 0;
+        return bScore - aScore;
+      });
+
+      populateVoiceDropdown();
+    }
+
+    function getSelectedVoice() {
+      if (availableVoices.length === 0) return null;
+      const savedName = localStorage.getItem('bMMC_selectedVoiceName');
+      if (savedName) {
+        const found = availableVoices.find(v => v.name === savedName);
+        if (found) return found;
+      }
+      return availableVoices[0]; // Uses top sorted natural voice by default
+    }
+
+    function populateVoiceDropdown() {
+      const select = document.getElementById('voiceSelect');
+      if (!select) return;
+
+      select.innerHTML = '';
+      const currentVoice = getSelectedVoice();
+
+      availableVoices.forEach(voice => {
+        const opt = document.createElement('option');
+        opt.value = voice.name;
+        const isNatural = ['natural', 'neural', 'enhanced', 'premium', 'google', 'online', 'siri', 'edge'].some(k => voice.name.toLowerCase().includes(k));
+        opt.textContent = `${voice.name} ${isNatural ? '✨ (Natural)' : ''}`;
+        if (currentVoice && currentVoice.name === voice.name) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      });
+
+      select.onchange = function() {
+        localStorage.setItem('bMMC_selectedVoiceName', this.value);
+        if (window.speechSynthesis.speaking) {
+          window.speechSynthesis.cancel();
+          // Resume speech with newly selected voice
+          const btnModal = document.getElementById('btnAudioGuide');
+          if (btnModal && btnModal.getAttribute('data-row')) {
+            speakAudioGuide(parseInt(btnModal.getAttribute('data-row')));
+          }
+        }
+      };
+    }
+
+    if ('speechSynthesis' in window) {
+      loadVoices();
+      speechSynthesis.onvoiceschanged = loadVoices;
+    }
 
     function getVal(row, colIndex) {
       if (!row || !Array.isArray(row) || colIndex >= row.length || row[colIndex] == null) return '';
       return String(row[colIndex]).trim();
     }
 
-    // Dynamic Scroll Offset Function (Positioned right below bottom edge of sticky header)
     function scrollToGrid() {
       const header = document.getElementById('mainHeader');
       const headerHeight = header ? header.offsetHeight : 100;
@@ -296,7 +363,6 @@
       });
     }
 
-    // BROWSE ALL EXHIBITS ACTION
     function browseAllExhibits() {
       document.getElementById('searchInput').value = '';
       document.getElementById('filterAge').value = '';
@@ -520,9 +586,9 @@
       filterCatalog(true);
     });
 
-    // AUDIO NARRATOR (Reads ONLY Museum Notes by Row Index to avoid string escaping bugs)
+    // AUDIO NARRATOR (Using Selected Natural Voice)
     function speakAudioGuide(originalIndex, event) {
-      if (event) event.stopPropagation(); // Prevents opening modal when speaker icon clicked on card
+      if (event) event.stopPropagation();
 
       const row = rawRows[originalIndex];
       if (!row) return;
@@ -539,10 +605,19 @@
         const cleanNotes = notes.replace(/^#\s*/, '');
         const textToSpeak = `Museum Note: ${cleanNotes}`;
         currentSpeechUtterance = new SpeechSynthesisUtterance(textToSpeak);
-        currentSpeechUtterance.rate = 0.95;
+        
+        // Use selected natural voice
+        const chosenVoice = getSelectedVoice();
+        if (chosenVoice) {
+          currentSpeechUtterance.voice = chosenVoice;
+        }
+
+        currentSpeechUtterance.rate = 0.92; // Natural, measured narrator speed
+        currentSpeechUtterance.pitch = 1.0;
         
         const btnModal = document.getElementById('btnAudioGuide');
         if (btnModal) {
+          btnModal.setAttribute('data-row', originalIndex);
           btnModal.innerHTML = '⏹️ Stop Audio Guide';
           btnModal.onclick = stopAudioGuide;
         }
@@ -566,6 +641,10 @@
         const btnModal = document.getElementById('btnAudioGuide');
         if (btnModal) {
           btnModal.innerHTML = '🔊 Listen to Museum Notes';
+          const rowIdx = btnModal.getAttribute('data-row');
+          if (rowIdx) {
+            btnModal.onclick = () => speakAudioGuide(parseInt(rowIdx));
+          }
         }
       }
     }
@@ -710,14 +789,22 @@
         </div>
 
         ${notes ? `
-          <div class="mb-4">
+          <!-- Audio Guide Bar + Voice Selector Dropdown -->
+          <div class="mb-4 bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <button 
               id="btnAudioGuide" 
+              data-row="${originalIndex}"
               onclick="speakAudioGuide(${originalIndex})"
-              class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm"
             >
               🔊 Listen to Museum Notes
             </button>
+            <div class="flex items-center gap-2">
+              <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Voice:</label>
+              <select id="voiceSelect" class="text-xs bg-white border border-slate-200 rounded-lg p-1.5 focus:ring-2 focus:ring-blue-500 font-medium max-w-[210px] truncate outline-none">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
           </div>
         ` : ''}
         
@@ -765,7 +852,6 @@
             <model-viewer src="${d3d}" camera-controls auto-rotate class="w-full h-72 bg-slate-900 rounded-xl overflow-hidden"></model-viewer>
           </div>` : ''}
 
-        <!-- Clean Link Button Labels: 3D Model ↗, Documentation ↗, Web Link ↗ -->
         <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
           ${d3d ? `<a href="${d3d}" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">3D Model ↗</a>` : ''}
           ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">Documentation ↗</a>` : ''}
@@ -773,6 +859,7 @@
         </div>
       `;
 
+      populateVoiceDropdown();
       document.getElementById('detailModal').classList.remove('hidden');
     }
 
