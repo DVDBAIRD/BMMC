@@ -10,6 +10,11 @@
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
   
   <!-- PapaParse for direct Google Sheets CSV fetching -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -24,46 +29,70 @@
 
   <style>
     body { font-family: 'Inter', sans-serif; }
-    /* 100% Solid Opaque Header Background */
     .solid-header {
       background-color: #ffffff;
     }
+    .dark .solid-header {
+      background-color: #0f172a;
+    }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased relative">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased relative transition-colors duration-300">
 
-  <!-- Header (Solid Opaque White, Sticky Top) -->
-  <header id="mainHeader" class="solid-header border-b border-slate-200 sticky top-0 z-30 shadow-md">
+  <!-- Tour Playing Top Banner -->
+  <div id="tourBanner" class="hidden sticky top-0 z-40 bg-purple-900 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shadow-md">
+    <div class="flex items-center gap-2">
+      <span class="animate-pulse text-purple-300">🎬 MUSEUM TOUR IN PROGRESS:</span>
+      <span id="tourProgressText" class="font-normal text-purple-100">Exhibits Tour</span>
+    </div>
+    <button id="btnStopTour" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded-lg text-xs font-bold transition">
+      ⏹️ Stop Tour
+    </button>
+  </div>
+
+  <!-- Header -->
+  <header id="mainHeader" class="solid-header border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-md transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       
-      <!-- Top Header Row: Main Title + Quick Action Buttons -->
+      <!-- Top Header Row -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             BMMC Showcase
           </h1>
         </div>
         
         <!-- Action Buttons Bar -->
         <div class="flex flex-wrap items-center gap-2">
+          <!-- Museum Tour Button -->
+          <button id="btnStartTour" class="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800/80 px-3 py-2 rounded-xl transition shadow-sm">
+            <span>🎬 Museum Tour</span>
+          </button>
+
           <!-- Permanent Browse All Button -->
-          <button id="btnBrowseAllHeader" class="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-2 rounded-xl transition shadow-sm">
+          <button id="btnBrowseAllHeader" class="flex items-center gap-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800/80 px-3 py-2 rounded-xl transition shadow-sm">
             <span>🌐 Browse All Exhibits</span>
           </button>
 
           <!-- Surprise Me Button -->
-          <button id="btnSurprise" class="flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-2 rounded-xl transition shadow-sm">
+          <button id="btnSurprise" class="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800/80 px-3 py-2 rounded-xl transition shadow-sm">
             <span>✨ Surprise Me!</span>
           </button>
 
           <!-- Favorites Toggle -->
-          <button id="btnFavorites" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-xl transition shadow-sm">
+          <button id="btnFavorites" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl transition shadow-sm">
             <span id="favHeartIcon">🤍</span>
             <span id="favCountText">Saved (0)</span>
           </button>
 
+          <!-- Night Mode Theme Toggle -->
+          <button id="btnThemeToggle" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl transition shadow-sm">
+            <span id="themeToggleIcon">🌙</span>
+            <span id="themeToggleText">Night Mode</span>
+          </button>
+
           <!-- Universal Toggle Controls Button -->
-          <button id="toggleControlsBtn" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-xl transition shadow-sm">
+          <button id="toggleControlsBtn" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl transition shadow-sm">
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
             </svg>
@@ -73,16 +102,16 @@
         </div>
       </div>
 
-      <!-- Collapsible Container (Subtitle, Search, Dropdowns & Hubs) -->
+      <!-- Collapsible Container -->
       <div id="collapsibleControls" class="mt-3 flex flex-col gap-3.5 transition-all duration-300">
         
         <!-- Subheading -->
-        <p class="text-xs text-slate-600 font-normal leading-relaxed">
+        <p class="text-xs text-slate-600 dark:text-slate-400 font-normal leading-relaxed">
           The Bonniefields Museum of Memorabilia and Curiosities (BMMC) preserves historical artifacts for a nostalgic glimpse into the past.
         </p>
 
         <!-- Search Bar & Item Counter -->
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1 border-t border-slate-200/60">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1 border-t border-slate-200/60 dark:border-slate-800">
           <p class="text-[11px] text-slate-400 font-semibold" id="itemCount">Loading catalog items...</p>
           
           <div class="w-full sm:w-80 relative">
@@ -90,12 +119,12 @@
               type="text" 
               id="searchInput" 
               placeholder="Search items, details, notes..." 
-              class="w-full pl-10 pr-10 py-2 bg-slate-100/80 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-xs transition"
+              class="w-full pl-10 pr-10 py-2 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-xs text-slate-800 dark:text-slate-100 transition"
             />
             <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-            <button id="clearSearch" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs font-bold bg-slate-200 rounded-full w-4 h-4 flex items-center justify-center">✕</button>
+            <button id="clearSearch" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs font-bold bg-slate-200 dark:bg-slate-700 rounded-full w-4 h-4 flex items-center justify-center">✕</button>
           </div>
         </div>
 
@@ -103,39 +132,39 @@
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Age</label>
-            <select id="filterAge" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+            <select id="filterAge" class="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
               <option value="">All Ages</option>
             </select>
           </div>
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Type</label>
-            <select id="filterType" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+            <select id="filterType" class="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
               <option value="">All Types</option>
             </select>
           </div>
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Category</label>
-            <select id="filterCategory" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+            <select id="filterCategory" class="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
               <option value="">All Categories</option>
             </select>
           </div>
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Subcategory</label>
-            <select id="filterSubcategory" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+            <select id="filterSubcategory" class="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
               <option value="">All Subcategories</option>
             </select>
           </div>
           
           <!-- 3D Models Only Toggle -->
           <div class="col-span-2 sm:col-span-1 flex items-end">
-            <button id="btn3DOnly" class="w-full p-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-sm h-[34px]">
+            <button id="btn3DOnly" class="w-full p-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-sm h-[34px]">
               <span>🕶️ 3D Models Only</span>
             </button>
           </div>
         </div>
 
-        <!-- 6 Collection Hubs: Placed BELOW Filters -->
-        <div id="collectionHubsSection" class="hidden pt-2 border-t border-slate-200/60">
+        <!-- 6 Collection Hubs -->
+        <div id="collectionHubsSection" class="hidden pt-2 border-t border-slate-200/60 dark:border-slate-800">
           <div id="hubsGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5"></div>
         </div>
 
@@ -153,12 +182,12 @@
       <p class="text-slate-500 text-sm font-medium">Fetching exhibit catalog from BMMC...</p>
     </div>
     
-    <!-- Initial Prompt (Grid Hidden Until Requested) -->
-    <div id="gridPrompt" class="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300 shadow-sm hidden">
+    <!-- Initial Prompt -->
+    <div id="gridPrompt" class="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 shadow-sm hidden">
       <div class="max-w-md mx-auto px-4">
         <span class="text-3xl mb-2 block">🔍</span>
-        <h3 class="text-base font-bold text-slate-800">Ready to Explore Exhibits</h3>
-        <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">
+        <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">Ready to Explore Exhibits</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4 leading-relaxed">
           Select a Collection Hub above or use search to display exhibit items.
         </p>
         <button id="btnBrowseAllPrompt" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
@@ -178,10 +207,21 @@
     <span>⬇️ View Exhibits</span>
   </button>
 
+  <!-- Museum Tour Category Selector Modal -->
+  <div id="tourCategoryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
+      <button id="closeTourModal" class="absolute top-4 right-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 p-2 rounded-full font-bold transition">✕</button>
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">🎬 Select Museum Tour</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Choose a collection category to begin your narrated automated walkthrough:</p>
+      
+      <div id="tourCategoryList" class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1"></div>
+    </div>
+  </div>
+
   <!-- Detail Pop-up Modal -->
   <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity">
-    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col border border-slate-100">
-      <button id="closeModal" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-full z-10 font-bold transition">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col border border-slate-100 dark:border-slate-800">
+      <button id="closeModal" class="absolute top-4 right-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 p-2 rounded-full z-10 font-bold transition">
         ✕
       </button>
       <div id="modalContent" class="p-6 sm:p-8"></div>
@@ -205,6 +245,39 @@
     let currentSpeechUtterance = null;
     let availableVoices = [];
 
+    // Tour Variables
+    let isTourActive = false;
+    let tourItems = [];
+    let currentTourIndex = 0;
+    let tourTimer = null;
+
+    // Theme Toggle Handler
+    function initTheme() {
+      const savedTheme = localStorage.getItem('bMMC_theme');
+      const isDark = savedTheme === 'dark';
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      updateThemeUI(isDark);
+    }
+
+    function updateThemeUI(isDark) {
+      const icon = document.getElementById('themeToggleIcon');
+      const text = document.getElementById('themeToggleText');
+      if (icon && text) {
+        icon.textContent = isDark ? '☀️' : '🌙';
+        text.textContent = isDark ? 'Day Mode' : 'Night Mode';
+      }
+    }
+
+    document.getElementById('btnThemeToggle').addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('bMMC_theme', isDark ? 'dark' : 'light');
+      updateThemeUI(isDark);
+    });
+
     // Detect & Load High Quality Natural Voices
     function loadVoices() {
       if (!('speechSynthesis' in window)) return;
@@ -212,7 +285,6 @@
       const voices = speechSynthesis.getVoices();
       availableVoices = voices.filter(v => v.lang.startsWith('en'));
 
-      // Sort to prioritize "Natural", "Neural", "Enhanced", "Google", "Siri", or "Premium" voices
       const highQualityKeywords = ['natural', 'neural', 'enhanced', 'premium', 'google', 'online', 'siri', 'edge'];
 
       availableVoices.sort((a, b) => {
@@ -233,7 +305,7 @@
         const found = availableVoices.find(v => v.name === savedName);
         if (found) return found;
       }
-      return availableVoices[0]; // Uses top sorted natural voice by default
+      return availableVoices[0];
     }
 
     function populateVoiceDropdown() {
@@ -258,7 +330,6 @@
         localStorage.setItem('bMMC_selectedVoiceName', this.value);
         if (window.speechSynthesis.speaking) {
           window.speechSynthesis.cancel();
-          // Resume speech with newly selected voice
           const btnModal = document.getElementById('btnAudioGuide');
           if (btnModal && btnModal.getAttribute('data-row')) {
             speakAudioGuide(parseInt(btnModal.getAttribute('data-row')));
@@ -321,10 +392,10 @@
       if (btnFav) {
         if (showingFavoritesOnly) {
           btnFav.classList.add('bg-rose-600', 'text-white', 'border-rose-600');
-          btnFav.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200');
+          btnFav.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200', 'dark:bg-slate-800', 'dark:text-slate-200');
         } else {
           btnFav.classList.remove('bg-rose-600', 'text-white', 'border-rose-600');
-          btnFav.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
+          btnFav.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200', 'dark:bg-slate-800', 'dark:text-slate-200');
         }
       }
     }
@@ -351,6 +422,126 @@
       return { title, details };
     }
 
+    // FEATURE 1: Ask Curator Gemini AI Action
+    function askCuratorAI(originalIndex) {
+      const row = rawRows[originalIndex];
+      if (!row) return;
+
+      const rawContent = getVal(row, 2) || getVal(row, 0);
+      const { title, details } = parseTitleAndDetails(rawContent);
+      const notes = getVal(row, 4);
+      const age = getVal(row, 13);
+      const type = getVal(row, 14);
+      const category = getVal(row, 15);
+
+      const promptText = `I am currently viewing a museum artifact at BMMC titled "${title}". Category: ${category}, Type: ${type}, Era: ${age}. Details: ${details}. Notes: ${notes}. Could you provide a detailed historical curator breakdown explaining the significance of items like this, how they were made or used, and interesting trivia from that era?`;
+
+      // Copy prompt to clipboard
+      navigator.clipboard.writeText(promptText).then(() => {
+        alert("📋 Research prompt copied to clipboard!\nOpening Google Gemini in a new tab... Simply paste (Ctrl+V or Cmd+V) to ask Gemini.");
+        window.open('https://gemini.google.com/app', '_blank');
+      }).catch(() => {
+        window.open('https://gemini.google.com/app', '_blank');
+      });
+    }
+
+    // FEATURE 2: Google Lens Search
+    function searchImageArchives(imgUrl) {
+      if (!imgUrl) return;
+      const lensUrl = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(imgUrl)}`;
+      window.open(lensUrl, '_blank');
+    }
+
+    // FEATURE 3: Museum Tour Handler
+    document.getElementById('btnStartTour').addEventListener('click', openTourCategorySelector);
+    document.getElementById('closeTourModal').addEventListener('click', () => {
+      document.getElementById('tourCategoryModal').classList.add('hidden');
+    });
+
+    function openTourCategorySelector() {
+      const modal = document.getElementById('tourCategoryModal');
+      const list = document.getElementById('tourCategoryList');
+      list.innerHTML = '';
+
+      // Get all unique categories present in sheet
+      const categories = [...new Set(rawRows.map(r => getVal(r, 15)).filter(Boolean))].sort();
+
+      // Add "All Exhibits" Option
+      const btnAll = document.createElement('button');
+      btnAll.className = 'w-full text-left bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200 p-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between';
+      btnAll.innerHTML = `<span>🌐 All Exhibits Collection</span><span class="text-[10px] text-blue-600 font-semibold">${rawRows.length} Items</span>`;
+      btnAll.onclick = () => startMuseumTour('');
+      list.appendChild(btnAll);
+
+      categories.forEach(cat => {
+        const count = rawRows.filter(r => getVal(r, 15) === cat).length;
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 p-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-between';
+        btn.innerHTML = `<span>📂 ${cat}</span><span class="text-[10px] text-slate-400 font-medium">${count} Items</span>`;
+        btn.onclick = () => startMuseumTour(cat);
+        list.appendChild(btn);
+      });
+
+      modal.classList.remove('hidden');
+    }
+
+    function startMuseumTour(categoryName) {
+      document.getElementById('tourCategoryModal').classList.add('hidden');
+      
+      if (categoryName) {
+        tourItems = rawRows.map((r, i) => ({ row: r, originalIndex: i })).filter(({ row }) => getVal(row, 15).toLowerCase() === categoryName.toLowerCase());
+      } else {
+        tourItems = rawRows.map((r, i) => ({ row: r, originalIndex: i }));
+      }
+
+      if (tourItems.length === 0) return;
+
+      isTourActive = true;
+      currentTourIndex = 0;
+      document.getElementById('tourBanner').classList.remove('hidden');
+      
+      playNextTourItem();
+    }
+
+    function playNextTourItem() {
+      if (!isTourActive || currentTourIndex >= tourItems.length) {
+        stopMuseumTour();
+        return;
+      }
+
+      const { row, originalIndex } = tourItems[currentTourIndex];
+      const rawContent = getVal(row, 2) || getVal(row, 0);
+      const { title } = parseTitleAndDetails(rawContent);
+
+      document.getElementById('tourProgressText').textContent = `Exhibit ${currentTourIndex + 1} of ${tourItems.length}: "${title}"`;
+
+      openModal(row, originalIndex);
+      
+      const notes = getVal(row, 4);
+      if (notes) {
+        speakAudioGuide(originalIndex);
+      }
+
+      // Advance to next tour exhibit after 10 seconds or when speech finishes
+      clearTimeout(tourTimer);
+      tourTimer = setTimeout(() => {
+        if (isTourActive) {
+          currentTourIndex++;
+          playNextTourItem();
+        }
+      }, 11000);
+    }
+
+    function stopMuseumTour() {
+      isTourActive = false;
+      clearTimeout(tourTimer);
+      stopAudioGuide();
+      document.getElementById('tourBanner').classList.add('hidden');
+      document.getElementById('detailModal').classList.add('hidden');
+    }
+
+    document.getElementById('btnStopTour').addEventListener('click', stopMuseumTour);
+
     // Universal Controls Toggle
     const toggleControlsBtn = document.getElementById('toggleControlsBtn');
     const collapsibleControls = document.getElementById('collapsibleControls');
@@ -375,7 +566,7 @@
       const btn3D = document.getElementById('btn3DOnly');
       if (btn3D) {
         btn3D.classList.remove('bg-purple-600', 'text-white', 'border-purple-600');
-        btn3D.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+        btn3D.classList.add('bg-white', 'dark:bg-slate-900', 'text-slate-700', 'dark:text-slate-200', 'border-slate-200', 'dark:border-slate-700');
       }
       
       updateFavoritesBadge();
@@ -404,10 +595,10 @@
       const btn = document.getElementById('btn3DOnly');
       if (only3DActive) {
         btn.classList.add('bg-purple-600', 'text-white', 'border-purple-600');
-        btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+        btn.classList.remove('bg-white', 'dark:bg-slate-900', 'text-slate-700', 'dark:text-slate-200', 'border-slate-200', 'dark:border-slate-700');
       } else {
         btn.classList.remove('bg-purple-600', 'text-white', 'border-purple-600');
-        btn.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+        btn.classList.add('bg-white', 'dark:bg-slate-900', 'text-slate-700', 'dark:text-slate-200', 'border-slate-200', 'dark:border-slate-700');
       }
       filterCatalog(true);
     });
@@ -430,6 +621,7 @@
 
     // Load Data
     function loadCatalogData() {
+      initTheme();
       Papa.parse(CSV_URL, {
         download: true,
         header: false,
@@ -477,15 +669,15 @@
         const previewImg = formatImageUrl(firstImgRaw) || NO_IMAGE_SVG;
 
         const hubCard = document.createElement('div');
-        hubCard.className = 'bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition duration-300 cursor-pointer flex flex-col group';
+        hubCard.className = 'bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md transition duration-300 cursor-pointer flex flex-col group';
         hubCard.innerHTML = `
-          <div class="h-20 bg-slate-100/90 relative overflow-hidden flex items-center justify-center p-1.5">
+          <div class="h-20 bg-slate-100/90 dark:bg-slate-800/90 relative overflow-hidden flex items-center justify-center p-1.5">
             <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" />
             <span class="absolute top-1.5 right-1.5 bg-slate-900/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">${count}</span>
           </div>
           <div class="p-2 flex-1 flex flex-col justify-between">
-            <h3 class="font-bold text-slate-900 text-xs group-hover:text-blue-600 transition-colors line-clamp-1">${catName}</h3>
-            <span class="text-[10px] text-blue-600 font-semibold mt-0.5 flex items-center gap-0.5">Explore →</span>
+            <h3 class="font-bold text-slate-900 dark:text-slate-100 text-xs group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">${catName}</h3>
+            <span class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5 flex items-center gap-0.5">Explore →</span>
           </div>
         `;
 
@@ -586,14 +778,14 @@
       filterCatalog(true);
     });
 
-    // AUDIO NARRATOR (Using Selected Natural Voice)
+    // AUDIO NARRATOR
     function speakAudioGuide(originalIndex, event) {
       if (event) event.stopPropagation();
 
       const row = rawRows[originalIndex];
       if (!row) return;
 
-      const notes = getVal(row, 4); // Column E (4): Museum Notes
+      const notes = getVal(row, 4);
       if (!notes || notes.trim() === '') {
         alert('No Museum Notes available for audio narration on this exhibit.');
         return;
@@ -606,13 +798,12 @@
         const textToSpeak = `Museum Note: ${cleanNotes}`;
         currentSpeechUtterance = new SpeechSynthesisUtterance(textToSpeak);
         
-        // Use selected natural voice
         const chosenVoice = getSelectedVoice();
         if (chosenVoice) {
           currentSpeechUtterance.voice = chosenVoice;
         }
 
-        currentSpeechUtterance.rate = 0.92; // Natural, measured narrator speed
+        currentSpeechUtterance.rate = 0.92;
         currentSpeechUtterance.pitch = 1.0;
         
         const btnModal = document.getElementById('btnAudioGuide');
@@ -626,6 +817,14 @@
           if (btnModal) {
             btnModal.innerHTML = '🔊 Listen to Museum Notes';
             btnModal.onclick = () => speakAudioGuide(originalIndex);
+          }
+          if (isTourActive) {
+            // Auto advance tour
+            clearTimeout(tourTimer);
+            tourTimer = setTimeout(() => {
+              currentTourIndex++;
+              playNextTourItem();
+            }, 1000);
           }
         };
 
@@ -660,8 +859,8 @@
 
       if (items.length === 0) {
         grid.innerHTML = `
-          <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
-            <p class="text-slate-500 font-medium">No exhibit results match your selected filters.</p>
+          <div class="col-span-full text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+            <p class="text-slate-500 dark:text-slate-400 font-medium">No exhibit results match your selected filters.</p>
           </div>`;
         return;
       }
@@ -671,7 +870,7 @@
         const { title, details } = parseTitleAndDetails(rawContent);
         const displayTitle = title || `Exhibit Item #${originalIndex + 1}`;
 
-        const notes = getVal(row, 4);                          // Column E (4): Museum Notes
+        const notes = getVal(row, 4);
         const age = getVal(row, 13);
         const type = getVal(row, 14);
         const category = getVal(row, 15);
@@ -685,10 +884,10 @@
         const isFav = favs.includes(originalIndex);
 
         const card = document.createElement('div');
-        card.className = 'bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-200/80 overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group relative';
+        card.className = 'bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group relative';
         
         card.innerHTML = `
-          <div class="h-56 bg-slate-100/80 relative overflow-hidden flex items-center justify-center p-2">
+          <div class="h-56 bg-slate-100/80 dark:bg-slate-800/80 relative overflow-hidden flex items-center justify-center p-2">
             <a href="${img1}" target="_blank" onclick="event.stopPropagation()" title="Open full image in new tab" class="w-full h-full flex items-center justify-center relative group/img">
               <img 
                 src="${img1}" 
@@ -699,21 +898,21 @@
               />
             </a>
 
-            <!-- Heart Button (Grey until selected, then Red) -->
+            <!-- Heart Button -->
             <button 
               onclick="toggleFavorite(${originalIndex}, event)" 
               title="${isFav ? 'Remove from favorites' : 'Save to favorites'}"
-              class="absolute top-3 right-3 p-1.5 rounded-full backdrop-blur-md transition shadow-sm ${isFav ? 'bg-rose-500 text-white' : 'bg-white/90 hover:bg-white text-slate-400 hover:text-rose-500'}"
+              class="absolute top-3 right-3 p-1.5 rounded-full backdrop-blur-md transition shadow-sm ${isFav ? 'bg-rose-500 text-white' : 'bg-white/90 dark:bg-slate-800/90 text-slate-400 hover:text-rose-500'}"
             >
               ${isFav ? '❤️' : '🤍'}
             </button>
 
-            <!-- Audio Speaker Button (Below Heart Button) -->
+            <!-- Audio Speaker Button -->
             ${notes ? `
               <button 
                 onclick="speakAudioGuide(${originalIndex}, event)" 
                 title="Listen to Museum Notes"
-                class="absolute top-12 right-3 p-1.5 rounded-full bg-white/90 hover:bg-white text-blue-600 hover:text-blue-700 backdrop-blur-md transition shadow-sm text-xs font-bold"
+                class="absolute top-12 right-3 p-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 text-blue-600 dark:text-blue-400 hover:text-blue-700 backdrop-blur-md transition shadow-sm text-xs font-bold"
               >
                 🔊
               </button>
@@ -725,25 +924,25 @@
           <div class="p-5 flex-1 flex flex-col justify-between">
             <div>
               <div class="flex gap-1.5 flex-wrap text-[11px] mb-2 font-semibold">
-                ${category ? `<span class="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-100">${category}</span>` : ''}
-                ${type ? `<span class="bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full">${type}</span>` : ''}
-                ${subcategory ? `<span class="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-100">${subcategory}</span>` : ''}
+                ${category ? `<span class="bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-2.5 py-0.5 rounded-full border border-blue-100 dark:border-blue-900">${category}</span>` : ''}
+                ${type ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2.5 py-0.5 rounded-full">${type}</span>` : ''}
+                ${subcategory ? `<span class="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900">${subcategory}</span>` : ''}
               </div>
               
-              <h3 class="font-bold text-slate-900 text-sm mb-1.5 line-clamp-1 group-hover:text-blue-600 transition-colors">${displayTitle}</h3>
-              <p class="text-xs text-slate-500 line-clamp-2 mb-4 leading-relaxed">${details || 'Click for full details and museum notes.'}</p>
+              <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1.5 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">${displayTitle}</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed">${details || 'Click for full details and museum notes.'}</p>
             </div>
 
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-              <span class="text-xs font-semibold text-blue-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+              <span class="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                 Details 
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </span>
               
               <div class="flex gap-1.5" onclick="event.stopPropagation()">
-                ${d3d ? `<a href="${d3d}" target="_blank" title="3D Model" class="bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold border border-purple-200 transition">3D</a>` : ''}
-                ${ddoc ? `<a href="${ddoc}" target="_blank" title="Documentation" class="bg-slate-100 text-slate-700 hover:bg-slate-800 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold transition">Doc</a>` : ''}
-                ${dweb ? `<a href="${dweb}" target="_blank" title="Website" class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold border border-blue-200 transition">Web</a>` : ''}
+                ${d3d ? `<a href="${d3d}" target="_blank" title="3D Model" class="bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 hover:bg-purple-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold border border-purple-200 dark:border-purple-800 transition">3D</a>` : ''}
+                ${ddoc ? `<a href="${ddoc}" target="_blank" title="Documentation" class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-800 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold transition">Doc</a>` : ''}
+                ${dweb ? `<a href="${dweb}" target="_blank" title="Website" class="bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold border border-blue-200 dark:border-blue-800 transition">Web</a>` : ''}
               </div>
             </div>
           </div>
@@ -762,7 +961,7 @@
       const { title, details } = parseTitleAndDetails(rawContent);
       const displayTitle = title || 'Exhibit Item Details';
 
-      const notes = getVal(row, 4);                          // Column E (4): Museum Notes
+      const notes = getVal(row, 4);
       const age = getVal(row, 13);
       const type = getVal(row, 14);
       const category = getVal(row, 15);
@@ -779,55 +978,88 @@
       const modalContent = document.getElementById('modalContent');
       modalContent.innerHTML = `
         <div class="flex items-start justify-between gap-4 mb-3 pr-8">
-          <h2 class="text-xl font-bold text-slate-900">${displayTitle}</h2>
+          <h2 class="text-xl font-bold text-slate-900 dark:text-white">${displayTitle}</h2>
           <button 
             onclick="toggleFavorite(${originalIndex}, event)" 
-            class="px-3 py-1 rounded-full text-xs font-bold border transition flex items-center gap-1 ${isFav ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'}"
+            class="px-3 py-1 rounded-full text-xs font-bold border transition flex items-center gap-1 ${isFav ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'}"
           >
             ${isFav ? '❤️ Saved' : '🤍 Save'}
           </button>
         </div>
 
-        ${notes ? `
-          <!-- Audio Guide Bar + Voice Selector Dropdown -->
-          <div class="mb-4 bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <!-- AI Curator & Audio Action Bar -->
+        <div class="mb-4 flex flex-col sm:flex-row gap-2">
+          ${notes ? `
             <button 
               id="btnAudioGuide" 
               data-row="${originalIndex}"
               onclick="speakAudioGuide(${originalIndex})"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm flex-1"
             >
               🔊 Listen to Museum Notes
             </button>
-            <div class="flex items-center gap-2">
-              <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Voice:</label>
-              <select id="voiceSelect" class="text-xs bg-white border border-slate-200 rounded-lg p-1.5 focus:ring-2 focus:ring-blue-500 font-medium max-w-[210px] truncate outline-none">
-                <!-- Populated dynamically -->
-              </select>
-            </div>
+          ` : ''}
+
+          <!-- FEATURE 1: Ask Curator Gemini Button -->
+          <button 
+            onclick="askCuratorAI(${originalIndex})"
+            title="Ask Google Gemini for deep historical research on this exhibit"
+            class="bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm"
+          >
+            🤖 Ask Curator
+          </button>
+        </div>
+
+        ${notes ? `
+          <!-- Voice Selector -->
+          <div class="mb-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 flex items-center justify-between gap-2">
+            <label class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Voice:</label>
+            <select id="voiceSelect" class="text-xs bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 focus:ring-2 focus:ring-blue-500 font-medium max-w-[210px] truncate outline-none">
+              <!-- Populated dynamically -->
+            </select>
           </div>
         ` : ''}
         
         <div class="flex flex-wrap gap-2 text-xs mb-6">
-          ${age ? `<span class="bg-slate-100 text-slate-800 px-3 py-1 rounded-full font-medium"><strong>Age:</strong> ${age}</span>` : ''}
-          ${type ? `<span class="bg-slate-100 text-slate-800 px-3 py-1 rounded-full font-medium"><strong>Type:</strong> ${type}</span>` : ''}
-          ${category ? `<span class="bg-blue-50 text-blue-800 border border-blue-100 px-3 py-1 rounded-full font-medium"><strong>Category:</strong> ${category}</span>` : ''}
-          ${subcategory ? `<span class="bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1 rounded-full font-medium"><strong>Subcategory:</strong> ${subcategory}</span>` : ''}
+          ${age ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-1 rounded-full font-medium"><strong>Age:</strong> ${age}</span>` : ''}
+          ${type ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-1 rounded-full font-medium"><strong>Type:</strong> ${type}</span>` : ''}
+          ${category ? `<span class="bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 border border-blue-100 dark:border-blue-900 px-3 py-1 rounded-full font-medium"><strong>Category:</strong> ${category}</span>` : ''}
+          ${subcategory ? `<span class="bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-100 dark:border-emerald-900 px-3 py-1 rounded-full font-medium"><strong>Subcategory:</strong> ${subcategory}</span>` : ''}
         </div>
 
+        <!-- Images Comparison + Google Lens Search Button -->
         <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-6">
           ${img1 ? `
             <div>
-              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Primary Image (DIMG)</p>
-              <a href="${img1}" target="_blank" title="Click to view full image in new tab" class="block group relative overflow-hidden rounded-xl border border-slate-200 bg-slate-100 p-2">
+              <div class="flex items-center justify-between mb-1.5">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Primary Image</p>
+                <!-- FEATURE 2: Search Image Google Lens Button -->
+                <button 
+                  onclick="searchImageArchives('${img1}')"
+                  title="Search archives, museums, and auction databases with Google Lens"
+                  class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                >
+                  🔍 Search Image
+                </button>
+              </div>
+              <a href="${img1}" target="_blank" title="Click to view full image in new tab" class="block group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 p-2">
                 <img src="${img1}" class="w-full h-56 object-contain rounded-lg group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" />
                 <span class="absolute bottom-3 right-3 bg-slate-900/80 text-white text-[10px] px-2 py-1 rounded shadow">Open Full Image ↗</span>
               </a>
             </div>` : ''}
           ${img2 ? `
             <div>
-              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Second Image (DIMG2)</p>
-              <a href="${img2}" target="_blank" title="Click to view second image in new tab" class="block group relative overflow-hidden rounded-xl border border-slate-200 bg-slate-100 p-2">
+              <div class="flex items-center justify-between mb-1.5">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Second Image</p>
+                <button 
+                  onclick="searchImageArchives('${img2}')"
+                  title="Search archives, museums, and auction databases with Google Lens"
+                  class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                >
+                  🔍 Search Image
+                </button>
+              </div>
+              <a href="${img2}" target="_blank" title="Click to view second image in new tab" class="block group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 p-2">
                 <img src="${img2}" class="w-full h-56 object-contain rounded-lg group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" />
                 <span class="absolute bottom-3 right-3 bg-slate-900/80 text-white text-[10px] px-2 py-1 rounded shadow">Open Full Image ↗</span>
               </a>
@@ -837,22 +1069,22 @@
         ${details ? `
           <div class="mb-4">
             <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
-            <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-xl border border-slate-100">${details}</div>
+            <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">${details}</div>
           </div>` : ''}
 
         ${notes ? `
           <div class="mb-6">
-            <h4 class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1.5">Museum Notes</h4>
-            <div class="text-sm text-amber-900 leading-relaxed whitespace-pre-line bg-amber-50/70 p-4 rounded-xl border border-amber-200/60">${notes}</div>
+            <h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1.5">Museum Notes</h4>
+            <div class="text-sm text-amber-900 dark:text-amber-200 leading-relaxed whitespace-pre-line bg-amber-50/70 dark:bg-amber-950/40 p-4 rounded-xl border border-amber-200/60 dark:border-amber-900/60">${notes}</div>
           </div>` : ''}
 
         ${d3d && (d3d.endsWith('.glb') || d3d.endsWith('.gltf')) ? `
           <div class="mb-6">
-            <h4 class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1.5">Interactive 3D Viewer</h4>
+            <h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1.5">Interactive 3D Viewer</h4>
             <model-viewer src="${d3d}" camera-controls auto-rotate class="w-full h-72 bg-slate-900 rounded-xl overflow-hidden"></model-viewer>
           </div>` : ''}
 
-        <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
+        <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
           ${d3d ? `<a href="${d3d}" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">3D Model ↗</a>` : ''}
           ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">Documentation ↗</a>` : ''}
           ${dweb ? `<a href="${dweb}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">Web Link ↗</a>` : ''}
