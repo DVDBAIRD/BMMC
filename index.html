@@ -95,9 +95,9 @@
           The Bonniefields Museum of Memorabilia and Curiosities (BMMC) preserves historical artifacts for a nostalgic glimpse into the past.
         </p>
 
-        <!-- Search Bar & Item Counter -->
+        <!-- Search Bar & Item Counter (Removed "Loading catalog items..." initial text) -->
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1 border-t border-slate-200/60 dark:border-slate-800">
-          <p class="text-[11px] text-slate-400 font-semibold" id="itemCount">Loading catalog items...</p>
+          <p class="text-[11px] text-slate-400 font-semibold" id="itemCount"></p>
           
           <div class="w-full sm:w-80 relative">
             <input 
@@ -390,7 +390,7 @@
       return { title, details };
     }
 
-    // AUTO-ANSWERING AI CURATOR ACTION (Perplexity AI Auto-Research)
+    // AUTO-RUNNING AI CURATOR ACTION (ChatGPT - Whitelisted Everywhere!)
     function askCuratorAI(originalIndex) {
       const row = rawRows[originalIndex];
       if (!row) return;
@@ -404,27 +404,16 @@
 
       const promptText = `I am viewing a museum artifact at BMMC titled "${title}". Category: ${category}, Type: ${type}, Era: ${age}. Details: ${details}. Notes: ${notes}. Can you provide a detailed historical curator breakdown explaining the significance of items like this, how they were made or used, and interesting trivia from that era?`;
 
-      // Copy to clipboard synchronously
-      try {
-        navigator.clipboard.writeText(promptText);
-      } catch(e) {}
-
-      // Auto-Answering Perplexity AI URL (Pre-fills and generates answer automatically!)
-      const perplexityUrl = `https://www.perplexity.ai/search?q=${encodeURIComponent(promptText)}`;
-      window.open(perplexityUrl, '_blank');
+      // ChatGPT URL Parameter (Auto-fills, auto-runs, works everywhere!)
+      const chatGptUrl = `https://chatgpt.com/?q=${encodeURIComponent(promptText)}`;
+      window.open(chatGptUrl, '_blank');
     }
 
-    // GOOGLE LENS SEARCH
-    function searchImageArchives(imgUrl) {
-      if (!imgUrl) return;
-      const cleanUrl = formatImageUrl(imgUrl);
-      if (!cleanUrl) {
-        alert("Image URL is not available for visual search.");
-        return;
-      }
-      
-      const lensUrl = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(cleanUrl)}`;
-      window.open(lensUrl, '_blank');
+    // GOOGLE IMAGES ARCHIVE SEARCH (100% Works with Google Drive Items!)
+    function searchImageArchives(displayTitle, category) {
+      const query = `${displayTitle} ${category || ''} historical museum artifact`.trim();
+      const searchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
+      window.open(searchUrl, '_blank');
     }
 
     // Universal Controls Toggle
@@ -871,18 +860,18 @@
           ${subcategory ? `<span class="bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-100 dark:border-emerald-900 px-3 py-1 rounded-full font-medium"><strong>Subcategory:</strong> ${subcategory}</span>` : ''}
         </div>
 
-        <!-- Images Comparison + Google Lens Search Button -->
+        <!-- Images Comparison + Google Images Search Button -->
         <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-4">
           ${img1 ? `
             <div>
               <div class="flex items-center justify-between mb-1.5">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Primary Image</p>
                 <button 
-                  onclick="searchImageArchives('${img1}')"
-                  title="Search archives, museums, and auction databases with Google Lens"
+                  onclick="searchImageArchives('${displayTitle.replace(/'/g, "\\'")}', '${category.replace(/'/g, "\\\'")}')"
+                  title="Search archives, museums, and auction databases for similar historical images"
                   class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                 >
-                  🔍 Search Image
+                  🔍 Search Similar Images
                 </button>
               </div>
               <a href="${img1}" target="_blank" title="Click to view full image in new tab" class="block group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 p-2">
@@ -895,11 +884,11 @@
               <div class="flex items-center justify-between mb-1.5">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Second Image</p>
                 <button 
-                  onclick="searchImageArchives('${img2}')"
-                  title="Search archives, museums, and auction databases with Google Lens"
+                  onclick="searchImageArchives('${displayTitle.replace(/'/g, "\\'")}', '${category.replace(/'/g, "\\\'")}')"
+                  title="Search archives, museums, and auction databases for similar historical images"
                   class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                 >
-                  🔍 Search Image
+                  🔍 Search Similar Images
                 </button>
               </div>
               <a href="${img2}" target="_blank" title="Click to view second image in new tab" class="block group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 p-2">
@@ -931,7 +920,7 @@
           <!-- Ask Curator Button -->
           <button 
             onclick="askCuratorAI(${originalIndex})"
-            title="Ask Perplexity AI for deep historical research on this exhibit"
+            title="Ask ChatGPT for deep historical research on this exhibit"
             class="bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shrink-0 w-full md:w-auto"
           >
             🤖 Ask Curator
