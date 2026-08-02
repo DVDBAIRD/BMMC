@@ -39,17 +39,6 @@
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased relative transition-colors duration-300">
 
-  <!-- Tour Playing Top Banner -->
-  <div id="tourBanner" class="hidden sticky top-0 z-40 bg-purple-900 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shadow-md">
-    <div class="flex items-center gap-2">
-      <span class="animate-pulse text-purple-300">🎬 MUSEUM TOUR IN PROGRESS:</span>
-      <span id="tourProgressText" class="font-normal text-purple-100">Exhibits Tour</span>
-    </div>
-    <button id="btnStopTour" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded-lg text-xs font-bold transition">
-      ⏹️ Stop Tour
-    </button>
-  </div>
-
   <!-- Header -->
   <header id="mainHeader" class="solid-header border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-md transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -64,11 +53,6 @@
         
         <!-- Action Buttons Bar -->
         <div class="flex flex-wrap items-center gap-2">
-          <!-- Museum Tour Button -->
-          <button id="btnStartTour" class="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800/80 px-3 py-2 rounded-xl transition shadow-sm">
-            <span>🎬 Museum Tour</span>
-          </button>
-
           <!-- Permanent Browse All Button -->
           <button id="btnBrowseAllHeader" class="flex items-center gap-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800/80 px-3 py-2 rounded-xl transition shadow-sm">
             <span>🌐 Browse All Exhibits</span>
@@ -207,17 +191,6 @@
     <span>⬇️ View Exhibits</span>
   </button>
 
-  <!-- Museum Tour Category Selector Modal -->
-  <div id="tourCategoryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
-      <button id="closeTourModal" class="absolute top-4 right-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 p-2 rounded-full font-bold transition">✕</button>
-      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">🎬 Select Museum Tour</h3>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Choose a collection category to begin your narrated automated walkthrough:</p>
-      
-      <div id="tourCategoryList" class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1"></div>
-    </div>
-  </div>
-
   <!-- Detail Pop-up Modal -->
   <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity">
     <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col border border-slate-100 dark:border-slate-800">
@@ -244,12 +217,6 @@
     let isGridActive = false;
     let currentSpeechUtterance = null;
     let availableVoices = [];
-
-    // Tour Variables
-    let isTourActive = false;
-    let tourItems = [];
-    let currentTourIndex = 0;
-    let tourTimer = null;
 
     // Theme Toggle Handler
     function initTheme() {
@@ -422,7 +389,7 @@
       return { title, details };
     }
 
-    // FEATURE 1: Ask Curator Gemini AI Action
+    // SYNCHRONOUS ASK CURATOR GEMINI AI ACTION (Zero Popup Blocker issues)
     function askCuratorAI(originalIndex) {
       const row = rawRows[originalIndex];
       if (!row) return;
@@ -434,113 +401,30 @@
       const type = getVal(row, 14);
       const category = getVal(row, 15);
 
-      const promptText = `I am currently viewing a museum artifact at BMMC titled "${title}". Category: ${category}, Type: ${type}, Era: ${age}. Details: ${details}. Notes: ${notes}. Could you provide a detailed historical curator breakdown explaining the significance of items like this, how they were made or used, and interesting trivia from that era?`;
+      const promptText = `I am viewing a museum artifact at BMMC titled "${title}". Category: ${category}, Type: ${type}, Era: ${age}. Details: ${details}. Notes: ${notes}. Can you provide a detailed historical curator breakdown explaining the significance of items like this, how they were made or used, and interesting trivia from that era?`;
 
-      // Copy prompt to clipboard
-      navigator.clipboard.writeText(promptText).then(() => {
-        alert("📋 Research prompt copied to clipboard!\nOpening Google Gemini in a new tab... Simply paste (Ctrl+V or Cmd+V) to ask Gemini.");
-        window.open('https://gemini.google.com/app', '_blank');
-      }).catch(() => {
-        window.open('https://gemini.google.com/app', '_blank');
-      });
+      // Copy to clipboard synchronously
+      try {
+        navigator.clipboard.writeText(promptText);
+      } catch(e) {}
+
+      // Synchronous window.open -- NEVER blocked by browser popup blockers!
+      window.open(`https://gemini.google.com/app`, '_blank');
     }
 
-    // FEATURE 2: Google Lens Search
+    // GOOGLE LENS SEARCH
     function searchImageArchives(imgUrl) {
       if (!imgUrl) return;
-      const lensUrl = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(imgUrl)}`;
-      window.open(lensUrl, '_blank');
-    }
-
-    // FEATURE 3: Museum Tour Handler
-    document.getElementById('btnStartTour').addEventListener('click', openTourCategorySelector);
-    document.getElementById('closeTourModal').addEventListener('click', () => {
-      document.getElementById('tourCategoryModal').classList.add('hidden');
-    });
-
-    function openTourCategorySelector() {
-      const modal = document.getElementById('tourCategoryModal');
-      const list = document.getElementById('tourCategoryList');
-      list.innerHTML = '';
-
-      // Get all unique categories present in sheet
-      const categories = [...new Set(rawRows.map(r => getVal(r, 15)).filter(Boolean))].sort();
-
-      // Add "All Exhibits" Option
-      const btnAll = document.createElement('button');
-      btnAll.className = 'w-full text-left bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200 p-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between';
-      btnAll.innerHTML = `<span>🌐 All Exhibits Collection</span><span class="text-[10px] text-blue-600 font-semibold">${rawRows.length} Items</span>`;
-      btnAll.onclick = () => startMuseumTour('');
-      list.appendChild(btnAll);
-
-      categories.forEach(cat => {
-        const count = rawRows.filter(r => getVal(r, 15) === cat).length;
-        const btn = document.createElement('button');
-        btn.className = 'w-full text-left bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 p-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-between';
-        btn.innerHTML = `<span>📂 ${cat}</span><span class="text-[10px] text-slate-400 font-medium">${count} Items</span>`;
-        btn.onclick = () => startMuseumTour(cat);
-        list.appendChild(btn);
-      });
-
-      modal.classList.remove('hidden');
-    }
-
-    function startMuseumTour(categoryName) {
-      document.getElementById('tourCategoryModal').classList.add('hidden');
-      
-      if (categoryName) {
-        tourItems = rawRows.map((r, i) => ({ row: r, originalIndex: i })).filter(({ row }) => getVal(row, 15).toLowerCase() === categoryName.toLowerCase());
-      } else {
-        tourItems = rawRows.map((r, i) => ({ row: r, originalIndex: i }));
-      }
-
-      if (tourItems.length === 0) return;
-
-      isTourActive = true;
-      currentTourIndex = 0;
-      document.getElementById('tourBanner').classList.remove('hidden');
-      
-      playNextTourItem();
-    }
-
-    function playNextTourItem() {
-      if (!isTourActive || currentTourIndex >= tourItems.length) {
-        stopMuseumTour();
+      const cleanUrl = formatImageUrl(imgUrl);
+      if (!cleanUrl) {
+        alert("Image URL is not available for visual search.");
         return;
       }
-
-      const { row, originalIndex } = tourItems[currentTourIndex];
-      const rawContent = getVal(row, 2) || getVal(row, 0);
-      const { title } = parseTitleAndDetails(rawContent);
-
-      document.getElementById('tourProgressText').textContent = `Exhibit ${currentTourIndex + 1} of ${tourItems.length}: "${title}"`;
-
-      openModal(row, originalIndex);
       
-      const notes = getVal(row, 4);
-      if (notes) {
-        speakAudioGuide(originalIndex);
-      }
-
-      // Advance to next tour exhibit after 10 seconds or when speech finishes
-      clearTimeout(tourTimer);
-      tourTimer = setTimeout(() => {
-        if (isTourActive) {
-          currentTourIndex++;
-          playNextTourItem();
-        }
-      }, 11000);
+      // Lens Upload-by-URL Endpoint
+      const lensUrl = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(cleanUrl)}`;
+      window.open(lensUrl, '_blank');
     }
-
-    function stopMuseumTour() {
-      isTourActive = false;
-      clearTimeout(tourTimer);
-      stopAudioGuide();
-      document.getElementById('tourBanner').classList.add('hidden');
-      document.getElementById('detailModal').classList.add('hidden');
-    }
-
-    document.getElementById('btnStopTour').addEventListener('click', stopMuseumTour);
 
     // Universal Controls Toggle
     const toggleControlsBtn = document.getElementById('toggleControlsBtn');
@@ -815,16 +699,8 @@
 
         currentSpeechUtterance.onend = () => {
           if (btnModal) {
-            btnModal.innerHTML = '🔊 Listen to Museum Notes';
+            btnModal.innerHTML = '🔊 Listen to Notes';
             btnModal.onclick = () => speakAudioGuide(originalIndex);
-          }
-          if (isTourActive) {
-            // Auto advance tour
-            clearTimeout(tourTimer);
-            tourTimer = setTimeout(() => {
-              currentTourIndex++;
-              playNextTourItem();
-            }, 1000);
           }
         };
 
@@ -839,7 +715,7 @@
         window.speechSynthesis.cancel();
         const btnModal = document.getElementById('btnAudioGuide');
         if (btnModal) {
-          btnModal.innerHTML = '🔊 Listen to Museum Notes';
+          btnModal.innerHTML = '🔊 Listen to Notes';
           const rowIdx = btnModal.getAttribute('data-row');
           if (rowIdx) {
             btnModal.onclick = () => speakAudioGuide(parseInt(rowIdx));
@@ -870,7 +746,7 @@
         const { title, details } = parseTitleAndDetails(rawContent);
         const displayTitle = title || `Exhibit Item #${originalIndex + 1}`;
 
-        const notes = getVal(row, 4);
+        const notes = getVal(row, 4);                          // Column E (4): Museum Notes
         const age = getVal(row, 13);
         const type = getVal(row, 14);
         const category = getVal(row, 15);
@@ -961,7 +837,7 @@
       const { title, details } = parseTitleAndDetails(rawContent);
       const displayTitle = title || 'Exhibit Item Details';
 
-      const notes = getVal(row, 4);
+      const notes = getVal(row, 4);                          // Column E (4): Museum Notes
       const age = getVal(row, 13);
       const type = getVal(row, 14);
       const category = getVal(row, 15);
@@ -987,38 +863,34 @@
           </button>
         </div>
 
-        <!-- AI Curator & Audio Action Bar -->
-        <div class="mb-4 flex flex-col sm:flex-row gap-2">
-          ${notes ? `
-            <button 
-              id="btnAudioGuide" 
-              data-row="${originalIndex}"
-              onclick="speakAudioGuide(${originalIndex})"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm flex-1"
-            >
-              🔊 Listen to Museum Notes
-            </button>
-          ` : ''}
+        <!-- 1-Line Action Bar: Listen to Notes + Voice Select + Ask Curator -->
+        <div class="mb-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
+          
+          <div class="flex items-center gap-2 flex-1 w-full md:w-auto">
+            ${notes ? `
+              <button 
+                id="btnAudioGuide" 
+                data-row="${originalIndex}"
+                onclick="speakAudioGuide(${originalIndex})"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shrink-0"
+              >
+                🔊 Listen to Notes
+              </button>
+              <select id="voiceSelect" class="text-xs bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 focus:ring-2 focus:ring-blue-500 font-medium w-full md:w-auto max-w-[160px] truncate outline-none">
+                <!-- Populated dynamically -->
+              </select>
+            ` : '<span class="text-xs text-slate-400 font-medium">No Museum Notes for narration</span>'}
+          </div>
 
-          <!-- FEATURE 1: Ask Curator Gemini Button -->
+          <!-- Ask Curator Button -->
           <button 
             onclick="askCuratorAI(${originalIndex})"
             title="Ask Google Gemini for deep historical research on this exhibit"
-            class="bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm"
+            class="bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shrink-0 w-full md:w-auto"
           >
             🤖 Ask Curator
           </button>
         </div>
-
-        ${notes ? `
-          <!-- Voice Selector -->
-          <div class="mb-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 flex items-center justify-between gap-2">
-            <label class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Voice:</label>
-            <select id="voiceSelect" class="text-xs bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 focus:ring-2 focus:ring-blue-500 font-medium max-w-[210px] truncate outline-none">
-              <!-- Populated dynamically -->
-            </select>
-          </div>
-        ` : ''}
         
         <div class="flex flex-wrap gap-2 text-xs mb-6">
           ${age ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-1 rounded-full font-medium"><strong>Age:</strong> ${age}</span>` : ''}
@@ -1033,7 +905,6 @@
             <div>
               <div class="flex items-center justify-between mb-1.5">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Primary Image</p>
-                <!-- FEATURE 2: Search Image Google Lens Button -->
                 <button 
                   onclick="searchImageArchives('${img1}')"
                   title="Search archives, museums, and auction databases with Google Lens"
