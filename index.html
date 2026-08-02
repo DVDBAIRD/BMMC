@@ -29,6 +29,7 @@
 
   <style>
     body { font-family: 'Inter', sans-serif; }
+    /* 100% Solid Opaque Header Background */
     .solid-header {
       background-color: #ffffff;
     }
@@ -389,7 +390,7 @@
       return { title, details };
     }
 
-    // SYNCHRONOUS ASK CURATOR GEMINI AI ACTION (Zero Popup Blocker issues)
+    // AUTO-ANSWERING AI CURATOR ACTION (Perplexity AI Auto-Research)
     function askCuratorAI(originalIndex) {
       const row = rawRows[originalIndex];
       if (!row) return;
@@ -408,8 +409,9 @@
         navigator.clipboard.writeText(promptText);
       } catch(e) {}
 
-      // Synchronous window.open -- NEVER blocked by browser popup blockers!
-      window.open(`https://gemini.google.com/app`, '_blank');
+      // Auto-Answering Perplexity AI URL (Pre-fills and generates answer automatically!)
+      const perplexityUrl = `https://www.perplexity.ai/search?q=${encodeURIComponent(promptText)}`;
+      window.open(perplexityUrl, '_blank');
     }
 
     // GOOGLE LENS SEARCH
@@ -421,7 +423,6 @@
         return;
       }
       
-      // Lens Upload-by-URL Endpoint
       const lensUrl = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(cleanUrl)}`;
       window.open(lensUrl, '_blank');
     }
@@ -863,36 +864,7 @@
           </button>
         </div>
 
-        <!-- 1-Line Action Bar: Listen to Notes + Voice Select + Ask Curator -->
-        <div class="mb-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
-          
-          <div class="flex items-center gap-2 flex-1 w-full md:w-auto">
-            ${notes ? `
-              <button 
-                id="btnAudioGuide" 
-                data-row="${originalIndex}"
-                onclick="speakAudioGuide(${originalIndex})"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shrink-0"
-              >
-                🔊 Listen to Notes
-              </button>
-              <select id="voiceSelect" class="text-xs bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 focus:ring-2 focus:ring-blue-500 font-medium w-full md:w-auto max-w-[160px] truncate outline-none">
-                <!-- Populated dynamically -->
-              </select>
-            ` : '<span class="text-xs text-slate-400 font-medium">No Museum Notes for narration</span>'}
-          </div>
-
-          <!-- Ask Curator Button -->
-          <button 
-            onclick="askCuratorAI(${originalIndex})"
-            title="Ask Google Gemini for deep historical research on this exhibit"
-            class="bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shrink-0 w-full md:w-auto"
-          >
-            🤖 Ask Curator
-          </button>
-        </div>
-        
-        <div class="flex flex-wrap gap-2 text-xs mb-6">
+        <div class="flex flex-wrap gap-2 text-xs mb-4">
           ${age ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-1 rounded-full font-medium"><strong>Age:</strong> ${age}</span>` : ''}
           ${type ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-1 rounded-full font-medium"><strong>Type:</strong> ${type}</span>` : ''}
           ${category ? `<span class="bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 border border-blue-100 dark:border-blue-900 px-3 py-1 rounded-full font-medium"><strong>Category:</strong> ${category}</span>` : ''}
@@ -900,7 +872,7 @@
         </div>
 
         <!-- Images Comparison + Google Lens Search Button -->
-        <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-6">
+        <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-4">
           ${img1 ? `
             <div>
               <div class="flex items-center justify-between mb-1.5">
@@ -935,6 +907,35 @@
                 <span class="absolute bottom-3 right-3 bg-slate-900/80 text-white text-[10px] px-2 py-1 rounded shadow">Open Full Image ↗</span>
               </a>
             </div>` : ''}
+        </div>
+
+        <!-- 1-Line Action Bar UNDER THE IMAGES: Listen to Notes + Voice Select + Ask Curator -->
+        <div class="mb-6 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
+          
+          <div class="flex items-center gap-2 flex-1 w-full md:w-auto">
+            ${notes ? `
+              <button 
+                id="btnAudioGuide" 
+                data-row="${originalIndex}"
+                onclick="speakAudioGuide(${originalIndex})"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shrink-0"
+              >
+                🔊 Listen to Notes
+              </button>
+              <select id="voiceSelect" class="text-xs bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 focus:ring-2 focus:ring-blue-500 font-medium w-full md:w-auto max-w-[160px] truncate outline-none">
+                <!-- Populated dynamically -->
+              </select>
+            ` : '<span class="text-xs text-slate-400 font-medium">No Museum Notes for narration</span>'}
+          </div>
+
+          <!-- Ask Curator Button -->
+          <button 
+            onclick="askCuratorAI(${originalIndex})"
+            title="Ask Perplexity AI for deep historical research on this exhibit"
+            class="bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shrink-0 w-full md:w-auto"
+          >
+            🤖 Ask Curator
+          </button>
         </div>
 
         ${details ? `
