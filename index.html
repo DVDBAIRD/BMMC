@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BMMC Showcase</title>
+  <title>BMMC Showcase — Bonniefields Museum of Memorabilia and Curiosities</title>
   
   <!-- Inline Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>">
@@ -13,44 +13,77 @@
   <script>
     tailwind.config = {
       darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#2563eb',
+              600: '#1d4ed8',
+              700: '#1e40af',
+            }
+          }
+        }
+      }
     }
   </script>
   
-  <!-- PapaParse for direct Google Sheets CSV fetching -->
+  <!-- PapaParse CSV Reader -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   
   <!-- 3D Model Viewer Web Component -->
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
-  <!-- Google Font -->
+  <!-- Google Font: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     body { font-family: 'Inter', sans-serif; }
-    /* 100% Solid Opaque Header Background */
-    .solid-header {
-      background-color: #ffffff;
+    .solid-header { background-color: #ffffff; }
+    .dark .solid-header { background-color: #0f172a; }
+    
+    /* Audio Equalizer Animation */
+    @keyframes barPulse {
+      0%, 100% { height: 4px; }
+      50% { height: 14px; }
     }
-    .dark .solid-header {
-      background-color: #0f172a;
+    .eq-bar {
+      display: inline-block;
+      width: 3px;
+      background-color: currentColor;
+      border-radius: 9999px;
+      animation: barPulse 0.8s infinite ease-in-out;
     }
+    .eq-bar:nth-child(2) { animation-delay: 0.2s; }
+    .eq-bar:nth-child(3) { animation-delay: 0.4s; }
   </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased relative transition-colors duration-300">
 
+  <!-- Toast Notification System -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-4 py-2.5 rounded-full shadow-2xl text-xs font-semibold flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 translate-y-3">
+    <span id="toastIcon">✨</span>
+    <span id="toastMsg">Notification message</span>
+  </div>
+
   <!-- Header -->
-  <header id="mainHeader" class="solid-header border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-md transition-colors">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+  <header id="mainHeader" class="solid-header border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-sm transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
       
       <!-- Top Header Row -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            <span class="text-2xl sm:text-3xl">🏛️</span> BMMC Showcase
-          </h1>
-        </div>
+        <a href="#" onclick="browseAllExhibits(); return false;" class="group flex items-center gap-2.5">
+          <span class="text-3xl transition-transform group-hover:scale-110">🏛️</span>
+          <div>
+            <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              BMMC Showcase
+            </h1>
+            <p class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Bonniefields Museum Catalog</p>
+          </div>
+        </a>
         
         <!-- Action Buttons Bar -->
         <div class="flex flex-wrap items-center gap-2">
@@ -70,71 +103,85 @@
             <span id="favCountText">Saved (0)</span>
           </button>
 
-          <!-- Night Mode Theme Toggle -->
-          <button id="btnThemeToggle" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl transition shadow-sm">
+          <!-- Theme Toggle -->
+          <button id="btnThemeToggle" aria-label="Toggle Night Mode" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl transition shadow-sm">
             <span id="themeToggleIcon">🌙</span>
-            <span id="themeToggleText">Night Mode</span>
+            <span id="themeToggleText" class="hidden sm:inline">Night Mode</span>
           </button>
 
-          <!-- Universal Toggle Controls Button -->
-          <button id="toggleControlsBtn" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl transition shadow-sm">
+          <!-- Search & Filter Collapse Toggle -->
+          <button id="toggleControlsBtn" aria-label="Toggle Filter Controls" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl transition shadow-sm">
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
             </svg>
-            <span>Search & Filters</span>
+            <span>Filters</span>
             <span id="toggleChevron" class="transition-transform duration-200 text-slate-400">▼</span>
           </button>
         </div>
       </div>
 
       <!-- Collapsible Container -->
-      <div id="collapsibleControls" class="mt-3 flex flex-col gap-3.5 transition-all duration-300">
+      <div id="collapsibleControls" class="mt-3 flex flex-col gap-3 transition-all duration-300">
         
         <!-- Subheading -->
         <p class="text-xs text-slate-600 dark:text-slate-400 font-normal leading-relaxed">
-          The Bonniefields Museum of Memorabilia and Curiosities (BMMC) preserves historical artifacts for a nostalgic glimpse into the past.
+          The Bonniefields Museum preserves historical artifacts, technical equipment, and memorabilia for a nostalgic glimpse into the past.
         </p>
 
-        <!-- Search Bar & Item Counter -->
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1 border-t border-slate-200/60 dark:border-slate-800">
-          <p class="text-[11px] text-slate-400 font-semibold" id="itemCount"></p>
+        <!-- Search Bar & Item Counter Row -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800">
+          <div class="flex items-center justify-between sm:justify-start gap-4">
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold" id="itemCount">Loading catalog...</p>
+            
+            <!-- Sort Selector -->
+            <div class="flex items-center gap-1.5">
+              <label for="sortBy" class="text-[10px] font-bold uppercase text-slate-400">Sort:</label>
+              <select id="sortBy" class="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                <option value="default" class="dark:bg-slate-900">Default</option>
+                <option value="title-asc" class="dark:bg-slate-900">Title (A-Z)</option>
+                <option value="title-desc" class="dark:bg-slate-900">Title (Z-A)</option>
+                <option value="age-oldest" class="dark:bg-slate-900">Age (Pre 1950 First)</option>
+                <option value="age-newest" class="dark:bg-slate-900">Age (Post 1950 First)</option>
+              </select>
+            </div>
+          </div>
           
           <div class="w-full sm:w-80 relative">
             <input 
               type="text" 
               id="searchInput" 
               placeholder="Search items, details, notes..." 
-              class="w-full pl-10 pr-10 py-2 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-xs text-slate-800 dark:text-slate-100 transition"
+              class="w-full pl-10 pr-10 py-2 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-xs text-slate-800 dark:text-slate-100 transition shadow-inner"
             />
             <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-            <button id="clearSearch" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs font-bold bg-slate-200 dark:bg-slate-700 rounded-full w-4 h-4 flex items-center justify-center">✕</button>
+            <button id="clearSearch" title="Clear Search" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold bg-slate-200 dark:bg-slate-700 rounded-full w-4 h-4 flex items-center justify-center">✕</button>
           </div>
         </div>
 
         <!-- Filter Dropdowns Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
           <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Age</label>
+            <label for="filterAge" class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Age</label>
             <select id="filterAge" class="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
               <option value="">All Ages</option>
             </select>
           </div>
           <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Type</label>
+            <label for="filterType" class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Type</label>
             <select id="filterType" class="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
               <option value="">All Types</option>
             </select>
           </div>
           <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Category</label>
+            <label for="filterCategory" class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Category</label>
             <select id="filterCategory" class="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
               <option value="">All Categories</option>
             </select>
           </div>
           <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Subcategory</label>
+            <label for="filterSubcategory" class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Subcategory</label>
             <select id="filterSubcategory" class="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
               <option value="">All Subcategories</option>
             </select>
@@ -143,9 +190,18 @@
           <!-- 3D Models Only Toggle -->
           <div class="col-span-2 sm:col-span-1 flex items-end">
             <button id="btn3DOnly" class="w-full p-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-sm h-[34px]">
-              <span>🕶️ 3D Models Only</span>
+              <span>👓 3D Models Only</span>
             </button>
           </div>
+        </div>
+
+        <!-- Active Filter Pills Bar -->
+        <div id="activeFiltersBar" class="hidden flex-wrap items-center gap-2 pt-1">
+          <span class="text-[11px] text-slate-400 font-bold uppercase">Active Filters:</span>
+          <div id="activeFiltersContainer" class="flex flex-wrap gap-1.5"></div>
+          <button id="btnClearAllFilters" class="text-[11px] text-rose-600 dark:text-rose-400 font-bold hover:underline ml-auto">
+            Clear All
+          </button>
         </div>
 
         <!-- 7 Collection Hubs -->
@@ -161,21 +217,39 @@
   <!-- Main Content Area -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full z-10">
     
-    <!-- Loading Spinner -->
-    <div id="loading" class="text-center py-24">
-      <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent mb-3"></div>
-      <p class="text-slate-500 text-sm font-medium">Fetching exhibit catalog from BMMC...</p>
+    <!-- Modern Skeleton Loader -->
+    <div id="loading" class="py-6">
+      <div class="flex items-center justify-center gap-2 mb-8">
+        <div class="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent"></div>
+        <span class="text-sm font-semibold text-slate-500">Fetching exhibit catalog from BMMC...</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <!-- Skeleton Card Repeater -->
+        <script>
+          document.write(Array(8).fill(`
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-800 animate-pulse flex flex-col h-80">
+              <div class="w-full h-44 bg-slate-200 dark:bg-slate-800 rounded-xl mb-4"></div>
+              <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/3 mb-2"></div>
+              <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-3"></div>
+              <div class="h-3 bg-slate-100 dark:bg-slate-800/60 rounded w-full mb-1"></div>
+              <div class="h-3 bg-slate-100 dark:bg-slate-800/60 rounded w-2/3"></div>
+            </div>
+          `).join(''));
+        </script>
+      </div>
     </div>
     
-    <!-- Initial Prompt -->
-    <div id="gridPrompt" class="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 shadow-sm hidden">
+    <!-- Initial Visual Prompt -->
+    <div id="gridPrompt" class="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 shadow-sm hidden">
       <div class="max-w-md mx-auto px-4">
-        <span class="text-3xl mb-2 block">🔍</span>
-        <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">Ready to Explore Exhibits</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4 leading-relaxed">
-          Select a Collection Hub above or use search to display exhibit items.
+        <div class="w-16 h-16 bg-blue-50 dark:bg-blue-950/80 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-blue-100 dark:border-blue-900">
+          🔍
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Ready to Explore Exhibits</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 mb-5 leading-relaxed">
+          Select a Collection Hub above, search by keyword, or view all items in the BMMC archive.
         </p>
-        <button id="btnBrowseAllPrompt" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
+        <button id="btnBrowseAllPrompt" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-md hover:shadow-lg transition">
           Browse All Exhibits →
         </button>
       </div>
@@ -188,16 +262,36 @@
   </main>
 
   <!-- Floating Mobile Jump Pill -->
-  <button id="floatingJumpBtn" class="sm:hidden fixed bottom-5 right-5 z-40 bg-blue-600 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-lg flex items-center gap-1.5 hidden">
+  <button id="floatingJumpBtn" class="sm:hidden fixed bottom-5 right-5 z-40 bg-blue-600 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-xl flex items-center gap-1.5 hidden border border-white/20">
     <span>⬇️ View Exhibits</span>
   </button>
 
   <!-- Detail Pop-up Modal -->
-  <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity">
-    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col border border-slate-100 dark:border-slate-800">
-      <button id="closeModal" class="absolute top-4 right-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 p-2 rounded-full z-10 font-bold transition">
-        ✕
-      </button>
+  <div id="detailModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6 hidden transition-opacity" role="dialog" aria-modal="true">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col border border-slate-200 dark:border-slate-800">
+      
+      <!-- Modal Navigation Bar -->
+      <div class="sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-1.5">
+          <button id="modalPrevBtn" title="Previous Item (Left Arrow)" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition flex items-center gap-1">
+            <span>←</span> <span class="hidden sm:inline">Prev</span>
+          </button>
+          <span id="modalCounter" class="text-[11px] font-semibold text-slate-400 px-2"></span>
+          <button id="modalNextBtn" title="Next Item (Right Arrow)" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition flex items-center gap-1">
+            <span class="hidden sm:inline">Next</span> <span>→</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnShareExhibit" title="Copy Link to Exhibit" class="p-2 rounded-full text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition">
+            🔗
+          </button>
+          <button id="closeModal" title="Close (Esc)" class="p-2 rounded-full text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition">
+            ✕
+          </button>
+        </div>
+      </div>
+
       <div id="modalContent" class="p-6 sm:p-8"></div>
     </div>
   </div>
@@ -207,33 +301,45 @@
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
     const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
 
-    // 7 Desktop Collection Hub Categories
+    // 7 Main Collection Hub Categories
     const MAIN_HUB_CATEGORIES = [
       "War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"
     ];
 
     let rawRows = [];
     let currentFilteredRows = [];
+    let currentModalIndex = -1; // Current index in currentFilteredRows
     let only3DActive = false;
     let showingFavoritesOnly = false;
     let isGridActive = false;
     let currentSpeechUtterance = null;
     let availableVoices = [];
 
-    // Light Blue (Pre 1950) and Light Orange (Post 1950) Badge Styles
+    // Helper: Toast Notification
+    function showToast(msg, icon = '✨') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastIcon').textContent = icon;
+      toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-3');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-3');
+      }, 2500);
+    }
+
+    // Badge Styles
     function getAgeBadgeStyle(ageStr) {
       if (!ageStr) return 'bg-slate-900/80 text-white';
       const lower = ageStr.toLowerCase().trim();
 
       if (lower.includes('pre')) {
-        return 'bg-sky-100 text-sky-800 border border-sky-300 font-bold'; // Light Blue
+        return 'bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-800 font-bold';
       } else if (lower.includes('post')) {
-        return 'bg-orange-100 text-orange-800 border border-orange-300 font-bold'; // Light Orange
+        return 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-bold';
       } else {
         const num = parseInt(lower.replace(/[^0-9]/g, ''), 10);
         if (!isNaN(num)) {
-          if (num < 1950) return 'bg-sky-100 text-sky-800 border border-sky-300 font-bold';
-          if (num >= 1950) return 'bg-orange-100 text-orange-800 border border-orange-300 font-bold';
+          if (num < 1950) return 'bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-800 font-bold';
+          if (num >= 1950) return 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-bold';
         }
       }
       return 'bg-slate-900/80 text-white';
@@ -242,7 +348,7 @@
     // Theme Toggle Handler
     function initTheme() {
       const savedTheme = localStorage.getItem('bMMC_theme');
-      const isDark = savedTheme === 'dark';
+      const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
       if (isDark) {
         document.documentElement.classList.add('dark');
       } else {
@@ -266,7 +372,7 @@
       updateThemeUI(isDark);
     });
 
-    // Detect & Load High Quality Natural Voices
+    // Detect & Load Voices for TTS
     function loadVoices() {
       if (!('speechSynthesis' in window)) return;
       
@@ -307,7 +413,7 @@
         const opt = document.createElement('option');
         opt.value = voice.name;
         const isNatural = ['natural', 'neural', 'enhanced', 'premium', 'google', 'online', 'siri', 'edge'].some(k => voice.name.toLowerCase().includes(k));
-        opt.textContent = `${voice.name} ${isNatural ? '✨ (Natural)' : ''}`;
+        opt.textContent = `${voice.name} ${isNatural ? '✨' : ''}`;
         if (currentVoice && currentVoice.name === voice.name) {
           opt.selected = true;
         }
@@ -355,11 +461,16 @@
     function toggleFavorite(rowIndex, event) {
       if (event) event.stopPropagation();
       let favs = getFavorites();
-      if (favs.includes(rowIndex)) {
-        favs = favs.filter(i => i !== rowIndex);
-      } else {
+      const adding = !favs.includes(rowIndex);
+      
+      if (adding) {
         favs.push(rowIndex);
+        showToast('Saved to your collection', '❤️');
+      } else {
+        favs = favs.filter(i => i !== rowIndex);
+        showToast('Removed from saved items', '🤍');
       }
+      
       localStorage.setItem('bMMC_favorites', JSON.stringify(favs));
       updateFavoritesBadge();
       
@@ -410,10 +521,9 @@
       return { title, details };
     }
 
-    // GOOGLE ITEM SEARCH
     function googleItemSearch(title, category, details) {
       const cleanDetails = (details || '').replace(/^#\s*/, '').replace(/\s+/g, ' ').trim();
-      const shortDetails = cleanDetails.slice(0, 250);
+      const shortDetails = cleanDetails.slice(0, 200);
       
       const query = `${title} ${category || ''} Historical Artifact ${shortDetails}`.trim();
       const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
@@ -464,7 +574,11 @@
     document.getElementById('btnSurprise').addEventListener('click', () => {
       if (!rawRows || rawRows.length === 0) return;
       const randomIndex = Math.floor(Math.random() * rawRows.length);
-      openModal(rawRows[randomIndex], randomIndex);
+      
+      if (!isGridActive) {
+        filterCatalog(true);
+      }
+      openModalByOriginalIndex(randomIndex);
     });
 
     // 3D Only Toggle
@@ -514,24 +628,43 @@
             updateFavoritesBadge();
             renderCollectionHubs(rawRows);
             populateDropdowns(rawRows);
+
+            // Deep-link check on initial page load
+            checkUrlHashForExhibit();
           } catch(e) {
             console.error("Error initializing catalog UI:", e);
             document.getElementById('loading').innerHTML = `
-              <p class="text-red-500 font-bold text-base">Error initializing museum catalog.</p>
-              <p class="text-xs text-slate-500 mt-1">${e.message}</p>
+              <div class="text-center py-12">
+                <p class="text-red-500 font-bold text-base">Error initializing museum catalog.</p>
+                <p class="text-xs text-slate-500 mt-1">${e.message}</p>
+              </div>
             `;
           }
         },
         error: function(err) {
           document.getElementById('loading').innerHTML = `
-            <p class="text-red-500 font-bold text-base">Error loading spreadsheet data.</p>
-            <p class="text-xs text-slate-500 mt-1">Make sure the sheet is public ("Anyone with the link can view").</p>
+            <div class="text-center py-12">
+              <p class="text-red-500 font-bold text-base">Error loading spreadsheet data.</p>
+              <p class="text-xs text-slate-500 mt-1">Make sure the Google Sheet is public ("Anyone with the link can view").</p>
+            </div>
           `;
         }
       });
     }
 
-    // Render 7 Collection Hubs (Resilient Singular/Plural Match)
+    // Check URL Hash for deep-linking
+    function checkUrlHashForExhibit() {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#exhibit-')) {
+        const index = parseInt(hash.replace('#exhibit-', ''), 10);
+        if (!isNaN(index) && rawRows[index]) {
+          filterCatalog(true);
+          openModalByOriginalIndex(index);
+        }
+      }
+    }
+
+    // Render 7 Collection Hubs
     function renderCollectionHubs(rows) {
       const hubsGrid = document.getElementById('hubsGrid');
       if (!hubsGrid) return;
@@ -554,10 +687,10 @@
         const previewImg = formatImageUrl(firstImgRaw) || NO_IMAGE_SVG;
 
         const hubCard = document.createElement('div');
-        hubCard.className = 'bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md transition duration-300 cursor-pointer flex flex-col group';
+        hubCard.className = 'bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md transition duration-300 cursor-pointer flex flex-col group relative';
         hubCard.innerHTML = `
           <div class="h-20 bg-slate-100/90 dark:bg-slate-800/90 relative overflow-hidden flex items-center justify-center p-1.5">
-            <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" />
+            <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${catName}" />
             <span class="absolute top-1.5 right-1.5 bg-slate-900/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">${count}</span>
           </div>
           <div class="p-2 flex-1 flex flex-col justify-between">
@@ -614,6 +747,9 @@
       fillSelect('filterType', rows.map(r => getVal(r, 14)));
       fillSelect('filterCategory', rows.map(r => getVal(r, 15)));
       fillSelect('filterSubcategory', rows.map(r => getVal(r, 16)));
+      
+      document.getElementById('sortBy').addEventListener('change', () => filterCatalog(true));
+      document.getElementById('btnClearAllFilters').addEventListener('click', browseAllExhibits);
     }
 
     function fillSelect(elementId, values) {
@@ -636,16 +772,60 @@
       });
     }
 
-    // Filter Logic
+    // Render Active Filter Pills
+    function renderActiveFilterPills() {
+      const container = document.getElementById('activeFiltersContainer');
+      const bar = document.getElementById('activeFiltersBar');
+      if (!container || !bar) return;
+
+      container.innerHTML = '';
+      const filters = [];
+
+      const searchVal = document.getElementById('searchInput').value;
+      const ageVal = document.getElementById('filterAge').value;
+      const typeVal = document.getElementById('filterType').value;
+      const catVal = document.getElementById('filterCategory').value;
+      const subCatVal = document.getElementById('filterSubcategory').value;
+
+      if (searchVal) filters.push({ label: `Search: "${searchVal}"`, clear: () => { document.getElementById('searchInput').value = ''; } });
+      if (ageVal) filters.push({ label: `Age: ${ageVal}`, clear: () => { document.getElementById('filterAge').value = ''; } });
+      if (typeVal) filters.push({ label: `Type: ${typeVal}`, clear: () => { document.getElementById('filterType').value = ''; } });
+      if (catVal) filters.push({ label: `Category: ${catVal}`, clear: () => { document.getElementById('filterCategory').value = ''; } });
+      if (subCatVal) filters.push({ label: `Subcategory: ${subCatVal}`, clear: () => { document.getElementById('filterSubcategory').value = ''; } });
+      if (only3DActive) filters.push({ label: `3D Models Only`, clear: () => { document.getElementById('btn3DOnly').click(); return false; } });
+      if (showingFavoritesOnly) filters.push({ label: `Saved Items`, clear: () => { showingFavoritesOnly = false; updateFavoritesBadge(); } });
+
+      if (filters.length > 0) {
+        bar.classList.remove('hidden');
+        bar.classList.add('flex');
+        filters.forEach(f => {
+          const pill = document.createElement('span');
+          pill.className = 'inline-flex items-center gap-1 text-[11px] font-semibold bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 rounded-full';
+          pill.innerHTML = `${f.label} <button class="hover:text-red-500 font-bold ml-0.5">✕</button>`;
+          pill.querySelector('button').addEventListener('click', () => {
+            f.clear();
+            filterCatalog(true);
+          });
+          container.appendChild(pill);
+        });
+      } else {
+        bar.classList.add('hidden');
+        bar.classList.remove('flex');
+      }
+    }
+
+    // Filter & Sort Logic
     function filterCatalog(forceShowGrid = false) {
       const searchVal = (document.getElementById('searchInput').value || '').toLowerCase();
       const ageVal = document.getElementById('filterAge').value;
       const typeVal = document.getElementById('filterType').value;
       const catVal = document.getElementById('filterCategory').value;
       const subCatVal = document.getElementById('filterSubcategory').value;
+      const sortBy = document.getElementById('sortBy').value;
       const favs = getFavorites();
 
       document.getElementById('clearSearch').classList.toggle('hidden', !searchVal);
+      renderActiveFilterPills();
 
       const isFiltering = searchVal || ageVal || typeVal || catVal || subCatVal || only3DActive || showingFavoritesOnly;
 
@@ -679,6 +859,17 @@
         return fullTextMatch && ageMatch && typeMatch && catMatch && subCatMatch && match3D && matchFav;
       });
 
+      // Sorting Logic
+      if (sortBy === 'title-asc') {
+        currentFilteredRows.sort((a, b) => parseTitleAndDetails(getVal(a.row, 2) || getVal(a.row, 0)).title.localeCompare(parseTitleAndDetails(getVal(b.row, 2) || getVal(b.row, 0)).title));
+      } else if (sortBy === 'title-desc') {
+        currentFilteredRows.sort((a, b) => parseTitleAndDetails(getVal(b.row, 2) || getVal(b.row, 0)).title.localeCompare(parseTitleAndDetails(getVal(a.row, 2) || getVal(a.row, 0)).title));
+      } else if (sortBy === 'age-oldest') {
+        currentFilteredRows.sort((a, b) => getVal(a.row, 13).localeCompare(getVal(b.row, 13)));
+      } else if (sortBy === 'age-newest') {
+        currentFilteredRows.sort((a, b) => getVal(b.row, 13).localeCompare(getVal(a.row, 13)));
+      }
+
       renderGrid(currentFilteredRows);
     }
 
@@ -688,7 +879,7 @@
       filterCatalog(true);
     });
 
-    // AUDIO NARRATOR
+    // AUDIO NARRATOR WITH VISUALIZER
     function speakAudioGuide(originalIndex, event) {
       if (event) event.stopPropagation();
 
@@ -719,7 +910,14 @@
         const btnModal = document.getElementById('btnAudioGuide');
         if (btnModal) {
           btnModal.setAttribute('data-row', originalIndex);
-          btnModal.innerHTML = '⏹️ Stop';
+          btnModal.innerHTML = `
+            <span class="flex items-center gap-1 text-xs">
+              <span class="inline-flex items-center gap-0.5 text-blue-200">
+                <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
+              </span>
+              <span>Stop</span>
+            </span>
+          `;
           btnModal.onclick = stopAudioGuide;
         }
 
@@ -744,7 +942,7 @@
           btnModal.innerHTML = '🔊 Listen';
           const rowIdx = btnModal.getAttribute('data-row');
           if (rowIdx) {
-            btnModal.onclick = () => speakAudioGuide(parseInt(rowIdx));
+            btnModal.onclick = () => speakAudioGuide(parseInt(rowIdx, 10));
           }
         }
       }
@@ -762,18 +960,20 @@
       if (items.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-            <p class="text-slate-500 dark:text-slate-400 font-medium">No exhibit results match your selected filters.</p>
+            <span class="text-3xl mb-2 block">🔍</span>
+            <p class="text-slate-600 dark:text-slate-300 font-bold text-sm">No exhibit results match your selected filters.</p>
+            <button onclick="browseAllExhibits()" class="mt-3 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline">Reset search and filters</button>
           </div>`;
         return;
       }
 
-      items.forEach(({ row, originalIndex }) => {
+      items.forEach(({ row, originalIndex }, arrayIndex) => {
         const rawContent = getVal(row, 2) || getVal(row, 0);
         const { title, details } = parseTitleAndDetails(rawContent);
         const displayTitle = title || `Exhibit Item #${originalIndex + 1}`;
 
-        const notes = getVal(row, 4);                          // Column E (4): Museum Notes
-        const age = getVal(row, 13);                           // Column N (13): Age
+        const notes = getVal(row, 4);
+        const age = getVal(row, 13);
         const type = getVal(row, 14);
         const category = getVal(row, 15);
         const subcategory = getVal(row, 16);
@@ -805,7 +1005,7 @@
             <button 
               onclick="toggleFavorite(${originalIndex}, event)" 
               title="${isFav ? 'Remove from favorites' : 'Save to favorites'}"
-              class="absolute top-3 right-3 p-1.5 rounded-full backdrop-blur-md transition shadow-sm ${isFav ? 'bg-rose-500 text-white' : 'bg-white/90 dark:bg-slate-800/90 text-slate-400 hover:text-rose-500'}"
+              class="absolute top-3 right-3 p-2 rounded-full backdrop-blur-md transition shadow-sm ${isFav ? 'bg-rose-500 text-white' : 'bg-white/90 dark:bg-slate-800/90 text-slate-400 hover:text-rose-500'}"
             >
               ${isFav ? '❤️' : '🤍'}
             </button>
@@ -821,7 +1021,7 @@
               </button>
             ` : ''}
 
-            <!-- Light Blue (Pre 1950) / Light Orange (Post 1950) Badge -->
+            <!-- Badge -->
             ${age ? `<span class="absolute top-3 left-3 ${ageBadgeClass} backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] shadow-sm pointer-events-none">${age}</span>` : ''}
           </div>
           
@@ -852,20 +1052,40 @@
           </div>
         `;
 
-        card.addEventListener('click', () => openModal(row, originalIndex));
+        card.addEventListener('click', () => openModalByFilteredIndex(arrayIndex));
         grid.appendChild(card);
       });
     }
 
-    // Modal View
+    function openModalByOriginalIndex(origIdx) {
+      const filteredIndex = currentFilteredRows.findIndex(item => item.originalIndex === origIdx);
+      if (filteredIndex !== -1) {
+        openModalByFilteredIndex(filteredIndex);
+      } else if (rawRows[origIdx]) {
+        // Fallback if item isn't in current filter view
+        openModal(rawRows[origIdx], origIdx);
+      }
+    }
+
+    function openModalByFilteredIndex(filteredIndex) {
+      if (filteredIndex < 0 || filteredIndex >= currentFilteredRows.length) return;
+      currentModalIndex = filteredIndex;
+      const { row, originalIndex } = currentFilteredRows[filteredIndex];
+      openModal(row, originalIndex);
+    }
+
+    // Modal View Rendering
     function openModal(row, originalIndex) {
       stopAudioGuide();
       
+      // Update Deep-link URL Hash
+      window.history.replaceState(null, '', `#exhibit-${originalIndex}`);
+
       const rawContent = getVal(row, 2) || getVal(row, 0);
       const { title, details } = parseTitleAndDetails(rawContent);
       const displayTitle = title || 'Exhibit Item Details';
 
-      const notes = getVal(row, 4);                          // Column E (4): Museum Notes
+      const notes = getVal(row, 4);
       const age = getVal(row, 13);
       const type = getVal(row, 14);
       const category = getVal(row, 15);
@@ -881,13 +1101,36 @@
       const ageBadgeClass = getAgeBadgeStyle(age);
       const hasTwoImages = Boolean(img1 && img2);
 
+      // Modal Nav Controls & Counter
+      const counterElem = document.getElementById('modalCounter');
+      const prevBtn = document.getElementById('modalPrevBtn');
+      const nextBtn = document.getElementById('modalNextBtn');
+
+      if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
+        counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
+        prevBtn.disabled = currentModalIndex === 0;
+        nextBtn.disabled = currentModalIndex === currentFilteredRows.length - 1;
+        prevBtn.classList.toggle('opacity-40', currentModalIndex === 0);
+        nextBtn.classList.toggle('opacity-40', currentModalIndex === currentFilteredRows.length - 1);
+      } else {
+        counterElem.textContent = '';
+      }
+
+      // Share Button listener
+      document.getElementById('btnShareExhibit').onclick = () => {
+        const url = `${window.location.origin}${window.location.pathname}#exhibit-${originalIndex}`;
+        navigator.clipboard.writeText(url).then(() => {
+          showToast('Direct link copied to clipboard!', '🔗');
+        });
+      };
+
       const modalContent = document.getElementById('modalContent');
       modalContent.innerHTML = `
-        <div class="flex items-start justify-between gap-4 mb-3 pr-8">
-          <h2 class="text-xl font-bold text-slate-900 dark:text-white">${displayTitle}</h2>
+        <div class="flex items-start justify-between gap-4 mb-3">
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
           <button 
             onclick="toggleFavorite(${originalIndex}, event)" 
-            class="px-3 py-1 rounded-full text-xs font-bold border transition flex items-center gap-1 ${isFav ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'}"
+            class="px-3 py-1.5 rounded-full text-xs font-bold border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'}"
           >
             ${isFav ? '❤️ Saved' : '🤍 Save'}
           </button>
@@ -901,35 +1144,31 @@
         </div>
 
         <!-- Images Comparison -->
-        <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-4">
+        <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-5">
           ${img1 ? `
             <div>
-              <!-- Header Line Above Primary Image: Equal height 1-line bar -->
               <div class="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
-                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Primary Image</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Primary Image</p>
 
-                <!-- Compact Audio Guide & Voice Selector -->
+                <!-- Audio Guide Controls -->
                 ${notes ? `
                   <div class="flex items-center gap-1 shrink-0">
                     <button 
                       id="btnAudioGuide" 
                       data-row="${originalIndex}"
                       onclick="speakAudioGuide(${originalIndex})"
-                      class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded text-[10px] font-bold transition shadow-sm"
+                      class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold transition shadow-sm"
                     >
                       🔊 Listen
                     </button>
                     <select id="voiceSelect" class="text-[10px] bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded p-0.5 font-medium max-w-[100px] truncate outline-none">
-                      <!-- Populated dynamically -->
                     </select>
                   </div>
                 ` : ''}
 
-                <!-- Only show Google Item above Primary Image if there is NO second image -->
                 ${!hasTwoImages ? `
                   <button 
-                    onclick="googleItemSearch('${displayTitle.replace(/'/g, "\\'")}', '${category.replace(/'/g, "\\'")}', '${details.replace(/'/g, "\\'").replace(/\n/g, ' ')}')"
-                    title="Search Google with Title, Category, Historical Artifact, and Details"
+                    id="btnGoogleSearchMain"
                     class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 shrink-0 ml-auto"
                   >
                     🔍 Google Item
@@ -937,52 +1176,48 @@
                 ` : ''}
               </div>
 
-              <!-- Primary Image Box -->
-              <a href="${img1}" target="_blank" title="Click to view full image in new tab" class="block group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 p-2">
-                <img src="${img1}" class="w-full h-56 object-contain rounded-lg group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" />
-                <span class="absolute bottom-3 right-3 bg-slate-900/80 text-white text-[10px] px-2 py-1 rounded shadow">Open Full Image ↗</span>
+              <a href="${img1}" target="_blank" title="Click to view full image in new tab" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 p-2">
+                <img src="${img1}" class="w-full h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                <span class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-lg shadow">Open Full Image ↗</span>
               </a>
             </div>` : ''}
 
           ${img2 ? `
             <div>
-              <!-- Header Line Above Second Image: Height matches Primary Image Header -->
               <div class="flex items-center justify-between gap-1.5 mb-1.5">
-                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Second Image</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Second Image</p>
                 <button 
-                  onclick="googleItemSearch('${displayTitle.replace(/'/g, "\\'")}', '${category.replace(/'/g, "\\'")}', '${details.replace(/'/g, "\\'").replace(/\n/g, ' ')}')"
-                  title="Search Google with Title, Category, Historical Artifact, and Details"
+                  id="btnGoogleSearchSec"
                   class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 shrink-0 ml-auto"
                 >
                   🔍 Google Item
                 </button>
               </div>
-              <a href="${img2}" target="_blank" title="Click to view second image in new tab" class="block group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 p-2">
-                <img src="${img2}" class="w-full h-56 object-contain rounded-lg group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" />
-                <span class="absolute bottom-3 right-3 bg-slate-900/80 text-white text-[10px] px-2 py-1 rounded shadow">Open Full Image ↗</span>
+              <a href="${img2}" target="_blank" title="Click to view second image in new tab" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 p-2">
+                <img src="${img2}" class="w-full h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                <span class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-lg shadow">Open Full Image ↗</span>
               </a>
             </div>` : ''}
         </div>
 
         ${details ? `
-          <div class="mb-4">
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
-            <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">${details}</div>
+          <div class="mb-5">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Details</h4>
+            <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">${details}</div>
           </div>` : ''}
 
         ${notes ? `
-          <div class="mb-3">
-            <h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1.5">Museum Notes</h4>
-            <div class="text-sm text-amber-900 dark:text-amber-200 leading-relaxed whitespace-pre-line bg-amber-50/70 dark:bg-amber-950/40 p-4 rounded-xl border border-amber-200/60 dark:border-amber-900/60">${notes}</div>
+          <div class="mb-5">
+            <h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-2">Museum Notes</h4>
+            <div class="text-sm text-amber-900 dark:text-amber-200 leading-relaxed whitespace-pre-line bg-amber-50/70 dark:bg-amber-950/40 p-4 rounded-2xl border border-amber-200/60 dark:border-amber-900/60">${notes}</div>
           </div>` : ''}
 
         ${d3d && (d3d.endsWith('.glb') || d3d.endsWith('.gltf')) ? `
-          <div class="mb-3">
-            <h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1.5">Interactive 3D Viewer</h4>
-            <model-viewer src="${d3d}" camera-controls auto-rotate class="w-full h-72 bg-slate-900 rounded-xl overflow-hidden"></model-viewer>
+          <div class="mb-5">
+            <h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-2">Interactive 3D Viewer</h4>
+            <model-viewer src="${d3d}" camera-controls auto-rotate class="w-full h-72 bg-slate-900 rounded-2xl overflow-hidden shadow-inner"></model-viewer>
           </div>` : ''}
 
-        <!-- Tightened gap before Action Links -->
         <div class="flex flex-wrap gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
           ${d3d ? `<a href="${d3d}" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">3D Model ↗</a>` : ''}
           ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition">Documentation ↗</a>` : ''}
@@ -990,20 +1225,44 @@
         </div>
       `;
 
+      // Safe event listener binding for Google search buttons
+      const btnMain = document.getElementById('btnGoogleSearchMain');
+      const btnSec = document.getElementById('btnGoogleSearchSec');
+      if (btnMain) btnMain.onclick = () => googleItemSearch(displayTitle, category, details);
+      if (btnSec) btnSec.onclick = () => googleItemSearch(displayTitle, category, details);
+
       populateVoiceDropdown();
       document.getElementById('detailModal').classList.remove('hidden');
     }
 
     // Modal Close
-    document.getElementById('closeModal').addEventListener('click', () => {
+    function closeModal() {
       stopAudioGuide();
       document.getElementById('detailModal').classList.add('hidden');
-    });
+      window.history.replaceState(null, '', ' '); // Clear exhibit hash safely
+    }
+
+    document.getElementById('closeModal').addEventListener('click', closeModal);
     document.getElementById('detailModal').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('detailModal')) {
-        stopAudioGuide();
-        document.getElementById('detailModal').classList.add('hidden');
-      }
+      if (e.target === document.getElementById('detailModal')) closeModal();
+    });
+
+    // Modal Keyboard & Nav Listeners
+    document.getElementById('modalPrevBtn').addEventListener('click', () => {
+      if (currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1);
+    });
+
+    document.getElementById('modalNextBtn').addEventListener('click', () => {
+      if (currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('detailModal');
+      if (modal.classList.contains('hidden')) return;
+
+      if (e.key === 'Escape') closeModal();
+      if (e.key === 'ArrowLeft' && currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1);
+      if (e.key === 'ArrowRight' && currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1);
     });
 
     // Start App
