@@ -109,18 +109,18 @@
             <span id="themeToggleText" class="hidden sm:inline">Night Mode</span>
           </button>
 
-          <!-- Search & Filter Collapse Toggle -->
-          <button id="toggleControlsBtn" aria-label="Toggle Filter Controls" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl transition shadow-sm">
+          <!-- Search & Controls Collapse Toggle Button -->
+          <button id="toggleControlsBtn" aria-label="Toggle Search & Controls" class="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl transition shadow-sm">
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
             </svg>
-            <span>Filters</span>
+            <span>Search & Controls</span>
             <span id="toggleChevron" class="transition-transform duration-200 text-slate-400">▼</span>
           </button>
         </div>
       </div>
 
-      <!-- Collapsible Container -->
+      <!-- Collapsible Container (Contains Subheading, Search Bar, Filters & Collection Hubs) -->
       <div id="collapsibleControls" class="mt-2.5 flex flex-col gap-2.5 transition-all duration-300">
         
         <!-- Subheading -->
@@ -343,6 +343,34 @@
     let isGridActive = false;
     let currentSpeechUtterance = null;
     let availableVoices = [];
+
+    // Controls Toggle Logic (Collapses/Expands Search Bar, Filters & Hubs together)
+    const toggleControlsBtn = document.getElementById('toggleControlsBtn');
+    const collapsibleControls = document.getElementById('collapsibleControls');
+    const toggleChevron = document.getElementById('toggleChevron');
+
+    function toggleCollapsibleControls(show) {
+      if (!collapsibleControls) return;
+      const shouldShow = show !== undefined ? show : collapsibleControls.classList.contains('hidden');
+      
+      if (shouldShow) {
+        collapsibleControls.classList.remove('hidden');
+        if (toggleChevron) toggleChevron.style.transform = 'rotate(0deg)';
+        if (toggleControlsBtn) {
+          toggleControlsBtn.classList.add('bg-blue-50', 'dark:bg-blue-950/60', 'text-blue-700', 'dark:text-blue-300', 'border-blue-300');
+        }
+      } else {
+        collapsibleControls.classList.add('hidden');
+        if (toggleChevron) toggleChevron.style.transform = 'rotate(180deg)';
+        if (toggleControlsBtn) {
+          toggleControlsBtn.classList.remove('bg-blue-50', 'dark:bg-blue-950/60', 'text-blue-700', 'dark:text-blue-300', 'border-blue-300');
+        }
+      }
+    }
+
+    if (toggleControlsBtn) {
+      toggleControlsBtn.addEventListener('click', () => toggleCollapsibleControls());
+    }
 
     // Smart Discogs / Recording Link Parser across Index 9, Index 7, Index 12, or Row
     function parseDiscogsVal(raw) {
@@ -667,11 +695,6 @@
       
       updateFavoritesBadge();
       filterCatalog(true);
-
-      if (window.innerWidth < 640 && collapsibleControls) {
-        collapsibleControls.classList.add('hidden');
-        if (toggleChevron) toggleChevron.style.transform = 'rotate(180deg)';
-      }
       scrollToGrid();
     }
 
@@ -713,10 +736,6 @@
 
     // Floating Mobile Jump Listener
     document.getElementById('floatingJumpBtn').addEventListener('click', () => {
-      if (collapsibleControls) {
-        collapsibleControls.classList.add('hidden');
-        if (toggleChevron) toggleChevron.style.transform = 'rotate(180deg)';
-      }
       scrollToGrid();
     });
 
@@ -894,11 +913,6 @@
           }
 
           filterCatalog(true);
-          
-          if (window.innerWidth < 640 && collapsibleControls) {
-            collapsibleControls.classList.add('hidden');
-            if (toggleChevron) toggleChevron.style.transform = 'rotate(180deg)';
-          }
           scrollToGrid();
         });
 
@@ -921,10 +935,6 @@
 
       gramophoneHubCard.addEventListener('click', () => {
         setTab('gramophone');
-        if (window.innerWidth < 640 && collapsibleControls) {
-          collapsibleControls.classList.add('hidden');
-          if (toggleChevron) toggleChevron.style.transform = 'rotate(180deg)';
-        }
         scrollToGrid();
       });
 
@@ -965,10 +975,6 @@
       });
       select.addEventListener('change', () => {
         filterCatalog(true);
-        if (window.innerWidth < 640 && collapsibleControls) {
-          collapsibleControls.classList.add('hidden');
-          if (toggleChevron) toggleChevron.style.transform = 'rotate(180deg)';
-        }
         scrollToGrid();
       });
     }
