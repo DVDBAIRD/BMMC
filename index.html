@@ -1,3 +1,13 @@
+Here is the updated index.html file with the requested changes applied:
+
+  - Archives 78s Button: Updated to display "Archives 78s Recording" only when
+    available.
+  - Button Styling: Changed the orange/amber color to light blue (sky-100 /
+    sky-950).
+  - Discogs Buttons: Maintained the smart conditional display of "Discogs
+    Recording" (when audio recording is flagged) or "Discogs" (standard release
+    link).
+
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
@@ -32,6 +42,9 @@
   <!-- PapaParse CSV Reader -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   
+  <!-- Fuse.js Fuzzy Search -->
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
+
   <!-- 3D Model Viewer Web Component -->
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
@@ -64,7 +77,7 @@
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased relative transition-colors duration-300">
 
   <!-- Toast Notification System -->
-  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-4 py-2.5 rounded-full shadow-2xl text-xs font-semibold flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 translate-y-3">
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-4 py-2.5 rounded-full shadow-2xl text-xs font-semibold flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 translate-y-3" role="status" aria-live="polite">
     <span id="toastIcon">✨</span>
     <span id="toastMsg">Notification message</span>
   </div>
@@ -152,13 +165,14 @@
             <input 
               type="text" 
               id="searchInput" 
-              placeholder="Search items, details, artists..." 
+              placeholder="Fuzzy search items, details, artists..." 
+              aria-label="Search catalog"
               class="w-full pl-9 pr-9 py-1.5 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-xs text-slate-800 dark:text-slate-100 transition shadow-inner"
             />
             <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-            <button id="clearSearch" title="Clear Search" class="hidden absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold bg-slate-200 dark:bg-slate-700 rounded-full w-4 h-4 flex items-center justify-center">✕</button>
+            <button id="clearSearch" title="Clear Search" aria-label="Clear Search" class="hidden absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold bg-slate-200 dark:bg-slate-700 rounded-full w-4 h-4 flex items-center justify-center">✕</button>
           </div>
         </div>
 
@@ -233,7 +247,7 @@
           </button>
         </div>
 
-        <!-- 8 Collection Hubs Grid -->
+        <!-- Collection Hubs Grid -->
         <div id="collectionHubsSection" class="hidden pt-2 border-t border-slate-200/60 dark:border-slate-800">
           <div id="hubsGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2"></div>
         </div>
@@ -285,35 +299,48 @@
     <!-- Exhibit Cards Grid or Desktop 3-Column Audio Grid -->
     <div id="gridSection">
       <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden"></div>
+      
+      <!-- Pagination Bar -->
+      <div id="paginationContainer" class="hidden mt-8 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+        <span id="pageInfoText" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Page 1 of 1</span>
+        <div class="flex items-center gap-2">
+          <button id="btnPrevPage" class="px-3.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition shadow-sm">
+            ← Previous
+          </button>
+          <button id="btnNextPage" class="px-3.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition shadow-sm">
+            Next →
+          </button>
+        </div>
+      </div>
     </div>
   </main>
 
   <!-- Floating Mobile Jump Pill -->
-  <button id="floatingJumpBtn" class="sm:hidden fixed bottom-5 right-5 z-40 bg-blue-600 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-xl flex items-center gap-1.5 hidden border border-white/20">
+  <button id="floatingJumpBtn" aria-label="Jump to Archive Grid" class="sm:hidden fixed bottom-5 right-5 z-40 bg-blue-600 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-xl flex items-center gap-1.5 hidden border border-white/20">
     <span>⬇️ View Archive</span>
   </button>
 
   <!-- Detail Pop-up Modal -->
-  <div id="detailModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6 hidden transition-opacity" role="dialog" aria-modal="true">
-    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col border border-slate-200 dark:border-slate-800">
+  <div id="detailModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6 hidden transition-opacity" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col border border-slate-200 dark:border-slate-800" id="modalContainer">
       
       <!-- Modal Navigation Bar -->
       <div class="sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 py-2.5 flex items-center justify-between">
         <div class="flex items-center gap-1.5">
-          <button id="modalPrevBtn" title="Previous Item (Left Arrow)" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition flex items-center gap-1">
+          <button id="modalPrevBtn" title="Previous Item (Left Arrow)" aria-label="Previous Item" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition flex items-center gap-1">
             <span>←</span> <span class="hidden sm:inline">Prev</span>
           </button>
           <span id="modalCounter" class="text-[11px] font-semibold text-slate-400 px-2"></span>
-          <button id="modalNextBtn" title="Next Item (Right Arrow)" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition flex items-center gap-1">
+          <button id="modalNextBtn" title="Next Item (Right Arrow)" aria-label="Next Item" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition flex items-center gap-1">
             <span class="hidden sm:inline">Next</span> <span>→</span>
           </button>
         </div>
 
         <div class="flex items-center gap-2">
-          <button id="btnShareExhibit" title="Copy Link" class="p-2 rounded-full text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition">
+          <button id="btnShareExhibit" title="Copy Link" aria-label="Copy Link" class="p-2 rounded-full text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition">
             🔗
           </button>
-          <button id="closeModal" title="Close (Esc)" class="p-2 rounded-full text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition">
+          <button id="closeModal" title="Close (Esc)" aria-label="Close modal" class="p-2 rounded-full text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition">
             ✕
           </button>
         </div>
@@ -331,6 +358,7 @@
     const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
 
     const MAIN_HUB_CATEGORIES = ["War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"];
+    const CACHE_TTL_MS = 60 * 60 * 1000; // 1 Hour Cache
 
     let currentTab = 'exhibits';
     let rawExhibitsRows = [];
@@ -344,7 +372,33 @@
     let currentSpeechUtterance = null;
     let availableVoices = [];
 
-    // Controls Toggle Logic (Collapses/Expands Search Bar, Filters & Hubs together)
+    // Fuse.js Fuzzy Search instances
+    let fuseExhibits = null;
+    let fuseGramophone = null;
+
+    // Pagination State
+    let currentPage = 1;
+    const ITEMS_PER_PAGE = 24;
+
+    // HTML Sanitization / Security Helper
+    function escapeHTML(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Helper: Safely get CSV field and sanitize output
+    function getVal(row, colIndex) {
+      if (!row || !Array.isArray(row)) return '';
+      const raw = colIndex < row.length && row[colIndex] != null ? String(row[colIndex]).trim() : '';
+      return escapeHTML(raw);
+    }
+
+    // Controls Toggle Logic
     const toggleControlsBtn = document.getElementById('toggleControlsBtn');
     const collapsibleControls = document.getElementById('collapsibleControls');
     const toggleChevron = document.getElementById('toggleChevron');
@@ -372,7 +426,39 @@
       toggleControlsBtn.addEventListener('click', () => toggleCollapsibleControls());
     }
 
-    // Smart Discogs / Recording Link Parser across Index 9, Index 7, Index 12, or Row
+    // Caching CSV Fetcher
+    async function fetchCSVWithCache(url, cacheKey) {
+      const cached = sessionStorage.getItem(cacheKey);
+      const cacheTime = sessionStorage.getItem(`${cacheKey}_time`);
+
+      if (cached && cacheTime && (Date.now() - Number(cacheTime) < CACHE_TTL_MS)) {
+        try {
+          return JSON.parse(cached);
+        } catch (e) {
+          console.warn("Error parsing session cache, re-fetching URL:", e);
+        }
+      }
+
+      return new Promise((resolve, reject) => {
+        Papa.parse(url, {
+          download: true,
+          header: false,
+          skipEmptyLines: true,
+          complete: (results) => {
+            try {
+              sessionStorage.setItem(cacheKey, JSON.stringify(results.data));
+              sessionStorage.setItem(`${cacheKey}_time`, Date.now());
+            } catch (e) {
+              console.warn("Storage full, skipped caching:", e);
+            }
+            resolve(results.data);
+          },
+          error: (err) => reject(err)
+        });
+      });
+    }
+
+    // Smart Discogs Link Parser
     function parseDiscogsVal(raw) {
       if (!raw) return '';
       let str = String(raw).trim();
@@ -388,7 +474,6 @@
 
     function getDiscogsUrl(row) {
       if (!row || !Array.isArray(row)) return '';
-      
       const candidateIndices = [9, 7, 12, 8];
       for (let idx of candidateIndices) {
         const val = getVal(row, idx);
@@ -408,13 +493,11 @@
       return '';
     }
 
-    // Check if item contains recording text
     function checkIfHasRecording(row) {
       const colM = getVal(row, 12);
       return /recording/i.test(colM);
     }
 
-    // Helper: Get Gramophone Track Title
     function getGramophoneRawTitle(row) {
       const t2 = getVal(row, 2);
       const t9 = getVal(row, 9);
@@ -430,7 +513,6 @@
       return t2 || t9 || 'Untitled Record';
     }
 
-    // Helper: Split title on `/` onto new block lines with A: and B: prefixes
     function formatGramophoneTitle(rawTitle) {
       if (!rawTitle) return '';
       const parts = rawTitle.split('/').map(p => p.trim()).filter(Boolean);
@@ -454,7 +536,6 @@
       return parts.map(p => `<span class="block">${p}</span>`).join('');
     }
 
-    // Year parser helper to place missing/unknown years last
     function parseYearForSort(val) {
       if (!val) return 99999;
       const str = String(val).trim();
@@ -463,7 +544,6 @@
       return num;
     }
 
-    // Toast Notification
     function showToast(msg, icon = '✨') {
       const toast = document.getElementById('toast');
       document.getElementById('toastMsg').textContent = msg;
@@ -474,7 +554,6 @@
       }, 2500);
     }
 
-    // Badge Styles (2x Size: text-xs sm:text-sm px-3 py-1)
     function getAgeBadgeStyle(ageStr) {
       if (!ageStr) return 'bg-slate-900/80 text-white font-extrabold';
       const lower = ageStr.toLowerCase().trim();
@@ -493,7 +572,6 @@
       return 'bg-slate-900/80 text-white font-extrabold';
     }
 
-    // Theme Toggle Handler
     function initTheme() {
       const savedTheme = localStorage.getItem('bMMC_theme');
       const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -520,7 +598,7 @@
       updateThemeUI(isDark);
     });
 
-    // TTS Voices
+    // Speech Synthesis
     function loadVoices() {
       if (!('speechSynthesis' in window)) return;
       const voices = speechSynthesis.getVoices();
@@ -574,11 +652,6 @@
     if ('speechSynthesis' in window) {
       loadVoices();
       speechSynthesis.onvoiceschanged = loadVoices;
-    }
-
-    function getVal(row, colIndex) {
-      if (!row || !Array.isArray(row)) return '';
-      return colIndex < row.length && row[colIndex] != null ? String(row[colIndex]).trim() : '';
     }
 
     function scrollToGrid() {
@@ -668,7 +741,6 @@
       window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
     }
 
-    // Browse All / Clear Filter -> Resets and returns back to Main Museum Exhibits
     function browseAllExhibits() {
       if (currentTab !== 'exhibits') {
         setTab('exhibits');
@@ -694,6 +766,7 @@
       }
       
       updateFavoritesBadge();
+      updateDynamicDropdowns();
       filterCatalog(true);
       scrollToGrid();
     }
@@ -701,7 +774,6 @@
     document.getElementById('btnBrowseAllHeader').addEventListener('click', browseAllExhibits);
     document.getElementById('btnBrowseAllPrompt').addEventListener('click', browseAllExhibits);
 
-    // Surprise Me
     document.getElementById('btnSurprise').addEventListener('click', () => {
       const rows = currentTab === 'exhibits' ? rawExhibitsRows : rawGramophoneRows;
       if (!rows || rows.length === 0) return;
@@ -713,7 +785,6 @@
       openModalByOriginalIndex(randomIndex);
     });
 
-    // 3D Only Toggle
     document.getElementById('btn3DOnly').addEventListener('click', () => {
       only3DActive = !only3DActive;
       const btn = document.getElementById('btn3DOnly');
@@ -727,19 +798,16 @@
       filterCatalog(true);
     });
 
-    // Favorites Toggle
     document.getElementById('btnFavorites').addEventListener('click', () => {
       showingFavoritesOnly = !showingFavoritesOnly;
       updateFavoritesBadge();
       filterCatalog(true);
     });
 
-    // Floating Mobile Jump Listener
     document.getElementById('floatingJumpBtn').addEventListener('click', () => {
       scrollToGrid();
     });
 
-    // Tab Switcher Function
     function setTab(tabName) {
       currentTab = tabName;
       stopAudioGuide();
@@ -775,63 +843,100 @@
       }
 
       updateFavoritesBadge();
+      updateDynamicDropdowns();
       filterCatalog(true);
     }
 
-    // Load Data for both tabs
-    function loadCatalogData() {
-      initTheme();
+    // Initialize Fuse.js Fuzzy Search Engine
+    function initFuseSearch() {
+      if (typeof Fuse === 'undefined') return;
 
-      // Fetch Main Exhibits CSV
-      Papa.parse(EXHIBITS_CSV_URL, {
-        download: true,
-        header: false,
-        skipEmptyLines: true,
-        complete: function(results) {
-          rawExhibitsRows = results.data.slice(1);
-          populateExhibitsDropdowns(rawExhibitsRows);
+      if (rawExhibitsRows.length > 0) {
+        const exhibitsList = rawExhibitsRows.map((row, index) => {
+          const { title, details } = parseTitleAndDetails(getVal(row, 2) || getVal(row, 0));
+          return {
+            originalIndex: index,
+            title,
+            details,
+            notes: getVal(row, 4),
+            age: getVal(row, 13),
+            type: getVal(row, 14),
+            category: getVal(row, 15),
+            subcategory: getVal(row, 16)
+          };
+        });
 
-          // Fetch Gramophone CSV as Array Rows
-          Papa.parse(GRAMOPHONE_CSV_URL, {
-            download: true,
-            header: false,
-            skipEmptyLines: true,
-            complete: function(gramResults) {
-              rawGramophoneRows = gramResults.data.filter(r => {
-                const c0 = getVal(r, 0).toLowerCase();
-                const c1 = getVal(r, 1).toLowerCase();
-                return r.length >= 2 && !c0.includes('gramophone catalog') && !c0.includes('catalog#') && !c1.includes('artist');
-              });
+        fuseExhibits = new Fuse(exhibitsList, {
+          keys: ['title', 'details', 'notes', 'type', 'category', 'subcategory', 'age'],
+          threshold: 0.35,
+          ignoreLocation: true
+        });
+      }
 
-              renderCollectionHubs(rawExhibitsRows);
-              populateGramophoneDropdowns(rawGramophoneRows);
+      if (rawGramophoneRows.length > 0) {
+        const gramophoneList = rawGramophoneRows.map((row, index) => ({
+          originalIndex: index,
+          catalog: getVal(row, 0),
+          artist: getVal(row, 1),
+          title: getGramophoneRawTitle(row),
+          label: getVal(row, 3),
+          format: getVal(row, 4),
+          year: getVal(row, 6),
+          details: getVal(row, 12)
+        }));
 
-              document.getElementById('loading').classList.add('hidden');
-              document.getElementById('gridPrompt').classList.remove('hidden');
-
-              updateFavoritesBadge();
-              checkUrlHashForExhibit();
-            },
-            error: function(err) {
-              console.warn("Could not load Gramophone sheet, falling back to exhibits:", err);
-              renderCollectionHubs(rawExhibitsRows);
-              document.getElementById('loading').classList.add('hidden');
-              document.getElementById('gridPrompt').classList.remove('hidden');
-            }
-          });
-        },
-        error: function(err) {
-          document.getElementById('loading').innerHTML = `
-            <div class="text-center py-12">
-              <p class="text-red-500 font-bold text-base">Error loading Google Sheet data.</p>
-              <p class="text-xs text-slate-500 mt-1">Make sure the sheet is public ("Anyone with the link can view").</p>
-            </div>
-          `;
-        }
-      });
+        fuseGramophone = new Fuse(gramophoneList, {
+          keys: ['artist', 'title', 'label', 'catalog', 'details', 'year', 'format'],
+          threshold: 0.35,
+          ignoreLocation: true
+        });
+      }
     }
 
-    // Deep-linking URL hash check
+    // Load Data with sessionStorage Cache & Failover Error State
+    async function loadCatalogData() {
+      initTheme();
+
+      try {
+        const exhibitsData = await fetchCSVWithCache(EXHIBITS_CSV_URL, 'bMMC_cached_exhibits');
+        rawExhibitsRows = exhibitsData.slice(1);
+        populateInitialDropdowns();
+
+        try {
+          const gramophoneData = await fetchCSVWithCache(GRAMOPHONE_CSV_URL, 'bMMC_cached_gramophone');
+          rawGramophoneRows = gramophoneData.filter(r => {
+            const c0 = getVal(r, 0).toLowerCase();
+            const c1 = getVal(r, 1).toLowerCase();
+            return r.length >= 2 && !c0.includes('gramophone catalog') && !c0.includes('catalog#') && !c1.includes('artist');
+          });
+        } catch (gramErr) {
+          console.warn("Could not load Gramophone sheet, falling back to exhibits:", gramErr);
+        }
+
+        initFuseSearch();
+        renderCollectionHubs(rawExhibitsRows);
+        updateDynamicDropdowns();
+
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('gridPrompt').classList.remove('hidden');
+
+        updateFavoritesBadge();
+        checkUrlHashForExhibit();
+
+      } catch (err) {
+        console.error("Failed to load catalog data:", err);
+        document.getElementById('loading').innerHTML = `
+          <div class="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-rose-200 dark:border-rose-900">
+            <p class="text-rose-600 dark:text-rose-400 font-bold text-base mb-1">Error loading Google Sheet data</p>
+            <p class="text-xs text-slate-500 mb-4">Please check your connection or retry fetching the catalog archive.</p>
+            <button onclick="sessionStorage.clear(); location.reload();" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow">
+              🔄 Retry Fetching
+            </button>
+          </div>
+        `;
+      }
+    }
+
     function checkUrlHashForExhibit() {
       const hash = window.location.hash;
       if (hash && hash.startsWith('#exhibit-')) {
@@ -849,13 +954,11 @@
       }
     }
 
-    // Render 8 Collection Hubs (7 Category Hubs + 8th Clean Gramophone Hub)
     function renderCollectionHubs(rows) {
       const hubsGrid = document.getElementById('hubsGrid');
       if (!hubsGrid) return;
       hubsGrid.innerHTML = '';
 
-      // 1–7: Exhibit Category Hubs
       MAIN_HUB_CATEGORIES.forEach(catName => {
         const baseName = catName.toLowerCase().replace(/s$/, '');
         const matchingRows = rows.filter(r => {
@@ -912,6 +1015,7 @@
             }
           }
 
+          updateDynamicDropdowns();
           filterCatalog(true);
           scrollToGrid();
         });
@@ -919,7 +1023,6 @@
         hubsGrid.appendChild(hubCard);
       });
 
-      // 8th Hub: Clean White/Slate Gramophone Hub
       const gramophoneHubCard = document.createElement('div');
       gramophoneHubCard.className = 'bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md transition duration-300 cursor-pointer flex flex-col group relative';
       gramophoneHubCard.innerHTML = `
@@ -939,47 +1042,68 @@
       });
 
       hubsGrid.appendChild(gramophoneHubCard);
-
       document.getElementById('collectionHubsSection').classList.remove('hidden');
     }
 
-    // Dropdowns for Main Exhibits
-    function populateExhibitsDropdowns(rows) {
-      fillSelect('filterAge', rows.map(r => getVal(r, 13)));
-      fillSelect('filterType', rows.map(r => getVal(r, 14)));
-      fillSelect('filterCategory', rows.map(r => getVal(r, 15)));
-      fillSelect('filterSubcategory', rows.map(r => getVal(r, 16)));
-      
+    function populateInitialDropdowns() {
       document.getElementById('sortBy').addEventListener('change', () => filterCatalog(true));
       document.getElementById('btnClearAllFilters').addEventListener('click', browseAllExhibits);
+
+      ['filterAge', 'filterType', 'filterCategory', 'filterSubcategory', 'filterArtist', 'filterLabel', 'filterFormat', 'filterYear'].forEach(id => {
+        const elem = document.getElementById(id);
+        if (elem) {
+          elem.addEventListener('change', () => {
+            updateDynamicDropdowns();
+            filterCatalog(true);
+            scrollToGrid();
+          });
+        }
+      });
     }
 
-    // Dropdowns for Gramophone Records:
-    // Index 1: Artist, Index 3: Label, Index 4: Format, Index 6: Year
-    function populateGramophoneDropdowns(rows) {
-      fillSelect('filterArtist', rows.map(r => getVal(r, 1)));
-      fillSelect('filterLabel', rows.map(r => getVal(r, 3)));
-      fillSelect('filterFormat', rows.map(r => getVal(r, 4)));
-      fillSelect('filterYear', rows.map(r => getVal(r, 6)));
+    // Cascading Filter Dropdowns Updater
+    function updateDynamicDropdowns() {
+      if (currentTab === 'exhibits') {
+        const catVal = document.getElementById('filterCategory').value;
+        const typeVal = document.getElementById('filterType').value;
+
+        let availableRows = rawExhibitsRows;
+        if (catVal) availableRows = availableRows.filter(r => getVal(r, 15).toLowerCase().includes(catVal.toLowerCase()));
+        if (typeVal) availableRows = availableRows.filter(r => getVal(r, 14).toLowerCase().includes(typeVal.toLowerCase()));
+
+        updateSelectOptions('filterAge', rawExhibitsRows.map(r => getVal(r, 13)));
+        updateSelectOptions('filterType', rawExhibitsRows.map(r => getVal(r, 14)));
+        updateSelectOptions('filterCategory', rawExhibitsRows.map(r => getVal(r, 15)));
+        updateSelectOptions('filterSubcategory', availableRows.map(r => getVal(r, 16)));
+      } else {
+        const artistVal = document.getElementById('filterArtist').value;
+        let availableRows = rawGramophoneRows;
+        if (artistVal) availableRows = availableRows.filter(r => getVal(r, 1) === artistVal);
+
+        updateSelectOptions('filterArtist', rawGramophoneRows.map(r => getVal(r, 1)));
+        updateSelectOptions('filterLabel', availableRows.map(r => getVal(r, 3)));
+        updateSelectOptions('filterFormat', availableRows.map(r => getVal(r, 4)));
+        updateSelectOptions('filterYear', availableRows.map(r => getVal(r, 6)));
+      }
     }
 
-    function fillSelect(elementId, values) {
+    function updateSelectOptions(elementId, values) {
       const select = document.getElementById(elementId);
       if (!select) return;
+      const currentSelection = select.value;
+
       const uniqueValues = [...new Set(values.filter(Boolean))].sort();
+      select.innerHTML = `<option value="">All ${elementId.replace('filter', '')}s</option>`;
+
       uniqueValues.forEach(val => {
         const opt = document.createElement('option');
         opt.value = val;
         opt.textContent = val;
+        if (val === currentSelection) opt.selected = true;
         select.appendChild(opt);
-      });
-      select.addEventListener('change', () => {
-        filterCatalog(true);
-        scrollToGrid();
       });
     }
 
-    // Active Filter Pills
     function renderActiveFilterPills() {
       const container = document.getElementById('activeFiltersContainer');
       const bar = document.getElementById('activeFiltersBar');
@@ -1027,6 +1151,7 @@
           pill.innerHTML = `${f.label} <button class="hover:text-red-500 font-bold ml-0.5">✕</button>`;
           pill.querySelector('button').addEventListener('click', () => {
             f.clear();
+            updateDynamicDropdowns();
             filterCatalog(true);
           });
           container.appendChild(pill);
@@ -1037,9 +1162,9 @@
       }
     }
 
-    // Filter & Sort Engine
+    // Filter, Fuzzy Search & Pagination Engine
     function filterCatalog(forceShowGrid = false) {
-      const searchVal = (document.getElementById('searchInput').value || '').toLowerCase();
+      const searchVal = (document.getElementById('searchInput').value || '').trim();
       const sortBy = document.getElementById('sortBy').value;
       const favs = getFavorites();
 
@@ -1064,11 +1189,18 @@
           document.getElementById('grid').classList.add('hidden');
           document.getElementById('floatingJumpBtn').classList.add('hidden');
           document.getElementById('itemCount').textContent = '';
+          document.getElementById('paginationContainer').classList.add('hidden');
           return;
         }
 
+        let matchedOriginalIndices = null;
+        if (searchVal && fuseExhibits) {
+          const searchResults = fuseExhibits.search(searchVal);
+          matchedOriginalIndices = new Set(searchResults.map(res => res.item.originalIndex));
+        }
+
         currentFilteredRows = rawExhibitsRows.map((row, index) => ({ row, originalIndex: index })).filter(({ row, originalIndex }) => {
-          const fullTextMatch = row.join(' ').toLowerCase().includes(searchVal);
+          const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
           const ageMatch = !ageVal || getVal(row, 13) === ageVal;
           const typeMatch = !typeVal || getVal(row, 14).toLowerCase().includes(typeVal.toLowerCase());
           const catMatch = !catVal || getVal(row, 15).toLowerCase().includes(catVal.toLowerCase());
@@ -1076,7 +1208,7 @@
           const match3D = !only3DActive || getVal(row, 17) !== '';
           const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
 
-          return fullTextMatch && ageMatch && typeMatch && catMatch && subCatMatch && match3D && matchFav;
+          return searchMatch && ageMatch && typeMatch && catMatch && subCatMatch && match3D && matchFav;
         });
 
         if (sortBy === 'title-asc') {
@@ -1089,10 +1221,10 @@
           currentFilteredRows.sort((a, b) => getVal(b.row, 13).localeCompare(getVal(a.row, 13)));
         }
 
-        renderExhibitsGrid(currentFilteredRows);
+        currentPage = 1;
+        renderExhibitsGrid();
 
       } else {
-        // Gramophone Archive Filtering
         const artistVal = document.getElementById('filterArtist').value;
         const labelVal = document.getElementById('filterLabel').value;
         const formatVal = document.getElementById('filterFormat').value;
@@ -1110,22 +1242,27 @@
           document.getElementById('grid').classList.add('hidden');
           document.getElementById('floatingJumpBtn').classList.add('hidden');
           document.getElementById('itemCount').textContent = '';
+          document.getElementById('paginationContainer').classList.add('hidden');
           return;
         }
 
+        let matchedOriginalIndices = null;
+        if (searchVal && fuseGramophone) {
+          const searchResults = fuseGramophone.search(searchVal);
+          matchedOriginalIndices = new Set(searchResults.map(res => res.item.originalIndex));
+        }
+
         currentFilteredRows = rawGramophoneRows.map((row, index) => ({ row, originalIndex: index })).filter(({ row, originalIndex }) => {
-          const rowText = row.join(' ').toLowerCase();
-          const fullTextMatch = rowText.includes(searchVal);
+          const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
           const artistMatch = !artistVal || getVal(row, 1) === artistVal;
           const labelMatch = !labelVal || getVal(row, 3) === labelVal;
           const formatMatch = !formatVal || getVal(row, 4) === formatVal;
           const yearMatch = !yearVal || getVal(row, 6) === yearVal;
           const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
 
-          return fullTextMatch && artistMatch && labelMatch && formatMatch && yearMatch && matchFav;
+          return searchMatch && artistMatch && labelMatch && formatMatch && yearMatch && matchFav;
         });
 
-        // Default Sort: Oldest First (1916 -> 1953), Unknown/missing years last
         if (sortBy === 'default' || sortBy === 'age-oldest') {
           currentFilteredRows.sort((a, b) => parseYearForSort(getVal(a.row, 6)) - parseYearForSort(getVal(b.row, 6)));
         } else if (sortBy === 'age-newest') {
@@ -1142,7 +1279,8 @@
           currentFilteredRows.sort((a, b) => getGramophoneRawTitle(b.row).localeCompare(getGramophoneRawTitle(a.row)));
         }
 
-        renderGramophoneGrid(currentFilteredRows);
+        currentPage = 1;
+        renderGramophoneGrid();
       }
     }
 
@@ -1151,6 +1289,45 @@
       document.getElementById('searchInput').value = '';
       filterCatalog(true);
     });
+
+    // Pagination Controls Rendering
+    function updatePaginationControls() {
+      const container = document.getElementById('paginationContainer');
+      const pageInfo = document.getElementById('pageInfoText');
+      const btnPrev = document.getElementById('btnPrevPage');
+      const btnNext = document.getElementById('btnNextPage');
+
+      const totalItems = currentFilteredRows.length;
+      const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+      if (totalPages <= 1) {
+        container.classList.add('hidden');
+        return;
+      }
+
+      container.classList.remove('hidden');
+      container.classList.add('flex');
+
+      pageInfo.textContent = `Page ${currentPage} of ${totalPages} (${totalItems} total items)`;
+      btnPrev.disabled = currentPage === 1;
+      btnNext.disabled = currentPage === totalPages;
+
+      btnPrev.onclick = () => {
+        if (currentPage > 1) {
+          currentPage--;
+          if (currentTab === 'exhibits') renderExhibitsGrid(); else renderGramophoneGrid();
+          scrollToGrid();
+        }
+      };
+
+      btnNext.onclick = () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          if (currentTab === 'exhibits') renderExhibitsGrid(); else renderGramophoneGrid();
+          scrollToGrid();
+        }
+      };
+    }
 
     // TTS Audio Guide Logic
     function speakAudioGuide(originalIndex, event) {
@@ -1239,26 +1416,31 @@
     }
 
     // Render Main Exhibits Grid
-    function renderExhibitsGrid(items) {
+    function renderExhibitsGrid() {
       const grid = document.getElementById('grid');
       const itemCount = document.getElementById('itemCount');
       const favs = getFavorites();
-      
+
       grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6';
       grid.innerHTML = '';
-      if (itemCount) itemCount.textContent = `Showing ${items.length} exhibit${items.length === 1 ? '' : 's'}`;
+      if (itemCount) itemCount.textContent = `Showing ${currentFilteredRows.length} exhibit${currentFilteredRows.length === 1 ? '' : 's'}`;
 
-      if (items.length === 0) {
+      if (currentFilteredRows.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
             <span class="text-3xl mb-2 block">🔍</span>
             <p class="text-slate-600 dark:text-slate-300 font-bold text-sm">No exhibit results match your selected filters.</p>
             <button onclick="browseAllExhibits()" class="mt-3 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline">Reset search and filters</button>
           </div>`;
+        updatePaginationControls();
         return;
       }
 
-      items.forEach(({ row, originalIndex }, arrayIndex) => {
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const pageItems = currentFilteredRows.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+      pageItems.forEach(({ row, originalIndex }, pagedIndex) => {
+        const arrayIndex = startIndex + pagedIndex;
         const rawContent = getVal(row, 2) || getVal(row, 0);
         const { title, details } = parseTitleAndDetails(rawContent);
         const displayTitle = title || `Exhibit Item #${originalIndex + 1}`;
@@ -1287,17 +1469,16 @@
               <img src="${img1}" class="max-w-full max-h-full object-contain group-hover/img:scale-105 transition-transform duration-300" alt="${displayTitle}" loading="lazy" onError="this.src='${NO_IMAGE_SVG}'" />
             </a>
 
-            <button onclick="toggleFavorite(${originalIndex}, event)" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="absolute top-3 right-3 p-2 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md transition shadow-sm hover:scale-110 flex items-center justify-center">
+            <button onclick="toggleFavorite(${originalIndex}, event)" aria-label="Favorite item" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="absolute top-3 right-3 p-2 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md transition shadow-sm hover:scale-110 flex items-center justify-center">
               ${isFav ? '❤️' : '🤍'}
             </button>
 
             ${notes ? `
-              <button data-grid-audio-idx="${originalIndex}" onclick="speakAudioGuide(${originalIndex}, event)" title="Listen to Museum Notes" class="absolute top-12 right-3 p-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 text-blue-600 dark:text-blue-400 hover:text-blue-700 backdrop-blur-md transition shadow-sm text-xs font-bold">
+              <button data-grid-audio-idx="${originalIndex}" onclick="speakAudioGuide(${originalIndex}, event)" aria-label="Listen to notes" title="Listen to Museum Notes" class="absolute top-12 right-3 p-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 text-blue-600 dark:text-blue-400 hover:text-blue-700 backdrop-blur-md transition shadow-sm text-xs font-bold">
                 🔊
               </button>
             ` : ''}
 
-            <!-- 2x Size Age Badge -->
             ${age ? `<span class="absolute top-3 left-3 ${ageBadgeClass} backdrop-blur-sm px-3.5 py-1.5 rounded-full text-xs sm:text-sm shadow-md pointer-events-none">${age}</span>` : ''}
           </div>
           
@@ -1331,31 +1512,37 @@
         grid.appendChild(card);
       });
 
+      updatePaginationControls();
       updateAudioUI();
     }
 
-    // 3-Column Desktop Grid for Gramophone Records (Left->Right Age Order)
-    function renderGramophoneGrid(items) {
+    // Render Gramophone Desktop Grid
+    function renderGramophoneGrid() {
       const grid = document.getElementById('grid');
       const itemCount = document.getElementById('itemCount');
       const favs = getFavorites();
 
       grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5';
       grid.innerHTML = '';
-      if (itemCount) itemCount.textContent = `Showing ${items.length} gramophone record${items.length === 1 ? '' : 's'}`;
+      if (itemCount) itemCount.textContent = `Showing ${currentFilteredRows.length} gramophone record${currentFilteredRows.length === 1 ? '' : 's'}`;
 
-      if (items.length === 0) {
+      if (currentFilteredRows.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
             <span class="text-3xl mb-2 block">🎵</span>
             <p class="text-slate-600 dark:text-slate-300 font-bold text-sm">No gramophone records match your selected filters.</p>
             <button onclick="browseAllExhibits()" class="mt-3 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline">Return to Main Museum Exhibits</button>
           </div>`;
+        updatePaginationControls();
         return;
       }
 
-      items.forEach(({ row, originalIndex }, arrayIndex) => {
-        const artist = getVal(row, 1) || 'Unknown Artist'; // Full Artist Name, no cutoff
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const pageItems = currentFilteredRows.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+      pageItems.forEach(({ row, originalIndex }, pagedIndex) => {
+        const arrayIndex = startIndex + pagedIndex;
+        const artist = getVal(row, 1) || 'Unknown Artist';
         const rawTitle = getGramophoneRawTitle(row);
         const formattedTitleHTML = formatGramophoneTitle(rawTitle);
 
@@ -1375,28 +1562,22 @@
 
         card.innerHTML = `
           <div>
-            <!-- Top Badges Row -->
             <div class="flex items-center justify-between gap-2 mb-2">
               <div class="flex items-center gap-1.5 flex-wrap">
-                <!-- 2x Size Year Badge -->
                 ${released ? `<span class="bg-amber-500/90 text-slate-950 font-extrabold px-3 py-1 rounded-lg text-xs shadow-sm">${released}</span>` : '<span class="bg-slate-200 dark:bg-slate-800 text-slate-500 px-3 py-1 rounded-lg text-xs font-bold">19??</span>'}
                 ${label ? `<span class="text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/80">${label}</span>` : ''}
                 ${format ? `<span class="text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">${format}</span>` : ''}
               </div>
 
-              <button onclick="toggleFavorite(${originalIndex}, event)" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-xs transition">
+              <button onclick="toggleFavorite(${originalIndex}, event)" aria-label="Favorite item" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-xs transition">
                 ${isFav ? '❤️' : '🤍'}
               </button>
             </div>
 
-            <!-- Full Artist Name (No Cutoff) -->
             <p class="text-xs font-bold text-amber-700 dark:text-amber-400 mb-1">${artist}</p>
-
-            <!-- Side A / B Title -->
             <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">${formattedTitleHTML}</h3>
           </div>
 
-          <!-- Bottom Action Buttons Row -->
           <div class="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2" onclick="event.stopPropagation()">
             <span class="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
               Details <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
@@ -1410,8 +1591,8 @@
               ` : ''}
 
               ${hasArchiveRecording ? `
-                <a href="https://archive.org/details/78rpm?tab=collection&query=${archiveQuery}" target="_blank" class="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 px-2 py-1 rounded-lg text-[10px] font-extrabold shadow-sm transition hover:bg-amber-200 flex items-center gap-1">
-                  📻 Archives 78s
+                <a href="https://archive.org/details/78rpm?tab=collection&query=${archiveQuery}" target="_blank" class="bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-800 px-2 py-1 rounded-lg text-[10px] font-extrabold shadow-sm transition hover:bg-sky-200 flex items-center gap-1">
+                  📻 Archives 78s Recording
                 </a>
               ` : ''}
 
@@ -1427,6 +1608,8 @@
         card.addEventListener('click', () => openModalByFilteredIndex(arrayIndex));
         grid.appendChild(card);
       });
+
+      updatePaginationControls();
     }
 
     function openModalByOriginalIndex(origIdx) {
@@ -1446,7 +1629,7 @@
       openModal(row, originalIndex);
     }
 
-    // Modal View Rendering
+    // Modal View Rendering + Body Scroll Lock & Focus Trap
     function openModal(row, originalIndex) {
       stopAudioGuide();
       
@@ -1495,7 +1678,7 @@
 
         modalContent.innerHTML = `
           <div class="flex items-start justify-between gap-4 mb-2">
-            <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
+            <h2 id="modalTitle" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
             <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3 py-1.5 rounded-full text-xs font-bold border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'}">
               ${isFav ? '❤️ Saved' : '🤍 Save'}
             </button>
@@ -1561,7 +1744,6 @@
         populateVoiceDropdown();
 
       } else {
-        // Gramophone Record Modal View
         window.history.replaceState(null, '', `#gramophone-${originalIndex}`);
 
         const catalogNum = getVal(row, 0);
@@ -1575,10 +1757,9 @@
         const colMDetails = getVal(row, 12);
         const discogsUrl = getDiscogsUrl(row);
         const hasDiscogsRecording = checkIfHasRecording(row);
-        const hasArchiveRecording = getVal(row, 11).toLowerCase().includes('yes'); // Column L (Index 11)
+        const hasArchiveRecording = getVal(row, 11).toLowerCase().includes('yes');
         const hasAnyRecording = hasDiscogsRecording || hasArchiveRecording;
 
-        // Search queries using Artist + Title + Catalog No.
         const searchTerms = `${artist} ${rawTitle} ${catalogNum}`.trim();
         const ytQuery = encodeURIComponent(`${searchTerms} 78 RPM gramophone`);
         const archiveQuery = encodeURIComponent(searchTerms);
@@ -1599,26 +1780,22 @@
         };
 
         modalContent.innerHTML = `
-          <!-- Heading -->
           <div class="flex items-start justify-between gap-4 mb-2">
             <div>
-              <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">${formattedTitleHTML}</h2>
+              <h2 id="modalTitle" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">${formattedTitleHTML}</h2>
             </div>
             <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3 py-1.5 rounded-full text-xs font-bold border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'}">
               ${isFav ? '❤️ Saved' : '🤍 Save'}
             </button>
           </div>
 
-          <!-- Tags Row -->
           <div class="flex flex-wrap items-center gap-2 text-xs mb-4">
             ${released ? `<span class="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 px-3 py-0.5 rounded-full font-bold"><strong>Year:</strong> ${released}</span>` : ''}
             ${label ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-0.5 rounded-full font-medium"><strong>Label:</strong> ${label}</span>` : ''}
             ${format ? `<span class="bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 border border-blue-100 dark:border-blue-900 px-3 py-0.5 rounded-full font-medium"><strong>Format:</strong> ${format}</span>` : ''}
           </div>
 
-          <!-- 2-Column Half-Width Row: Left Vinyl Image, Right Metadata Box (Title Omitted) -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 items-stretch">
-            <!-- Left Half: Vinyl Image Graphic -->
             <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 rounded-2xl p-6 text-center flex flex-col items-center justify-center relative shadow-inner h-full min-h-[180px]">
               <div class="w-32 h-32 rounded-full border-4 border-amber-500/20 bg-slate-950 flex items-center justify-center shadow-2xl relative">
                 <div class="w-12 h-12 rounded-full bg-amber-600 border-2 border-amber-300 flex items-center justify-center text-[9px] font-bold text-amber-100 text-center p-1 leading-tight">
@@ -1627,7 +1804,6 @@
               </div>
             </div>
 
-            <!-- Right Half: Metadata Box -->
             <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 space-y-2 flex flex-col justify-center">
               <p><strong>Artist:</strong> <span class="font-semibold text-slate-900 dark:text-slate-100">${artist}</span></p>
               <p><strong>Record Label:</strong> ${label}</p>
@@ -1637,7 +1813,6 @@
             </div>
           </div>
 
-          <!-- Column M Notes at Bottom: Called "Details" -->
           ${colMDetails ? `
             <div class="mb-5">
               <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
@@ -1645,7 +1820,6 @@
             </div>
           ` : ''}
 
-          <!-- Action Buttons Bar according to exact recording logic -->
           <div class="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
             ${discogsUrl ? `
               <a href="${discogsUrl}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-2">
@@ -1672,12 +1846,16 @@
         `;
       }
 
+      // Lock Background Body Scroll
+      document.body.classList.add('overflow-hidden');
       document.getElementById('detailModal').classList.remove('hidden');
+      document.getElementById('closeModal').focus();
     }
 
-    // Modal Close
+    // Modal Close Handler & Body Scroll Unlock
     function closeModal() {
       stopAudioGuide();
+      document.body.classList.remove('overflow-hidden');
       document.getElementById('detailModal').classList.add('hidden');
       window.history.replaceState(null, '', ' ');
     }
@@ -1687,7 +1865,6 @@
       if (e.target === document.getElementById('detailModal')) closeModal();
     });
 
-    // Modal Keyboard Nav
     document.getElementById('modalPrevBtn').addEventListener('click', () => {
       if (currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1);
     });
@@ -1696,6 +1873,7 @@
       if (currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1);
     });
 
+    // Keyboard Focus Trap & Navigation Handler
     window.addEventListener('keydown', (e) => {
       const modal = document.getElementById('detailModal');
       if (modal.classList.contains('hidden')) return;
@@ -1703,9 +1881,25 @@
       if (e.key === 'Escape') closeModal();
       if (e.key === 'ArrowLeft' && currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1);
       if (e.key === 'ArrowRight' && currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1);
+
+      // Focus Trap within Modal
+      if (e.key === 'Tab') {
+        const focusables = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      }
     });
 
-    // Start App
+    // Start App Initialization
     loadCatalogData();
   </script>
 </body>
