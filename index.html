@@ -322,7 +322,7 @@
       <!-- Modal Content -->
       <div id="modalContent" class="px-6 pt-3 sm:pt-4 pb-6 sm:px-8 sm:pb-8"></div>
     </div>
-  </main>
+  </div>
 
   <!-- JavaScript Logic -->
   <script>
@@ -380,14 +380,10 @@
       return '';
     }
 
-    // Helper: Find direct audio/video recording link inside Column M (Index 12) or row
-    function getRecordingListenUrl(row) {
+    // Check if item contains recording text
+    function checkIfHasRecording(row) {
       const colM = getVal(row, 12);
-      if (colM) {
-        const match = colM.match(/(https?:\/\/[^\s]+)/i);
-        if (match && match[1]) return match[1];
-      }
-      return '';
+      return /recording/i.test(colM);
     }
 
     // Helper: Get Gramophone Track Title
@@ -1332,7 +1328,7 @@
       updateAudioUI();
     }
 
-    // High-Efficiency 2-Column Desktop Grid for Gramophone Records (Left->Right Reading Flow)
+    // 2-Column Desktop Grid for Gramophone Records (Left->Right Age Order)
     function renderGramophoneGrid(items) {
       const grid = document.getElementById('grid');
       const itemCount = document.getElementById('itemCount');
@@ -1360,9 +1356,8 @@
         const label = getVal(row, 3);
         const format = getVal(row, 4) || '78 RPM';
         const released = getVal(row, 6);
-        const colMDetails = getVal(row, 12); // Column M (Index 12) Details
         const discogsUrl = getDiscogsUrl(row);
-        const listenUrl = getRecordingListenUrl(row);
+        const hasRecording = checkIfHasRecording(row);
         const isFav = favs.includes(originalIndex);
 
         const card = document.createElement('div');
@@ -1388,12 +1383,7 @@
             <p class="text-xs font-bold text-amber-700 dark:text-amber-400 mb-1">${artist}</p>
 
             <!-- Side A / B Title -->
-            <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">${formattedTitleHTML}</h3>
-
-            <!-- Column M Details Snippet -->
-            ${colMDetails ? `
-              <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-3 bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg border border-slate-100 dark:border-slate-800/80">${colMDetails}</p>
-            ` : ''}
+            <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">${formattedTitleHTML}</h3>
           </div>
 
           <!-- Bottom Action Buttons Row -->
@@ -1402,12 +1392,13 @@
               Details <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </span>
 
-            <div class="flex items-center gap-1.5">
-              ${listenUrl ? `
-                <a href="${listenUrl}" target="_blank" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm">
-                  🎵 Listen
+            <div class="flex items-center gap-1.5 flex-wrap justify-end">
+              ${hasRecording ? `
+                <a href="${discogsUrl || '#'}" target="_blank" class="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 px-2.5 py-1 rounded-lg text-[11px] font-extrabold shadow-sm transition hover:bg-emerald-200 flex items-center gap-1">
+                  🎙️ Recording on Discogs
                 </a>
               ` : ''}
+
               ${discogsUrl ? `
                 <a href="${discogsUrl}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm">
                   📀 Discogs ↗
@@ -1565,9 +1556,9 @@
         const label = getVal(row, 3) || 'Unspecified Label';
         const format = getVal(row, 4) || '';
         const released = getVal(row, 6) || '';
-        const colMDetails = getVal(row, 12); // Column M (Index 12)
+        const colMDetails = getVal(row, 12);
         const discogsUrl = getDiscogsUrl(row);
-        const listenUrl = getRecordingListenUrl(row);
+        const hasRecording = checkIfHasRecording(row);
 
         if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
           counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
@@ -1585,62 +1576,62 @@
         };
 
         modalContent.innerHTML = `
+          <!-- Heading -->
           <div class="flex items-start justify-between gap-4 mb-2">
             <div>
               <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">${formattedTitleHTML}</h2>
-              <p class="text-sm font-semibold text-amber-600 dark:text-amber-400 mt-1">${artist}</p>
             </div>
             <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3 py-1.5 rounded-full text-xs font-bold border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'}">
               ${isFav ? '❤️ Saved' : '🤍 Save'}
             </button>
           </div>
 
-          <!-- Tags Pill Row -->
-          <div class="flex flex-wrap gap-2 text-xs mb-4">
+          <!-- Tags Row -->
+          <div class="flex flex-wrap items-center gap-2 text-xs mb-4">
             ${released ? `<span class="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 px-3 py-0.5 rounded-full font-bold"><strong>Year:</strong> ${released}</span>` : ''}
             ${label ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-0.5 rounded-full font-medium"><strong>Label:</strong> ${label}</span>` : ''}
             ${format ? `<span class="bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 border border-blue-100 dark:border-blue-900 px-3 py-0.5 rounded-full font-medium"><strong>Format:</strong> ${format}</span>` : ''}
+            ${hasRecording ? `<span class="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 px-3 py-0.5 rounded-full font-extrabold flex items-center gap-1">🎙️ Recording on Discogs</span>` : ''}
           </div>
 
-          <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 rounded-2xl p-6 text-center mb-5 flex flex-col items-center justify-center relative shadow-inner">
-            <div class="w-40 h-40 rounded-full border-8 border-amber-500/20 bg-slate-950 flex items-center justify-center shadow-2xl relative">
-              <div class="w-16 h-16 rounded-full bg-amber-600 border-2 border-amber-300 flex items-center justify-center text-[10px] font-bold text-amber-100 text-center p-1 leading-tight">
-                ${label}
+          <!-- 2-Column Half-Width Row: Left Vinyl Image, Right Metadata Box (Title Omitted) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 items-stretch">
+            <!-- Left Half: Vinyl Image Graphic -->
+            <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 rounded-2xl p-6 text-center flex flex-col items-center justify-center relative shadow-inner h-full min-h-[180px]">
+              <div class="w-32 h-32 rounded-full border-4 border-amber-500/20 bg-slate-950 flex items-center justify-center shadow-2xl relative">
+                <div class="w-12 h-12 rounded-full bg-amber-600 border-2 border-amber-300 flex items-center justify-center text-[9px] font-bold text-amber-100 text-center p-1 leading-tight">
+                  ${label}
+                </div>
               </div>
+            </div>
+
+            <!-- Right Half: Metadata Box -->
+            <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 space-y-2 flex flex-col justify-center">
+              <p><strong>Artist:</strong> <span class="font-semibold text-slate-900 dark:text-slate-100">${artist}</span></p>
+              <p><strong>Record Label:</strong> ${label}</p>
+              ${format ? `<p><strong>Format:</strong> ${format}</p>` : ''}
+              <p><strong>Release Year:</strong> ${released || 'Unknown'}</p>
+              ${catalogNum ? `<p><strong>Catalog No.:</strong> <span class="font-mono font-semibold">${catalogNum}</span></p>` : ''}
             </div>
           </div>
 
-          <!-- Column M Details Block -->
+          <!-- Column M Notes at Bottom: Called "Details" -->
           ${colMDetails ? `
-            <div class="mb-4">
-              <h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1.5">Recording Details</h4>
-              <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-amber-50/50 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-200/50 dark:border-amber-900/50">${colMDetails}</div>
+            <div class="mb-5">
+              <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
+              <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">${colMDetails}</div>
             </div>
           ` : ''}
 
-          <!-- Details Box: Catalog No. Placed Last -->
-          <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 mb-5 text-xs text-slate-600 dark:text-slate-300 space-y-1.5">
-            <p><strong>Artist:</strong> ${artist}</p>
-            <p><strong>Title / Track:</strong> ${rawTitle}</p>
-            <p><strong>Record Label:</strong> ${label}</p>
-            ${format ? `<p><strong>Format:</strong> ${format}</p>` : ''}
-            <p><strong>Release Year:</strong> ${released || 'Unknown'}</p>
-            ${catalogNum ? `<p><strong>Catalog No.:</strong> <span class="font-mono font-semibold">${catalogNum}</span></p>` : ''}
-          </div>
-
-          <div class="flex flex-wrap gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-            ${listenUrl ? `
-              <a href="${listenUrl}" target="_blank" class="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
-                <span>🎵 Listen Recording</span>
-              </a>
-            ` : ''}
-
-            ${discogsUrl ? `
-              <a href="${discogsUrl}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+          <!-- Action Buttons Bar -->
+          ${discogsUrl ? `
+            <div class="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <a href="${discogsUrl}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-2">
                 <span>📀 Discogs Release Page ↗</span>
+                ${hasRecording ? `<span class="bg-emerald-500 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">🎙️ Recording</span>` : ''}
               </a>
-            ` : ''}
-          </div>
+            </div>
+          ` : ''}
         `;
       }
 
