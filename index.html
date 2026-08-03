@@ -224,7 +224,6 @@
         <span class="text-sm font-semibold text-slate-500">Fetching exhibit catalog from BMMC...</span>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- Skeleton Card Repeater -->
         <script>
           document.write(Array(8).fill(`
             <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-800 animate-pulse flex flex-col h-80">
@@ -270,8 +269,8 @@
   <div id="detailModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6 hidden transition-opacity" role="dialog" aria-modal="true">
     <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col border border-slate-200 dark:border-slate-800">
       
-      <!-- Modal Navigation Bar -->
-      <div class="sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 py-3 flex items-center justify-between">
+      <!-- Modal Navigation Bar (Tightened padding) -->
+      <div class="sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 py-2.5 flex items-center justify-between">
         <div class="flex items-center gap-1.5">
           <button id="modalPrevBtn" title="Previous Item (Left Arrow)" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition flex items-center gap-1">
             <span>←</span> <span class="hidden sm:inline">Prev</span>
@@ -292,7 +291,8 @@
         </div>
       </div>
 
-      <div id="modalContent" class="p-6 sm:p-8"></div>
+      <!-- Tightened Modal Content Top Padding -->
+      <div id="modalContent" class="px-6 pt-3 sm:pt-4 pb-6 sm:px-8 sm:pb-8"></div>
     </div>
   </div>
 
@@ -308,7 +308,8 @@
 
     let rawRows = [];
     let currentFilteredRows = [];
-    let currentModalIndex = -1; // Current index in currentFilteredRows
+    let currentModalIndex = -1;
+    let currentlySpeakingIndex = null; // Track currently playing exhibit audio
     let only3DActive = false;
     let showingFavoritesOnly = false;
     let isGridActive = false;
@@ -426,7 +427,7 @@
           window.speechSynthesis.cancel();
           const btnModal = document.getElementById('btnAudioGuide');
           if (btnModal && btnModal.getAttribute('data-row')) {
-            speakAudioGuide(parseInt(btnModal.getAttribute('data-row')));
+            speakAudioGuide(parseInt(btnModal.getAttribute('data-row'), 10));
           }
         }
       };
@@ -629,7 +630,6 @@
             renderCollectionHubs(rawRows);
             populateDropdowns(rawRows);
 
-            // Deep-link check on initial page load
             checkUrlHashForExhibit();
           } catch(e) {
             console.error("Error initializing catalog UI:", e);
@@ -879,22 +879,29 @@
       filterCatalog(true);
     });
 
-    // AUDIO NARRATOR WITH VISUALIZER
+    // AUDIO NARRATOR WITH VISUALIZER & TOGGLE FUNCTIONALITY
     function speakAudioGuide(originalIndex, event) {
       if (event) event.stopPropagation();
+
+      // Toggle off if clicking the speaker while audio is currently speaking this exhibit
+      if (currentlySpeakingIndex === originalIndex && window.speechSynthesis && window.speechSynthesis.speaking) {
+        stopAudioGuide();
+        return;
+      }
 
       const row = rawRows[originalIndex];
       if (!row) return;
 
       const notes = getVal(row, 4);
       if (!notes || notes.trim() === '') {
-        alert('No Museum Notes available for audio narration on this exhibit.');
+        showToast('No Museum Notes available for audio narration', 'ℹ️');
         return;
       }
 
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         
+        currentlySpeakingIndex = originalIndex;
         const cleanNotes = notes.replace(/^#\s*/, '');
         const textToSpeak = `Museum Note: ${cleanNotes}`;
         currentSpeechUtterance = new SpeechSynthesisUtterance(textToSpeak);
@@ -907,28 +914,18 @@
         currentSpeechUtterance.rate = 0.92;
         currentSpeechUtterance.pitch = 1.0;
         
-        const btnModal = document.getElementById('btnAudioGuide');
-        if (btnModal) {
-          btnModal.setAttribute('data-row', originalIndex);
-          btnModal.innerHTML = `
-            <span class="flex items-center gap-1 text-xs">
-              <span class="inline-flex items-center gap-0.5 text-blue-200">
-                <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
-              </span>
-              <span>Stop</span>
-            </span>
-          `;
-          btnModal.onclick = stopAudioGuide;
-        }
-
         currentSpeechUtterance.onend = () => {
-          if (btnModal) {
-            btnModal.innerHTML = '🔊 Listen';
-            btnModal.onclick = () => speakAudioGuide(originalIndex);
-          }
+          currentlySpeakingIndex = null;
+          updateAudioUI();
+        };
+
+        currentSpeechUtterance.onerror = () => {
+          currentlySpeakingIndex = null;
+          updateAudioUI();
         };
 
         window.speechSynthesis.speak(currentSpeechUtterance);
+        updateAudioUI();
       } else {
         alert('Speech Synthesis is not supported in this browser.');
       }
@@ -937,13 +934,46 @@
     function stopAudioGuide() {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        const btnModal = document.getElementById('btnAudioGuide');
-        if (btnModal) {
+      }
+      currentlySpeakingIndex = null;
+      updateAudioUI();
+    }
+
+    // Synchronize Audio UI across Grid Cards and Modal
+    function updateAudioUI() {
+      const isSpeaking = window.speechSynthesis && window.speechSynthesis.speaking;
+
+      // Update main page grid card audio buttons
+      document.querySelectorAll('[data-grid-audio-idx]').forEach(btn => {
+        const idx = parseInt(btn.getAttribute('data-grid-audio-idx'), 10);
+        if (currentlySpeakingIndex === idx && isSpeaking) {
+          btn.classList.add('animate-pulse', 'bg-blue-600', 'text-white', 'ring-2', 'ring-blue-400');
+          btn.classList.remove('bg-white/90', 'dark:bg-slate-800/90', 'text-blue-600', 'dark:text-blue-400');
+          btn.innerHTML = `<span class="flex items-center gap-1 text-[11px] px-1 font-bold">🔊 <span class="eq-bar"></span><span class="eq-bar"></span></span>`;
+        } else {
+          btn.classList.remove('animate-pulse', 'bg-blue-600', 'text-white', 'ring-2', 'ring-blue-400');
+          btn.classList.add('bg-white/90', 'dark:bg-slate-800/90', 'text-blue-600', 'dark:text-blue-400');
+          btn.innerHTML = '🔊';
+        }
+      });
+
+      // Update modal popup audio guide button
+      const btnModal = document.getElementById('btnAudioGuide');
+      if (btnModal) {
+        const modalRowIdx = parseInt(btnModal.getAttribute('data-row'), 10);
+        if (currentlySpeakingIndex === modalRowIdx && isSpeaking) {
+          btnModal.innerHTML = `
+            <span class="flex items-center gap-1 text-xs font-bold">
+              <span class="inline-flex items-center gap-0.5 text-blue-200">
+                <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
+              </span>
+              <span>Stop</span>
+            </span>
+          `;
+          btnModal.onclick = stopAudioGuide;
+        } else {
           btnModal.innerHTML = '🔊 Listen';
-          const rowIdx = btnModal.getAttribute('data-row');
-          if (rowIdx) {
-            btnModal.onclick = () => speakAudioGuide(parseInt(rowIdx, 10));
-          }
+          btnModal.onclick = () => speakAudioGuide(modalRowIdx);
         }
       }
     }
@@ -1001,27 +1031,28 @@
               />
             </a>
 
-            <!-- Heart Button -->
+            <!-- Clean Favorite Heart Button (No filled red circle) -->
             <button 
               onclick="toggleFavorite(${originalIndex}, event)" 
               title="${isFav ? 'Remove from favorites' : 'Save to favorites'}"
-              class="absolute top-3 right-3 p-2 rounded-full backdrop-blur-md transition shadow-sm ${isFav ? 'bg-rose-500 text-white' : 'bg-white/90 dark:bg-slate-800/90 text-slate-400 hover:text-rose-500'}"
+              class="absolute top-3 right-3 p-2 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md transition shadow-sm hover:scale-110 flex items-center justify-center"
             >
               ${isFav ? '❤️' : '🤍'}
             </button>
 
-            <!-- Audio Speaker Button -->
+            <!-- Audio Speaker Button with Toggle & Pulsing visualizer -->
             ${notes ? `
               <button 
+                data-grid-audio-idx="${originalIndex}"
                 onclick="speakAudioGuide(${originalIndex}, event)" 
-                title="Listen to Museum Notes"
+                title="Listen to Museum Notes (Toggle On/Off)"
                 class="absolute top-12 right-3 p-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 text-blue-600 dark:text-blue-400 hover:text-blue-700 backdrop-blur-md transition shadow-sm text-xs font-bold"
               >
                 🔊
               </button>
             ` : ''}
 
-            <!-- Badge -->
+            <!-- Age Badge -->
             ${age ? `<span class="absolute top-3 left-3 ${ageBadgeClass} backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] shadow-sm pointer-events-none">${age}</span>` : ''}
           </div>
           
@@ -1055,6 +1086,8 @@
         card.addEventListener('click', () => openModalByFilteredIndex(arrayIndex));
         grid.appendChild(card);
       });
+
+      updateAudioUI();
     }
 
     function openModalByOriginalIndex(origIdx) {
@@ -1062,7 +1095,6 @@
       if (filteredIndex !== -1) {
         openModalByFilteredIndex(filteredIndex);
       } else if (rawRows[origIdx]) {
-        // Fallback if item isn't in current filter view
         openModal(rawRows[origIdx], origIdx);
       }
     }
@@ -1126,7 +1158,8 @@
 
       const modalContent = document.getElementById('modalContent');
       modalContent.innerHTML = `
-        <div class="flex items-start justify-between gap-4 mb-3">
+        <!-- Tightened Heading Layout -->
+        <div class="flex items-start justify-between gap-4 mb-2">
           <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
           <button 
             onclick="toggleFavorite(${originalIndex}, event)" 
@@ -1136,15 +1169,15 @@
           </button>
         </div>
 
-        <div class="flex flex-wrap gap-2 text-xs mb-4">
-          ${age ? `<span class="${ageBadgeClass} px-3 py-1 rounded-full font-medium"><strong>Age:</strong> ${age}</span>` : ''}
-          ${type ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-1 rounded-full font-medium"><strong>Type:</strong> ${type}</span>` : ''}
-          ${category ? `<span class="bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 border border-blue-100 dark:border-blue-900 px-3 py-1 rounded-full font-medium"><strong>Category:</strong> ${category}</span>` : ''}
-          ${subcategory ? `<span class="bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-100 dark:border-emerald-900 px-3 py-1 rounded-full font-medium"><strong>Subcategory:</strong> ${subcategory}</span>` : ''}
+        <div class="flex flex-wrap gap-2 text-xs mb-3.5">
+          ${age ? `<span class="${ageBadgeClass} px-3 py-0.5 rounded-full font-medium"><strong>Age:</strong> ${age}</span>` : ''}
+          ${type ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-0.5 rounded-full font-medium"><strong>Type:</strong> ${type}</span>` : ''}
+          ${category ? `<span class="bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 border border-blue-100 dark:border-blue-900 px-3 py-0.5 rounded-full font-medium"><strong>Category:</strong> ${category}</span>` : ''}
+          ${subcategory ? `<span class="bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-100 dark:border-emerald-900 px-3 py-0.5 rounded-full font-medium"><strong>Subcategory:</strong> ${subcategory}</span>` : ''}
         </div>
 
         <!-- Images Comparison -->
-        <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-5">
+        <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-4">
           ${img1 ? `
             <div>
               <div class="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
@@ -1157,7 +1190,7 @@
                       id="btnAudioGuide" 
                       data-row="${originalIndex}"
                       onclick="speakAudioGuide(${originalIndex})"
-                      class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold transition shadow-sm"
+                      class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-md text-[10px] font-bold transition shadow-sm"
                     >
                       🔊 Listen
                     </button>
@@ -1177,7 +1210,7 @@
               </div>
 
               <a href="${img1}" target="_blank" title="Click to view full image in new tab" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 p-2">
-                <img src="${img1}" class="w-full h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                <img src="${img1}" class="w-full h-56 sm:h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
                 <span class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-lg shadow">Open Full Image ↗</span>
               </a>
             </div>` : ''}
@@ -1194,27 +1227,27 @@
                 </button>
               </div>
               <a href="${img2}" target="_blank" title="Click to view second image in new tab" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 p-2">
-                <img src="${img2}" class="w-full h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                <img src="${img2}" class="w-full h-56 sm:h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
                 <span class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-lg shadow">Open Full Image ↗</span>
               </a>
             </div>` : ''}
         </div>
 
         ${details ? `
-          <div class="mb-5">
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Details</h4>
+          <div class="mb-4">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
             <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">${details}</div>
           </div>` : ''}
 
         ${notes ? `
-          <div class="mb-5">
-            <h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-2">Museum Notes</h4>
+          <div class="mb-4">
+            <h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1.5">Museum Notes</h4>
             <div class="text-sm text-amber-900 dark:text-amber-200 leading-relaxed whitespace-pre-line bg-amber-50/70 dark:bg-amber-950/40 p-4 rounded-2xl border border-amber-200/60 dark:border-amber-900/60">${notes}</div>
           </div>` : ''}
 
         ${d3d && (d3d.endsWith('.glb') || d3d.endsWith('.gltf')) ? `
-          <div class="mb-5">
-            <h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-2">Interactive 3D Viewer</h4>
+          <div class="mb-4">
+            <h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1.5">Interactive 3D Viewer</h4>
             <model-viewer src="${d3d}" camera-controls auto-rotate class="w-full h-72 bg-slate-900 rounded-2xl overflow-hidden shadow-inner"></model-viewer>
           </div>` : ''}
 
@@ -1225,7 +1258,6 @@
         </div>
       `;
 
-      // Safe event listener binding for Google search buttons
       const btnMain = document.getElementById('btnGoogleSearchMain');
       const btnSec = document.getElementById('btnGoogleSearchSec');
       if (btnMain) btnMain.onclick = () => googleItemSearch(displayTitle, category, details);
@@ -1239,7 +1271,7 @@
     function closeModal() {
       stopAudioGuide();
       document.getElementById('detailModal').classList.add('hidden');
-      window.history.replaceState(null, '', ' '); // Clear exhibit hash safely
+      window.history.replaceState(null, '', ' ');
     }
 
     document.getElementById('closeModal').addEventListener('click', closeModal);
