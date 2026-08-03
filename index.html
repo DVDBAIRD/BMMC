@@ -71,7 +71,7 @@
 
   <!-- Header -->
   <header id="mainHeader" class="solid-header border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-sm transition-colors">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
       
       <!-- Top Header Row -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -120,31 +120,22 @@
         </div>
       </div>
 
-      <!-- Main Catalog Navigation Switcher Tabs -->
-      <div class="flex items-center gap-2 mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-800">
-        <button id="tabExhibits" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm bg-blue-600 text-white">
-          <span>🏛️ Main Museum Exhibits</span>
-        </button>
-        <button id="tabGramophone" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
-          <span>🎵 Gramophone Archive (1916–1953)</span>
-        </button>
-      </div>
-
       <!-- Collapsible Container -->
-      <div id="collapsibleControls" class="mt-3 flex flex-col gap-3 transition-all duration-300">
+      <div id="collapsibleControls" class="mt-2.5 flex flex-col gap-2.5 transition-all duration-300">
         
         <!-- Subheading -->
         <p id="subheadingText" class="text-xs text-slate-600 dark:text-slate-400 font-normal leading-relaxed">
           The Bonniefields Museum preserves historical artifacts, technical equipment, and memorabilia for a nostalgic glimpse into the past.
         </p>
 
-        <!-- Search Bar & Item Counter Row -->
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800">
-          <div class="flex items-center justify-between sm:justify-start gap-4">
+        <!-- Search Bar, Tabs & Sort Bar Row -->
+        <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-800">
+          
+          <!-- Item Count & Sort Selector -->
+          <div class="flex items-center justify-between sm:justify-start gap-3">
             <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold" id="itemCount">Loading catalog...</p>
             
-            <!-- Sort Selector -->
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1">
               <label for="sortBy" class="text-[10px] font-bold uppercase text-slate-400">Sort:</label>
               <select id="sortBy" class="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none cursor-pointer">
                 <option value="default" class="dark:bg-slate-900">Default</option>
@@ -155,18 +146,29 @@
               </select>
             </div>
           </div>
+
+          <!-- 20% Smaller Main Catalog Navigation Switcher Tabs (Between Sort & Search) -->
+          <div class="flex items-center gap-1.5 shrink-0 my-1 lg:my-0">
+            <button id="tabExhibits" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold transition shadow-sm bg-blue-600 text-white">
+              <span>🏛️ Main Museum Exhibits</span>
+            </button>
+            <button id="tabGramophone" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold transition shadow-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+              <span>🎵 Gramophone Archive (1916–1953)</span>
+            </button>
+          </div>
           
-          <div class="w-full sm:w-80 relative">
+          <!-- Search Bar -->
+          <div class="w-full lg:w-72 relative">
             <input 
               type="text" 
               id="searchInput" 
               placeholder="Search items, details, artists..." 
-              class="w-full pl-10 pr-10 py-2 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-xs text-slate-800 dark:text-slate-100 transition shadow-inner"
+              class="w-full pl-9 pr-9 py-1.5 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-xs text-slate-800 dark:text-slate-100 transition shadow-inner"
             />
-            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-            <button id="clearSearch" title="Clear Search" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold bg-slate-200 dark:bg-slate-700 rounded-full w-4 h-4 flex items-center justify-center">✕</button>
+            <button id="clearSearch" title="Clear Search" class="hidden absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold bg-slate-200 dark:bg-slate-700 rounded-full w-4 h-4 flex items-center justify-center">✕</button>
           </div>
         </div>
 
@@ -340,7 +342,7 @@
 
     const MAIN_HUB_CATEGORIES = ["War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"];
 
-    let currentTab = 'exhibits'; // 'exhibits' or 'gramophone'
+    let currentTab = 'exhibits';
     let rawExhibitsRows = [];
     let rawGramophoneRows = [];
     let currentFilteredRows = [];
@@ -351,6 +353,14 @@
     let isGridActive = false;
     let currentSpeechUtterance = null;
     let availableVoices = [];
+
+    // Helper: Split title on `/` onto new block lines for main page cards
+    function formatTitleWithSlashes(title) {
+      if (!title) return '';
+      const parts = String(title).split('/').map(p => p.trim()).filter(Boolean);
+      if (parts.length <= 1) return title;
+      return parts.map(p => `<span class="block">${p}</span>`).join('');
+    }
 
     // Toast Notification
     function showToast(msg, icon = '✨') {
@@ -363,31 +373,23 @@
       }, 2500);
     }
 
-    // Badge Styles
+    // Badge Styles (Double 2x Size: text-xs sm:text-sm px-3.5 py-1.5)
     function getAgeBadgeStyle(ageStr) {
-      if (!ageStr) return 'bg-slate-900/80 text-white';
+      if (!ageStr) return 'bg-slate-900/80 text-white font-extrabold';
       const lower = ageStr.toLowerCase().trim();
 
       if (lower.includes('pre')) {
-        return 'bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-800 font-bold';
+        return 'bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-800 font-extrabold';
       } else if (lower.includes('post')) {
-        return 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-bold';
+        return 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-extrabold';
       } else {
         const num = parseInt(lower.replace(/[^0-9]/g, ''), 10);
         if (!isNaN(num)) {
-          if (num < 1950) return 'bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-800 font-bold';
-          if (num >= 1950) return 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-bold';
+          if (num < 1950) return 'bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-800 font-extrabold';
+          if (num >= 1950) return 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-extrabold';
         }
       }
-      return 'bg-slate-900/80 text-white';
-    }
-
-    // Star Rating Formatting
-    function formatStarRating(ratingVal) {
-      const num = parseFloat(ratingVal);
-      if (isNaN(num)) return '';
-      const stars = Math.min(5, Math.max(1, Math.round(num)));
-      return '⭐'.repeat(stars);
+      return 'bg-slate-900/80 text-white font-extrabold';
     }
 
     // Theme Toggle Handler
@@ -474,11 +476,8 @@
     }
 
     function getVal(row, colIndex) {
-      if (!row) return '';
-      if (Array.isArray(row)) {
-        return colIndex < row.length && row[colIndex] != null ? String(row[colIndex]).trim() : '';
-      }
-      return '';
+      if (!row || !Array.isArray(row)) return '';
+      return colIndex < row.length && row[colIndex] != null ? String(row[colIndex]).trim() : '';
     }
 
     function scrollToGrid() {
@@ -568,7 +567,7 @@
       window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
     }
 
-    function searchRecordAudio(artist, title, label, catalogNum) {
+    function searchRecordAudio(artist, title, label) {
       const query = `${artist} ${title} ${label || ''} Gramophone Record 78 RPM`.trim();
       window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
     }
@@ -662,7 +661,7 @@
       scrollToGrid();
     });
 
-    // Switch Tab View (Exhibits vs Gramophone)
+    // Switch Tab View
     document.getElementById('tabExhibits').addEventListener('click', () => setTab('exhibits'));
     document.getElementById('tabGramophone').addEventListener('click', () => setTab('gramophone'));
 
@@ -681,8 +680,8 @@
       const subhead = document.getElementById('subheadingText');
 
       if (tabName === 'exhibits') {
-        btnExhibits.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm bg-blue-600 text-white';
-        btnGramophone.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
+        btnExhibits.className = 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold transition shadow-sm bg-blue-600 text-white';
+        btnGramophone.className = 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold transition shadow-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
         
         exhibitsFilterGrid.classList.remove('hidden');
         gramophoneFilterGrid.classList.add('hidden');
@@ -696,8 +695,8 @@
         document.getElementById('promptTitle').textContent = 'Ready to Explore Exhibits';
         document.getElementById('promptDesc').textContent = 'Select a Collection Hub above, search by keyword, or view all items in the BMMC archive.';
       } else {
-        btnGramophone.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm bg-blue-600 text-white';
-        btnExhibits.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
+        btnGramophone.className = 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold transition shadow-sm bg-blue-600 text-white';
+        btnExhibits.className = 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold transition shadow-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
         
         gramophoneFilterGrid.classList.remove('hidden');
         exhibitsFilterGrid.classList.add('hidden');
@@ -730,13 +729,19 @@
           renderCollectionHubs(rawExhibitsRows);
           populateExhibitsDropdowns(rawExhibitsRows);
 
-          // Fetch Gramophone CSV
+          // Fetch Gramophone CSV as Array Rows (header: false for exact index mapping)
           Papa.parse(GRAMOPHONE_CSV_URL, {
             download: true,
-            header: true,
+            header: false,
             skipEmptyLines: true,
             complete: function(gramResults) {
-              rawGramophoneRows = gramResults.data;
+              // Filter out title/header rows (e.g., rows where catalog# or artist contain header labels)
+              rawGramophoneRows = gramResults.data.filter(r => {
+                const c0 = getVal(r, 0).toLowerCase();
+                const c1 = getVal(r, 1).toLowerCase();
+                return r.length >= 2 && !c0.includes('gramophone catalog') && !c0.includes('catalog#') && !c1.includes('artist');
+              });
+
               populateGramophoneDropdowns(rawGramophoneRows);
 
               document.getElementById('loading').classList.add('hidden');
@@ -763,7 +768,7 @@
       });
     }
 
-    // Check URL Hash for deep-linking
+    // Deep-linking URL hash check
     function checkUrlHashForExhibit() {
       const hash = window.location.hash;
       if (hash && hash.startsWith('#exhibit-')) {
@@ -858,7 +863,7 @@
       document.getElementById('collectionHubsSection').classList.remove('hidden');
     }
 
-    // Populate Dropdowns for Main Exhibits
+    // Dropdowns for Main Exhibits
     function populateExhibitsDropdowns(rows) {
       fillSelect('filterAge', rows.map(r => getVal(r, 13)));
       fillSelect('filterType', rows.map(r => getVal(r, 14)));
@@ -869,12 +874,13 @@
       document.getElementById('btnClearAllFilters').addEventListener('click', browseAllExhibits);
     }
 
-    // Populate Dropdowns for Gramophone Records
+    // Dropdowns for Gramophone Records using Column Indices:
+    // Index 1: Artist, Index 3: Label, Index 4: Format, Index 6: Year
     function populateGramophoneDropdowns(rows) {
-      fillSelect('filterArtist', rows.map(r => r.Artist));
-      fillSelect('filterLabel', rows.map(r => r.Label));
-      fillSelect('filterFormat', rows.map(r => r.Format));
-      fillSelect('filterYear', rows.map(r => r.Released));
+      fillSelect('filterArtist', rows.map(r => getVal(r, 1)));
+      fillSelect('filterLabel', rows.map(r => getVal(r, 3)));
+      fillSelect('filterFormat', rows.map(r => getVal(r, 4)));
+      fillSelect('filterYear', rows.map(r => getVal(r, 6)));
     }
 
     function fillSelect(elementId, values) {
@@ -1008,7 +1014,8 @@
         renderExhibitsGrid(currentFilteredRows);
 
       } else {
-        // Gramophone Archive Filtering
+        // Gramophone Archive Filtering using array column indices:
+        // Index 1: Artist, Index 3: Label, Index 4: Format, Index 6: Released (Year)
         const artistVal = document.getElementById('filterArtist').value;
         const labelVal = document.getElementById('filterLabel').value;
         const formatVal = document.getElementById('filterFormat').value;
@@ -1029,25 +1036,25 @@
         }
 
         currentFilteredRows = rawGramophoneRows.map((row, index) => ({ row, originalIndex: index })).filter(({ row, originalIndex }) => {
-          const rowText = Object.values(row).join(' ').toLowerCase();
+          const rowText = row.join(' ').toLowerCase();
           const fullTextMatch = rowText.includes(searchVal);
-          const artistMatch = !artistVal || row.Artist === artistVal;
-          const labelMatch = !labelVal || row.Label === labelVal;
-          const formatMatch = !formatVal || row.Format === formatVal;
-          const yearMatch = !yearVal || String(row.Released) === String(yearVal);
+          const artistMatch = !artistVal || getVal(row, 1) === artistVal;
+          const labelMatch = !labelVal || getVal(row, 3) === labelVal;
+          const formatMatch = !formatVal || getVal(row, 4) === formatVal;
+          const yearMatch = !yearVal || getVal(row, 6) === yearVal;
           const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
 
           return fullTextMatch && artistMatch && labelMatch && formatMatch && yearMatch && matchFav;
         });
 
         if (sortBy === 'title-asc') {
-          currentFilteredRows.sort((a, b) => (a.row.Title || '').localeCompare(b.row.Title || ''));
+          currentFilteredRows.sort((a, b) => getVal(a.row, 2).localeCompare(getVal(b.row, 2)));
         } else if (sortBy === 'title-desc') {
-          currentFilteredRows.sort((a, b) => (b.row.Title || '').localeCompare(a.row.Title || ''));
+          currentFilteredRows.sort((a, b) => getVal(b.row, 2).localeCompare(getVal(a.row, 2)));
         } else if (sortBy === 'age-oldest') {
-          currentFilteredRows.sort((a, b) => String(a.row.Released || '').localeCompare(String(b.row.Released || '')));
+          currentFilteredRows.sort((a, b) => getVal(a.row, 6).localeCompare(getVal(b.row, 6)));
         } else if (sortBy === 'age-newest') {
-          currentFilteredRows.sort((a, b) => String(b.row.Released || '').localeCompare(String(a.row.Released || '')));
+          currentFilteredRows.sort((a, b) => getVal(b.row, 6).localeCompare(getVal(a.row, 6)));
         }
 
         renderGramophoneGrid(currentFilteredRows);
@@ -1169,6 +1176,7 @@
         const rawContent = getVal(row, 2) || getVal(row, 0);
         const { title, details } = parseTitleAndDetails(rawContent);
         const displayTitle = title || `Exhibit Item #${originalIndex + 1}`;
+        const slashFormattedTitle = formatTitleWithSlashes(displayTitle);
 
         const notes = getVal(row, 4);
         const age = getVal(row, 13);
@@ -1203,7 +1211,8 @@
               </button>
             ` : ''}
 
-            ${age ? `<span class="absolute top-3 left-3 ${ageBadgeClass} backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] shadow-sm pointer-events-none">${age}</span>` : ''}
+            <!-- 2x Size Age Badge -->
+            ${age ? `<span class="absolute top-3 left-3 ${ageBadgeClass} backdrop-blur-sm px-3.5 py-1.5 rounded-full text-xs sm:text-sm shadow-md pointer-events-none">${age}</span>` : ''}
           </div>
           
           <div class="p-5 flex-1 flex flex-col justify-between">
@@ -1214,7 +1223,7 @@
                 ${subcategory ? `<span class="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900">${subcategory}</span>` : ''}
               </div>
               
-              <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1.5 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">${displayTitle}</h3>
+              <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">${slashFormattedTitle}</h3>
               <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed">${details || 'Click for full details and museum notes.'}</p>
             </div>
 
@@ -1239,7 +1248,7 @@
       updateAudioUI();
     }
 
-    // Render Gramophone Records Grid
+    // Render Gramophone Records Grid (Using Index Mapping: 0:Catalog#, 1:Artist, 2:Title, 3:Label, 4:Format, 6:Year)
     function renderGramophoneGrid(items) {
       const grid = document.getElementById('grid');
       const itemCount = document.getElementById('itemCount');
@@ -1259,15 +1268,20 @@
       }
 
       items.forEach(({ row, originalIndex }, arrayIndex) => {
-        const artist = row.Artist || 'Unknown Artist';
-        const title = row.Title || 'Untitled Track';
-        const label = row.Label || '';
-        const catalogNum = row['Catalog#'] || '';
-        const format = row.Format || '78 RPM';
-        const rating = row.Rating || '';
-        const released = row.Released || '';
+        const catalogNum = getVal(row, 0);
+        const artist = getVal(row, 1) || 'Unknown Artist';
+        
+        let rawTitle = getVal(row, 2) || 'Untitled Track';
+        const sideBTitle = getVal(row, 9);
+        if (sideBTitle && !rawTitle.includes('/')) {
+          rawTitle += ` / ${sideBTitle}`;
+        }
+        const slashFormattedTitle = formatTitleWithSlashes(rawTitle);
+
+        const label = getVal(row, 3); // Index 3 matches Label accurately
+        const format = getVal(row, 4) || '78 RPM';
+        const released = getVal(row, 6); // Index 6 matches Released Year
         const isFav = favs.includes(originalIndex);
-        const stars = formatStarRating(rating);
 
         const card = document.createElement('div');
         card.className = 'bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group relative';
@@ -1275,7 +1289,6 @@
         card.innerHTML = `
           <!-- Vinyl Disc Visual Header -->
           <div class="h-44 bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 relative overflow-hidden flex items-center justify-center p-4">
-            <!-- Grooves graphic -->
             <div class="w-32 h-32 rounded-full border-4 border-amber-500/20 bg-slate-950 flex items-center justify-center shadow-inner relative group-hover:rotate-45 transition-transform duration-700">
               <div class="w-12 h-12 rounded-full bg-amber-600/80 border-2 border-amber-300 flex items-center justify-center text-[9px] font-bold text-amber-100 text-center p-1 leading-tight">
                 ${label || 'BMMC'}
@@ -1287,8 +1300,8 @@
               ${isFav ? '❤️' : '🤍'}
             </button>
 
-            <!-- Release Year Badge -->
-            ${released ? `<span class="absolute top-3 left-3 bg-amber-500/90 text-slate-950 font-extrabold backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] shadow-sm pointer-events-none">${released}</span>` : ''}
+            <!-- 2x Size Release Year Badge -->
+            ${released ? `<span class="absolute top-3 left-3 bg-amber-500/95 text-slate-950 font-extrabold backdrop-blur-sm px-3.5 py-1.5 rounded-full text-xs sm:text-sm shadow-md pointer-events-none">${released}</span>` : ''}
           </div>
 
           <div class="p-5 flex-1 flex flex-col justify-between">
@@ -1299,9 +1312,9 @@
                 ${catalogNum ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2.5 py-0.5 rounded-full font-mono text-[10px]">${catalogNum}</span>` : ''}
               </div>
 
-              <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">${title}</h3>
-              <p class="text-xs font-semibold text-amber-700 dark:text-amber-400 line-clamp-1 mb-2">${artist}</p>
-              ${stars ? `<p class="text-xs mb-3">${stars}</p>` : ''}
+              <!-- Slash Line Breakdown Title -->
+              <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">${slashFormattedTitle}</h3>
+              <p class="text-xs font-semibold text-amber-700 dark:text-amber-400 line-clamp-1 mb-3">${artist}</p>
             </div>
 
             <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
@@ -1309,7 +1322,7 @@
                 Record Info <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </span>
 
-              <button onclick="event.stopPropagation(); searchRecordAudio('${artist.replace(/'/g, "\\'")}', '${title.replace(/'/g, "\\'")}', '${label.replace(/'/g, "\\'")}')" class="bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 hover:bg-rose-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold border border-rose-200 dark:border-rose-800 transition flex items-center gap-1">
+              <button onclick="event.stopPropagation(); searchRecordAudio('${artist.replace(/'/g, "\\'")}', '${rawTitle.replace(/'/g, "\\'")}', '${label.replace(/'/g, "\\'")}')" class="bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 hover:bg-rose-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-semibold border border-rose-200 dark:border-rose-800 transition flex items-center gap-1">
                 <span>🎵 Listen</span>
               </button>
             </div>
@@ -1394,7 +1407,7 @@
           </div>
 
           <div class="flex flex-wrap gap-2 text-xs mb-3.5">
-            ${age ? `<span class="${ageBadgeClass} px-3 py-0.5 rounded-full font-medium"><strong>Age:</strong> ${age}</span>` : ''}
+            ${age ? `<span class="${ageBadgeClass} px-3 py-0.5 rounded-full"><strong>Age:</strong> ${age}</span>` : ''}
             ${type ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-0.5 rounded-full font-medium"><strong>Type:</strong> ${type}</span>` : ''}
             ${category ? `<span class="bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 border border-blue-100 dark:border-blue-900 px-3 py-0.5 rounded-full font-medium"><strong>Category:</strong> ${category}</span>` : ''}
             ${subcategory ? `<span class="bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-100 dark:border-emerald-900 px-3 py-0.5 rounded-full font-medium"><strong>Subcategory:</strong> ${subcategory}</span>` : ''}
@@ -1454,18 +1467,22 @@
 
       } else {
         // Gramophone Record Modal View
+        // Index 0: Catalog No., Index 1: Artist, Index 2: Title, Index 3: Label, Index 4: Format, Index 6: Year, Index 7: release_id (Folder Index 8 Excluded)
         window.history.replaceState(null, '', `#gramophone-${originalIndex}`);
 
-        const artist = row.Artist || 'Unknown Artist';
-        const title = row.Title || 'Untitled Record';
-        const label = row.Label || 'Unspecified Label';
-        const catalogNum = row['Catalog#'] || '';
-        const format = row.Format || '';
-        const rating = row.Rating || '';
-        const released = row.Released || '';
-        const releaseId = row.release_id || '';
-        const folder = row.Folder || '';
-        const stars = formatStarRating(rating);
+        const catalogNum = getVal(row, 0);
+        const artist = getVal(row, 1) || 'Unknown Artist';
+        
+        let title = getVal(row, 2) || 'Untitled Record';
+        const sideBTitle = getVal(row, 9);
+        if (sideBTitle && !title.includes('/')) {
+          title += ` / ${sideBTitle}`;
+        }
+
+        const label = getVal(row, 3) || 'Unspecified Label'; // Index 3 matches Label
+        const format = getVal(row, 4) || '';
+        const released = getVal(row, 6) || '';
+        const releaseId = getVal(row, 7) || '';
 
         if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
           counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
@@ -1494,27 +1511,27 @@
           </div>
 
           <div class="flex flex-wrap gap-2 text-xs mb-4">
-            ${released ? `<span class="bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 px-3 py-0.5 rounded-full font-bold"><strong>Year:</strong> ${released}</span>` : ''}
+            ${catalogNum ? `<span class="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 px-3 py-0.5 rounded-full font-mono font-bold"><strong>Catalog No:</strong> ${catalogNum}</span>` : ''}
+            ${released ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-0.5 rounded-full font-bold"><strong>Year:</strong> ${released}</span>` : ''}
             ${label ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-0.5 rounded-full font-medium"><strong>Label:</strong> ${label}</span>` : ''}
             ${format ? `<span class="bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 border border-blue-100 dark:border-blue-900 px-3 py-0.5 rounded-full font-medium"><strong>Format:</strong> ${format}</span>` : ''}
-            ${catalogNum ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-3 py-0.5 rounded-full font-mono font-medium"><strong>Catalog #:</strong> ${catalogNum}</span>` : ''}
           </div>
 
           <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 rounded-2xl p-6 text-center mb-5 flex flex-col items-center justify-center relative shadow-inner">
-            <div class="w-40 h-40 rounded-full border-8 border-amber-500/20 bg-slate-950 flex items-center justify-center shadow-2xl relative mb-3">
+            <div class="w-40 h-40 rounded-full border-8 border-amber-500/20 bg-slate-950 flex items-center justify-center shadow-2xl relative">
               <div class="w-16 h-16 rounded-full bg-amber-600 border-2 border-amber-300 flex items-center justify-center text-[10px] font-bold text-amber-100 text-center p-1 leading-tight">
                 ${label}
               </div>
             </div>
-            <p class="text-xs text-amber-200 font-semibold">${stars || ''}</p>
           </div>
 
-          <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 mb-5 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+          <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 mb-5 text-xs text-slate-600 dark:text-slate-300 space-y-1.5">
+            ${catalogNum ? `<p><strong>Catalog No. (Index 0):</strong> <span class="font-mono font-semibold">${catalogNum}</span></p>` : ''}
             <p><strong>Artist:</strong> ${artist}</p>
             <p><strong>Title / Track:</strong> ${title}</p>
-            <p><strong>Record Label:</strong> ${label} ${catalogNum ? `(${catalogNum})` : ''}</p>
+            <p><strong>Record Label (Index 3):</strong> ${label}</p>
+            ${format ? `<p><strong>Format:</strong> ${format}</p>` : ''}
             <p><strong>Release Year:</strong> ${released || 'Unknown'}</p>
-            ${folder ? `<p><strong>Archive Folder:</strong> ${folder}</p>` : ''}
           </div>
 
           <div class="flex flex-wrap gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
