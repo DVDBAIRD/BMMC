@@ -1560,8 +1560,10 @@
         const discogsUrl = getDiscogsUrl(row);
         const hasRecording = checkIfHasRecording(row);
 
-        const ytQuery = encodeURIComponent(`${artist} ${rawTitle} 78 RPM gramophone`);
-        const archiveQuery = encodeURIComponent(`${artist} ${rawTitle}`);
+        // Targeted search queries including Catalog No. for pinpoint accuracy
+        const searchTerms = `${artist} ${rawTitle} ${catalogNum}`.trim();
+        const ytQuery = encodeURIComponent(`${searchTerms} 78 RPM gramophone`);
+        const archiveQuery = encodeURIComponent(searchTerms);
 
         if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
           counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
@@ -1638,7 +1640,7 @@
               <a href="https://www.youtube.com/results?search_query=${ytQuery}" target="_blank" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
                 <span>🎵 Search Audio on YouTube ↗</span>
               </a>
-              <a href="https://archive.org/details/georgeblood?tab=collection&query=${archiveQuery}" target="_blank" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5" title="Search the Great 78 Project on Internet Archive">
+              <a href="https://archive.org/details/78rpm?tab=collection&query=${archiveQuery}" target="_blank" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5" title="Search the 78 RPM Collection on Internet Archive">
                 <span>📻 Internet Archive 78s ↗</span>
               </a>
             ` : ''}
