@@ -282,7 +282,7 @@
       </div>
     </div>
 
-    <!-- Exhibit Cards Grid or High-Density Audio List View -->
+    <!-- Exhibit Cards Grid or Audio List View -->
     <div id="gridSection">
       <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden"></div>
     </div>
@@ -344,16 +344,56 @@
     let currentSpeechUtterance = null;
     let availableVoices = [];
 
-    // Format Discogs URL from Index 9 or Index 7
-    function getDiscogsUrl(row) {
-      const rawVal = getVal(row, 9) || getVal(row, 7);
-      if (!rawVal) return '';
-      const val = rawVal.trim();
-      if (!val) return '';
-      if (val.startsWith('http://') || val.startsWith('https://')) return val;
-      if (val.includes('discogs.com')) return `https://${val.replace(/^https?:\/\//, '')}`;
-      if (/^[0-9]+$/.test(val)) return `https://www.discogs.com/release/${val}`;
+    // Helper: Parse Discogs URL safely across Column J (Index 9), Column H (Index 7: release_id), Column I
+    function parseDiscogsVal(raw) {
+      if (!raw) return '';
+      let str = String(raw).trim();
+      if (!str) return '';
+
+      if (str.startsWith('http://') || str.startsWith('https://')) return str;
+      if (str.toLowerCase().includes('discogs.com')) return `https://${str.replace(/^https?:\/\//i, '')}`;
+
+      const cleanId = str.replace(/[^0-9]/g, '');
+      if (cleanId.length >= 4) return `https://www.discogs.com/release/${cleanId}`;
       return '';
+    }
+
+    function getDiscogsUrl(row) {
+      if (!row || !Array.isArray(row)) return '';
+      
+      const candidateIndices = [9, 7, 8];
+      for (let idx of candidateIndices) {
+        const val = getVal(row, idx);
+        if (val) {
+          const url = parseDiscogsVal(val);
+          if (url) return url;
+        }
+      }
+
+      for (let i = 0; i < row.length; i++) {
+        const val = getVal(row, i);
+        if (val && (val.includes('discogs') || val.startsWith('http'))) {
+          const url = parseDiscogsVal(val);
+          if (url) return url;
+        }
+      }
+      return '';
+    }
+
+    // Helper: Get Gramophone Track Title (prefers Column C / Index 2 if Column J is a link)
+    function getGramophoneRawTitle(row) {
+      const t2 = getVal(row, 2);
+      const t9 = getVal(row, 9);
+
+      if (t9 && (t9.includes('discogs') || t9.startsWith('http') || /^[0-9]+$/.test(t9))) {
+        return t2 || 'Untitled Record';
+      }
+
+      if (t2 && t9 && t2 !== t9) {
+        return `${t2} / ${t9}`;
+      }
+
+      return t2 || t9 || 'Untitled Record';
     }
 
     // Helper: Split title on `/` onto new block lines with A: and B: prefixes
@@ -871,7 +911,7 @@
         hubsGrid.appendChild(hubCard);
       });
 
-      // 8th Hub: Clean White/Slate Gramophone Hub
+      // 8th Hub: Clean White/Slate Gramophone Hub (Matches 7 Category Hubs)
       const gramophoneHubCard = document.createElement('div');
       gramophoneHubCard.className = 'bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md transition duration-300 cursor-pointer flex flex-col group relative';
       gramophoneHubCard.innerHTML = `
@@ -1097,9 +1137,9 @@
             return yB - yA;
           });
         } else if (sortBy === 'title-asc') {
-          currentFilteredRows.sort((a, b) => (getVal(a.row, 9) || getVal(a.row, 2)).localeCompare(getVal(b.row, 9) || getVal(b.row, 2)));
+          currentFilteredRows.sort((a, b) => getGramophoneRawTitle(a.row).localeCompare(getGramophoneRawTitle(b.row)));
         } else if (sortBy === 'title-desc') {
-          currentFilteredRows.sort((a, b) => (getVal(b.row, 9) || getVal(b.row, 2)).localeCompare(getVal(a.row, 9) || getVal(a.row, 2)));
+          currentFilteredRows.sort((a, b) => getGramophoneRawTitle(b.row).localeCompare(getGramophoneRawTitle(a.row)));
         }
 
         renderGramophoneGrid(currentFilteredRows);
@@ -1318,8 +1358,8 @@
       listContainer.className = 'bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm divide-y divide-slate-100 dark:divide-slate-800/80';
 
       items.forEach(({ row, originalIndex }, arrayIndex) => {
-        const artist = getVal(row, 1) || 'Unknown Artist'; // Full Artist name, no truncation
-        const rawTitle = getVal(row, 9) || getVal(row, 2) || 'Untitled Record';
+        const artist = getVal(row, 1) || 'Unknown Artist'; // Full Artist Name, no cutoff
+        const rawTitle = getGramophoneRawTitle(row);
         const formattedTitleHTML = formatGramophoneTitle(rawTitle);
 
         const label = getVal(row, 3);
@@ -1511,7 +1551,7 @@
 
         const catalogNum = getVal(row, 0);
         const artist = getVal(row, 1) || 'Unknown Artist';
-        const rawTitle = getVal(row, 9) || getVal(row, 2) || 'Untitled Record';
+        const rawTitle = getGramophoneRawTitle(row);
         const formattedTitleHTML = formatGramophoneTitle(rawTitle);
 
         const label = getVal(row, 3) || 'Unspecified Label';
