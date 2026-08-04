@@ -251,9 +251,9 @@
           </button>
         </div>
 
-        <!-- Collection Hubs Grid -->
+        <!-- Collection Hubs Grid (Set to 8 columns on lg screens so all 8 cards fit on a single line) -->
         <div id="collectionHubsSection" class="hidden pt-2 border-t border-slate-200/60 dark:border-slate-800">
-          <div id="hubsGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2"></div>
+          <div id="hubsGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2"></div>
         </div>
 
       </div>
@@ -322,17 +322,10 @@
     <!-- Museum Showcase Statistics Dashboard Section -->
     <div id="statsSection" class="hidden space-y-6">
       
-      <!-- Top Single-Line Header for Stats -->
-      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <h2 class="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-          <span>📊</span> Museum Showcase Analytics & Insights Live
-        </h2>
-      </div>
-
-      <!-- Row 2 Notes Text Card -->
+      <!-- Details Card (From Row 2 Notes - Index 19) -->
       <div id="statRow2NotesCard" class="hidden bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 rounded-2xl p-4 shadow-sm">
         <h4 class="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-          <span>📝</span> Catalog Row Notes & Details
+          <span>📝</span> Details
         </h4>
         <p id="statRow2NotesText" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium whitespace-pre-line"></p>
       </div>
@@ -347,7 +340,7 @@
             <span class="p-1.5 bg-blue-50 dark:bg-blue-950/80 text-blue-600 rounded-lg text-base">🏛️</span>
           </div>
           <div class="text-2xl font-black text-slate-900 dark:text-white" id="statTotalItems">1,157</div>
-          <p class="text-[10px] text-slate-500 mt-1">Sum of preserved items (Col #items)</p>
+          <p class="text-[10px] text-slate-500 mt-1">Total number of preserved items</p>
         </div>
 
         <!-- Date Range -->
@@ -394,7 +387,7 @@
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <div class="mb-4">
           <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1">Origin Locations (Where Made)</h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Top manufacturing and production places parsed from index 17</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Top manufacturing and production places</p>
         </div>
         <div class="chart-container relative h-[320px] w-full">
           <canvas id="chartLocations"></canvas>
@@ -918,7 +911,7 @@
         exhibitsFilterGrid.classList.add('hidden');
         searchSortBar.classList.remove('hidden');
 
-        headerTitle.textContent = 'BMMC Gramophone Archive';
+        headerTitle.textContent = 'BMMC Gramophones'; // UPDATED Header Title
         headerIcon.textContent = '🎵';
         subhead.textContent = 'Gramophone Catalog (1916 – 1953): Shellac, vinyl, and early 20th-century audio recordings preserved in the BMMC music collection.';
         
@@ -934,7 +927,7 @@
         searchSortBar.classList.add('hidden');
         statsSection.classList.remove('hidden');
 
-        headerTitle.textContent = 'Museum Showcase Analytics & Insights Live';
+        headerTitle.textContent = 'Museum Showcase Analytics & Insights Live'; // UPDATED Header Title
         headerIcon.textContent = '📊';
         subhead.textContent = 'Explore live analytics, origin distribution, and chronological evolution from the Bonniefields Museum catalog.';
 
@@ -1063,7 +1056,7 @@
       }
     }
 
-    // UPDATED: "Showcase stats" hub card removed from 8-wide collection stack
+    // Render Collection Hubs Grid (7 main category cards + Gramophone card = 8 cards total on one line)
     function renderCollectionHubs(rows) {
       const hubsGrid = document.getElementById('hubsGrid');
       if (!hubsGrid) return;
@@ -1141,7 +1134,7 @@
           <span class="absolute top-1.5 right-1.5 bg-slate-900/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">${rawGramophoneRows.length}</span>
         </div>
         <div class="p-2 flex-1 flex flex-col justify-between">
-          <h3 class="font-bold text-slate-900 dark:text-slate-100 text-xs group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">Gramophone Archive</h3>
+          <h3 class="font-bold text-slate-900 dark:text-slate-100 text-xs group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">Gramophones</h3>
           <span class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5 flex items-center gap-0.5">1916–1953 →</span>
         </div>
       `;
@@ -1196,7 +1189,7 @@
       }
     }
 
-    // Ensure HTML entities like &quot; are cleanly unescaped in option labels!
+    // Cleanly unescapes HTML entities like &quot; to render clean 10" or 12" quotes
     function updateSelectOptions(elementId, values) {
       const select = document.getElementById(elementId);
       if (!select) return;
@@ -1361,7 +1354,7 @@
         currentFilteredRows = rawGramophoneRows.map((row, index) => ({ row, originalIndex: index })).filter(({ row, originalIndex }) => {
           const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
           const artistMatch = !artistVal || getVal(row, 1) === artistVal;
-          const labelMatch = !labelVal || getVal(row, 3) === labelVal;
+          const labelMatch = !labelVal || getVal(row, 3) === labelMatch;
           const formatMatch = !formatVal || getVal(row, 4) === formatVal;
           const yearMatch = !yearVal || getVal(row, 6) === yearVal;
           const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
@@ -1688,8 +1681,8 @@
       }
 
       if (targetRow2) {
-        // Extract Text from details/notes in Row 2
-        const row2NotesText = unescapeHTML(getVal(targetRow2, 4) || getVal(targetRow2, 12) || getVal(targetRow2, 2));
+        // UPDATED: Extract Notes text from Index 19 of Row 2
+        const row2NotesText = unescapeHTML(getVal(targetRow2, 19));
         const row2Card = document.getElementById('statRow2NotesCard');
         const row2TextElem = document.getElementById('statRow2NotesText');
         
@@ -1726,7 +1719,7 @@
       }
 
       catalogSource.forEach(row => {
-        // Total items is the sum of Index 2 (#items)
+        // Sum values in Index 2 (#items)
         const col2Val = getVal(row, 2);
         const col2Num = parseInt(col2Val.replace(/[^0-9]/g, ''), 10);
         if (!isNaN(col2Num)) {
@@ -1769,7 +1762,7 @@
         }
       });
 
-      // Total Items Display (Sum of Index 2 = 1,157)
+      // Display Total Items (Sum of Index 2 = 1,157)
       document.getElementById('statTotalItems').textContent = itemsSumIndex2 > 0 ? itemsSumIndex2.toLocaleString() : '1,157';
 
       if (validYears.length > 0) {
@@ -1780,7 +1773,7 @@
         document.getElementById('statDateRange').textContent = 'N/A';
       }
 
-      // Destroy previous chart instances to prevent duplication
+      // Destroy previous chart instances
       if (chartStackedInstance) chartStackedInstance.destroy();
       if (chartLocationsInstance) chartLocationsInstance.destroy();
 
@@ -2213,3 +2206,4 @@
   </script>
 </body>
 </html>
+```
