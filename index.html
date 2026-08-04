@@ -353,7 +353,7 @@
     let fuseExhibits = null;
     let fuseGramophone = null;
 
-    // HTML Sanitization / Security Helper
+    // HTML Sanitization / Security Helpers
     function escapeHTML(str) {
       if (str == null) return '';
       return String(str)
@@ -364,6 +364,16 @@
         .replace(/'/g, '&#039;');
     }
 
+    function unescapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#039;/g, "'");
+    }
+
     // Helper: Safely get CSV field and sanitize output
     function getVal(row, colIndex) {
       if (!row || !Array.isArray(row)) return '';
@@ -371,9 +381,12 @@
       return escapeHTML(raw);
     }
 
-    // Internet Archive Search URL Builder (Exact Format Match)
+    // Smart Internet Archive Search URL Builder (Strict Format & Decoding Match)
     function buildArchiveSearchUrl(rawTitle, catalogNum) {
-      const combinedStr = `${rawTitle || ''} ${catalogNum || ''}`.trim();
+      const cleanTitle = unescapeHTML(rawTitle || '');
+      const cleanCat = unescapeHTML(catalogNum || '');
+      const combinedStr = `${cleanTitle} ${cleanCat}`.trim();
+
       const encodedQuery = encodeURIComponent(combinedStr)
         .replace(/'/g, '%27')
         .replace(/%20/g, '+');
@@ -717,9 +730,11 @@
     }
 
     function googleItemSearch(title, category, details) {
-      const cleanDetails = (details || '').replace(/^#\s*/, '').replace(/\s+/g, ' ').trim();
+      const cleanTitle = unescapeHTML(title);
+      const cleanCat = unescapeHTML(category);
+      const cleanDetails = unescapeHTML(details || '').replace(/^#\s*/, '').replace(/\s+/g, ' ').trim();
       const shortDetails = cleanDetails.slice(0, 200);
-      const query = `${title} ${category || ''} Historical Artifact ${shortDetails}`.trim();
+      const query = `${cleanTitle} ${cleanCat || ''} Historical Artifact ${shortDetails}`.trim();
       window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
     }
 
@@ -1687,7 +1702,9 @@
         const hasAnyRecording = hasDiscogsRecording || hasArchiveRecording;
 
         const archiveUrl = buildArchiveSearchUrl(rawTitle, catalogNum);
-        const ytQuery = encodeURIComponent(`${artist} ${rawTitle}`.replace(/^[AB][\s\.:-]+/gi, '').replace(/[^\w\s]/gi, ' ').trim()).replace(/%20/g, '+');
+        const cleanArtist = unescapeHTML(artist);
+        const cleanTitle = unescapeHTML(rawTitle);
+        const ytQuery = encodeURIComponent(`${cleanArtist} ${cleanTitle}`.replace(/^[AB][\s\.:-]+/gi, '').trim()).replace(/%20/g, '+');
 
         if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
           counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
