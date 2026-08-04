@@ -1,5 +1,7 @@
 import { state } from './config.js';
 import { getFavorites } from './storage.js';
+import { getVal } from './utils.js';
+import { browseAllExhibits, filterCatalog } from './data.js';
 
 export function showToast(msg, icon = '✨') {
   const toast = document.getElementById('toast');
@@ -84,30 +86,28 @@ export function updateFavoritesBadge() {
 }
 
 export function updateDynamicDropdowns() {
-  import('./utils.js').then(m => {
-    if (state.currentTab === 'exhibits') {
-      const catVal = document.getElementById('filterCategory').value;
-      const typeVal = document.getElementById('filterType').value;
+  if (state.currentTab === 'exhibits') {
+    const catVal = document.getElementById('filterCategory').value;
+    const typeVal = document.getElementById('filterType').value;
 
-      let availableRows = state.rawExhibitsRows;
-      if (catVal) availableRows = availableRows.filter(r => m.getVal(r, 15).toLowerCase().includes(catVal.toLowerCase()));
-      if (typeVal) availableRows = availableRows.filter(r => m.getVal(r, 14).toLowerCase().includes(typeVal.toLowerCase()));
+    let availableRows = state.rawExhibitsRows;
+    if (catVal) availableRows = availableRows.filter(r => getVal(r, 15).toLowerCase().includes(catVal.toLowerCase()));
+    if (typeVal) availableRows = availableRows.filter(r => getVal(r, 14).toLowerCase().includes(typeVal.toLowerCase()));
 
-      updateSelectOptions('filterAge', state.rawExhibitsRows.map(r => m.getVal(r, 13)));
-      updateSelectOptions('filterType', state.rawExhibitsRows.map(r => m.getVal(r, 14)));
-      updateSelectOptions('filterCategory', state.rawExhibitsRows.map(r => m.getVal(r, 15)));
-      updateSelectOptions('filterSubcategory', availableRows.map(r => m.getVal(r, 16)));
-    } else {
-      const artistVal = document.getElementById('filterArtist').value;
-      let availableRows = state.rawGramophoneRows;
-      if (artistVal) availableRows = availableRows.filter(r => m.getVal(r, 1) === artistVal);
+    updateSelectOptions('filterAge', state.rawExhibitsRows.map(r => getVal(r, 13)));
+    updateSelectOptions('filterType', state.rawExhibitsRows.map(r => getVal(r, 14)));
+    updateSelectOptions('filterCategory', state.rawExhibitsRows.map(r => getVal(r, 15)));
+    updateSelectOptions('filterSubcategory', availableRows.map(r => getVal(r, 16)));
+  } else {
+    const artistVal = document.getElementById('filterArtist').value;
+    let availableRows = state.rawGramophoneRows;
+    if (artistVal) availableRows = availableRows.filter(r => getVal(r, 1) === artistVal);
 
-      updateSelectOptions('filterArtist', state.rawGramophoneRows.map(r => m.getVal(r, 1)));
-      updateSelectOptions('filterLabel', availableRows.map(r => m.getVal(r, 3)));
-      updateSelectOptions('filterFormat', availableRows.map(r => m.getVal(r, 4)));
-      updateSelectOptions('filterYear', availableRows.map(r => m.getVal(r, 6)));
-    }
-  });
+    updateSelectOptions('filterArtist', state.rawGramophoneRows.map(r => getVal(r, 1)));
+    updateSelectOptions('filterLabel', availableRows.map(r => getVal(r, 3)));
+    updateSelectOptions('filterFormat', availableRows.map(r => getVal(r, 4)));
+    updateSelectOptions('filterYear', availableRows.map(r => getVal(r, 6)));
+  }
 }
 
 export function updateSelectOptions(elementId, values) {
@@ -150,7 +150,7 @@ export function renderActiveFilterPills() {
     if (subCatVal) filters.push({ label: `Subcategory: ${subCatVal}`, clear: () => { document.getElementById('filterSubcategory').value = ''; } });
     if (state.only3DActive) filters.push({ label: `3D Models Only`, clear: () => { document.getElementById('btn3DOnly').click(); return false; } });
   } else {
-    filters.push({ label: `Archive Mode: Gramophone`, clear: () => import('./data.js').then(m => m.browseAllExhibits()) });
+    filters.push({ label: `Archive Mode: Gramophone`, clear: () => browseAllExhibits() });
     const artistVal = document.getElementById('filterArtist').value;
     const labelVal = document.getElementById('filterLabel').value;
     const formatVal = document.getElementById('filterFormat').value;
@@ -175,7 +175,7 @@ export function renderActiveFilterPills() {
       pill.querySelector('button').addEventListener('click', () => {
         f.clear();
         updateDynamicDropdowns();
-        import('./data.js').then(m => m.filterCatalog(true));
+        filterCatalog(true);
       });
       container.appendChild(pill);
     });

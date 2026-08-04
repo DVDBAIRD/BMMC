@@ -53,9 +53,15 @@ export function populateVoiceDropdown() {
 }
 
 export function speakAudioGuide(originalIndex, event) {
-  if (event) event.stopPropagation();
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
 
-  if (state.currentlySpeakingIndex === originalIndex && window.speechSynthesis && window.speechSynthesis.speaking) {
+  const isSpeaking = window.speechSynthesis && window.speechSynthesis.speaking;
+
+  // Toggle off if currently speaking this exact item
+  if (state.currentlySpeakingIndex === originalIndex && isSpeaking) {
     stopAudioGuide();
     return;
   }
@@ -83,8 +89,14 @@ export function speakAudioGuide(originalIndex, event) {
     state.currentSpeechUtterance.rate = 0.92;
     state.currentSpeechUtterance.pitch = 1.0;
     
-    state.currentSpeechUtterance.onend = () => { state.currentlySpeakingIndex = null; updateAudioUI(); };
-    state.currentSpeechUtterance.onerror = () => { state.currentlySpeakingIndex = null; updateAudioUI(); };
+    state.currentSpeechUtterance.onend = () => { 
+      state.currentlySpeakingIndex = null; 
+      updateAudioUI(); 
+    };
+    state.currentSpeechUtterance.onerror = () => { 
+      state.currentlySpeakingIndex = null; 
+      updateAudioUI(); 
+    };
 
     window.speechSynthesis.speak(state.currentSpeechUtterance);
     updateAudioUI();
@@ -132,7 +144,7 @@ export function updateAudioUI() {
       btnModal.onclick = stopAudioGuide;
     } else {
       btnModal.innerHTML = '🔊 Listen';
-      btnModal.onclick = () => speakAudioGuide(modalRowIdx);
+      btnModal.onclick = (e) => speakAudioGuide(modalRowIdx, e);
     }
   }
 }

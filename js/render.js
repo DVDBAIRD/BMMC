@@ -4,9 +4,11 @@ import {
   getAgeBadgeStyle, getGramophoneRawTitle, formatGramophoneTitle, 
   getDiscogsUrl, checkIfHasRecording, buildArchiveSearchUrl 
 } from './utils.js';
-import { getFavorites } from './storage.js';
-import { updateAudioUI } from './tts.js';
+import { getFavorites, toggleFavorite } from './storage.js';
+import { updateAudioUI, speakAudioGuide } from './tts.js';
 import { openModalByFilteredIndex } from './modal.js';
+import { setTab, updateDynamicDropdowns, scrollToGrid } from './ui.js';
+import { filterCatalog, browseAllExhibits } from './data.js';
 
 export function renderCollectionHubs(rows) {
   const hubsGrid = document.getElementById('hubsGrid');
@@ -42,40 +44,36 @@ export function renderCollectionHubs(rows) {
     `;
 
     hubCard.addEventListener('click', () => {
-      import('./data.js').then(m => {
-        m.setTab('exhibits');
-        const catSelect = document.getElementById('filterCategory');
-        const typeSelect = document.getElementById('filterType');
-        
-        if (catSelect) catSelect.value = '';
-        if (typeSelect) typeSelect.value = '';
+      setTab('exhibits');
+      const catSelect = document.getElementById('filterCategory');
+      const typeSelect = document.getElementById('filterType');
+      
+      if (catSelect) catSelect.value = '';
+      if (typeSelect) typeSelect.value = '';
 
-        let matched = false;
-        if (typeSelect) {
-          for (let opt of typeSelect.options) {
-            if (opt.value.toLowerCase().includes(baseName)) {
-              typeSelect.value = opt.value;
-              matched = true;
-              break;
-            }
+      let matched = false;
+      if (typeSelect) {
+        for (let opt of typeSelect.options) {
+          if (opt.value.toLowerCase().includes(baseName)) {
+            typeSelect.value = opt.value;
+            matched = true;
+            break;
           }
         }
-        if (!matched && catSelect) {
-          for (let opt of catSelect.options) {
-            if (opt.value.toLowerCase().includes(baseName)) {
-              catSelect.value = opt.value;
-              matched = true;
-              break;
-            }
+      }
+      if (!matched && catSelect) {
+        for (let opt of catSelect.options) {
+          if (opt.value.toLowerCase().includes(baseName)) {
+            catSelect.value = opt.value;
+            matched = true;
+            break;
           }
         }
+      }
 
-        import('./ui.js').then(ui => {
-          ui.updateDynamicDropdowns();
-          m.filterCatalog(true);
-          ui.scrollToGrid();
-        });
-      });
+      updateDynamicDropdowns();
+      filterCatalog(true);
+      scrollToGrid();
     });
 
     hubsGrid.appendChild(hubCard);
@@ -95,8 +93,8 @@ export function renderCollectionHubs(rows) {
   `;
 
   gramophoneHubCard.addEventListener('click', () => {
-    import('./data.js').then(m => m.setTab('gramophone'));
-    import('./ui.js').then(ui => ui.scrollToGrid());
+    setTab('gramophone');
+    scrollToGrid();
   });
 
   hubsGrid.appendChild(gramophoneHubCard);
@@ -119,9 +117,7 @@ export function renderExhibitsGrid() {
         <p class="text-slate-600 dark:text-slate-300 font-bold text-sm">No exhibit results match your selected filters.</p>
         <button id="btnResetExhibitsPrompt" class="mt-3 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline">Reset search and filters</button>
       </div>`;
-    document.getElementById('btnResetExhibitsPrompt')?.addEventListener('click', () => {
-      import('./data.js').then(m => m.browseAllExhibits());
-    });
+    document.getElementById('btnResetExhibitsPrompt')?.addEventListener('click', browseAllExhibits);
     return;
   }
 
@@ -194,11 +190,13 @@ export function renderExhibitsGrid() {
     `;
 
     card.querySelector('.btn-fav-toggle')?.addEventListener('click', (e) => {
-      import('./storage.js').then(m => m.toggleFavorite(originalIndex, e));
+      toggleFavorite(originalIndex, e);
     });
 
     card.querySelector('.btn-tts-toggle')?.addEventListener('click', (e) => {
-      import('./tts.js').then(m => m.speakAudioGuide(originalIndex, e));
+      e.stopPropagation();
+      e.preventDefault();
+      speakAudioGuide(originalIndex, e);
     });
 
     card.addEventListener('click', () => openModalByFilteredIndex(arrayIndex));
@@ -224,9 +222,7 @@ export function renderGramophoneGrid() {
         <p class="text-slate-600 dark:text-slate-300 font-bold text-sm">No gramophone records match your selected filters.</p>
         <button id="btnResetGramophonePrompt" class="mt-3 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline">Return to Main Museum Exhibits</button>
       </div>`;
-    document.getElementById('btnResetGramophonePrompt')?.addEventListener('click', () => {
-      import('./data.js').then(m => m.browseAllExhibits());
-    });
+    document.getElementById('btnResetGramophonePrompt')?.addEventListener('click', browseAllExhibits);
     return;
   }
 
@@ -295,7 +291,7 @@ export function renderGramophoneGrid() {
     `;
 
     card.querySelector('.btn-fav-toggle')?.addEventListener('click', (e) => {
-      import('./storage.js').then(m => m.toggleFavorite(originalIndex, e));
+      toggleFavorite(originalIndex, e);
     });
 
     card.addEventListener('click', () => openModalByFilteredIndex(arrayIndex));

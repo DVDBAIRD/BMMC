@@ -2,7 +2,7 @@ import { EXHIBITS_CSV_URL, GRAMOPHONE_CSV_URL, state } from './config.js';
 import { getVal, parseTitleAndDetails, parseYearForSort, getGramophoneRawTitle } from './utils.js';
 import { fetchCSVWithCache, getFavorites } from './storage.js';
 import { renderCollectionHubs, renderExhibitsGrid, renderGramophoneGrid } from './render.js';
-import { updateFavoritesBadge, updateDynamicDropdowns, renderActiveFilterPills, scrollToGrid } from './ui.js';
+import { updateFavoritesBadge, updateDynamicDropdowns, renderActiveFilterPills, initTheme } from './ui.js';
 import { stopAudioGuide } from './tts.js';
 import { openModalByOriginalIndex } from './modal.js';
 
@@ -52,7 +52,7 @@ export function initFuseSearch() {
 }
 
 export async function loadCatalogData() {
-  import('./ui.js').then(m => m.initTheme());
+  initTheme();
 
   try {
     const exhibitsData = await fetchCSVWithCache(EXHIBITS_CSV_URL, 'bMMC_cached_exhibits');
@@ -137,7 +137,7 @@ export function browseAllExhibits() {
   updateFavoritesBadge();
   updateDynamicDropdowns();
   filterCatalog(true);
-  scrollToGrid();
+  import('./ui.js').then(m => m.scrollToGrid());
 }
 
 export function setTab(tabName) {

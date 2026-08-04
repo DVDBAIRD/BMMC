@@ -259,7 +259,6 @@ export function closeModal() {
   window.history.replaceState(null, '', ' ');
 }
 
-// Modal Event Bindings
 export function initModalListeners() {
   document.getElementById('closeModal')?.addEventListener('click', closeModal);
   document.getElementById('detailModal')?.addEventListener('click', (e) => {
