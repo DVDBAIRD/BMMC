@@ -371,32 +371,13 @@
       return escapeHTML(raw);
     }
 
-    // Smart Internet Archive Search URL Builder
-    function buildArchiveSearchUrl(artist, rawTitle, catalogNum) {
-      let cleanArtist = (artist || '').replace(/Unknown Artist/i, '').trim();
-
-      // Extract primary track title (Side A) and strip A: / B: prefixes
-      let primaryTitle = (rawTitle || '').replace(/^[AB][\s\.:-]+/gi, '');
-      if (primaryTitle.includes('/')) {
-        primaryTitle = primaryTitle.split('/')[0];
-      }
-      primaryTitle = primaryTitle.replace(/^[AB][\s\.:-]+/gi, '').trim();
-
-      // Strip punctuation characters that break Lucene queries
-      cleanArtist = cleanArtist.replace(/[^\w\s]/gi, ' ').replace(/\s+/g, ' ').trim();
-      primaryTitle = primaryTitle.replace(/[^\w\s]/gi, ' ').replace(/\s+/g, ' ').trim();
-
-      let queryTerms = [];
-      if (cleanArtist) queryTerms.push(cleanArtist);
-      if (primaryTitle) queryTerms.push(primaryTitle);
-
-      if (catalogNum) {
-        const cleanCat = catalogNum.replace(/[^\w]/gi, '').trim();
-        if (cleanCat && cleanCat.length >= 3) queryTerms.push(cleanCat);
-      }
-
-      const query = `collection:(78rpm) ${queryTerms.join(' ')}`.trim();
-      return `https://archive.org/search.php?query=${encodeURIComponent(query).replace(/%20/g, '+')}`;
+    // Internet Archive Search URL Builder (Exact Format Match)
+    function buildArchiveSearchUrl(rawTitle, catalogNum) {
+      const combinedStr = `${rawTitle || ''} ${catalogNum || ''}`.trim();
+      const encodedQuery = encodeURIComponent(combinedStr)
+        .replace(/'/g, '%27')
+        .replace(/%20/g, '+');
+      return `https://archive.org/details/78rpm?tab=collection&query=${encodedQuery}`;
     }
 
     // Controls Toggle Logic
@@ -1502,7 +1483,7 @@
         const isFav = favs.includes(originalIndex);
 
         const catalogNum = getVal(row, 0);
-        const archiveUrl = buildArchiveSearchUrl(artist, rawTitle, catalogNum);
+        const archiveUrl = buildArchiveSearchUrl(rawTitle, catalogNum);
 
         const card = document.createElement('div');
         card.className = 'bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between cursor-pointer group relative';
@@ -1705,7 +1686,7 @@
         const hasArchiveRecording = getVal(row, 11).toLowerCase().includes('yes');
         const hasAnyRecording = hasDiscogsRecording || hasArchiveRecording;
 
-        const archiveUrl = buildArchiveSearchUrl(artist, rawTitle, catalogNum);
+        const archiveUrl = buildArchiveSearchUrl(rawTitle, catalogNum);
         const ytQuery = encodeURIComponent(`${artist} ${rawTitle}`.replace(/^[AB][\s\.:-]+/gi, '').replace(/[^\w\s]/gi, ' ').trim()).replace(/%20/g, '+');
 
         if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
