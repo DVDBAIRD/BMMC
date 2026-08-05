@@ -345,78 +345,99 @@
         </div>
       </div>
 
-      <!-- KPI Metric Cards Bar -->
+      <!-- KPI Metric Cards Bar (4 Columns: Total Items, Date Span, Pre/Post 1950 Ratio, External Links) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <!-- Total Items (Sum of Index 2 = 1,157) -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Items</span>
-            <span class="p-1.5 bg-blue-50 dark:bg-blue-950/80 text-blue-600 rounded-lg text-base">🏛️</span>
+        <!-- Card 1: Total Items (Sum of Index 2 = 1,157) -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Items</span>
+              <span class="p-1.5 bg-blue-50 dark:bg-blue-950/80 text-blue-600 rounded-lg text-base">🏛️</span>
+            </div>
+            <div class="text-2xl font-black text-slate-900 dark:text-white" id="statTotalItems">1,157</div>
           </div>
-          <div class="text-2xl font-black text-slate-900 dark:text-white" id="statTotalItems">1,157</div>
           <p class="text-[10px] text-slate-500 mt-1">Total number of preserved items</p>
         </div>
 
-        <!-- Date Range -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date Span</span>
-            <span class="p-1.5 bg-amber-50 dark:bg-amber-950/80 text-amber-600 rounded-lg text-base">⏳</span>
+        <!-- Card 2: Date Span (Same text-2xl size as Total Items) -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date Span</span>
+              <span class="p-1.5 bg-amber-50 dark:bg-amber-950/80 text-amber-600 rounded-lg text-base">⏳</span>
+            </div>
+            <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white" id="statDateRange">--</div>
           </div>
-          <div class="text-lg font-black text-slate-900 dark:text-white" id="statDateRange">--</div>
           <p class="text-[10px] text-slate-500 mt-1">Earliest to newest date in catalog</p>
         </div>
 
-        <!-- Pre-1950 % / Post-1950 % Ratio (Parsed from Column Index 5) -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pre / Post 1950 %</span>
-            <span class="p-1.5 bg-purple-50 dark:bg-purple-950/80 text-purple-600 rounded-lg text-base">📜</span>
-          </div>
-          <div class="text-lg font-black text-slate-900 dark:text-white" id="statPrePost1950">--</div>
-          <p class="text-[10px] text-slate-500 mt-1">Pre-1950 % / Post-1950 % ratio (Col 5)</p>
-        </div>
-
-        <!-- Highlighted Item-Tab Style Links (Index 22 & 23 Row 2) -->
+        <!-- Card 3: Pre-1950 % / Post-1950 % Ratio (Parsed from Column Index 5, text-2xl size) -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Highlighted External Links</span>
-          <div class="flex flex-wrap items-center gap-2 mt-1">
-            <a id="statDocLink" href="#" target="_blank" class="hidden bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold px-3.5 py-2 rounded-xl border border-blue-500 shadow-sm transition flex items-center gap-1.5">
-              <span>📄 Documentation ↗</span>
-            </a>
-            <a id="statWebLink" href="#" target="_blank" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold px-3.5 py-2 rounded-xl border border-emerald-500 shadow-sm transition flex items-center gap-1.5">
-              <span>🌐 Web Info ↗</span>
-            </a>
-            <span id="statNoLinks" class="text-[10px] text-slate-400 italic">No links recorded</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Main Chart 1: Horizontal Stacked Bar Chart (Items by Date & Type, Year >= 1800) -->
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-        <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Items by Date Stacked by Type</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Horizontal distribution of artifacts post-1800 (filtering out items prior to 1800)</p>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pre / Post 1950 %</span>
+              <span class="p-1.5 bg-purple-50 dark:bg-purple-950/80 text-purple-600 rounded-lg text-base">📜</span>
+            </div>
+            <div class="text-2xl font-black text-slate-900 dark:text-white" id="statPrePost1950">--</div>
           </div>
-          <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 self-start sm:self-auto">Filter: Year ≥ 1800</span>
+          <p class="text-[10px] text-slate-500 mt-1">Pre-1950 % / Post-1950 % ratio</p>
         </div>
-        <div class="chart-container relative h-[420px] w-full">
-          <canvas id="chartStackedDateType"></canvas>
+
+        <!-- Card 4: Highlighted External Links (Aligned vertically in line with metric numbers) -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Highlighted External Links</span>
+              <span class="p-1.5 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 rounded-lg text-base">🔗</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 min-h-[32px]">
+              <a id="statDocLink" href="#" target="_blank" class="hidden bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl border border-blue-500 shadow-sm transition flex items-center gap-1">
+                <span>📄 Documentation ↗</span>
+              </a>
+              <a id="statWebLink" href="#" target="_blank" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl border border-emerald-500 shadow-sm transition flex items-center gap-1">
+                <span>🌐 Web Info ↗</span>
+              </a>
+              <span id="statNoLinks" class="text-xs text-slate-400 italic">No links recorded</span>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-500 mt-1">Direct catalog reference resources</p>
         </div>
+
       </div>
 
-      <!-- Chart 2: Origin Locations Bar Chart (Index 17 - Combined Countries) -->
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-        <div class="mb-4">
-          <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1">Origin Locations (Where Made)</h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Top manufacturing and production places</p>
+      <!-- Side-by-Side Charts Container (2 Columns: Stacked Bar Chart & Origin Locations Chart) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Chart 1: Horizontal Stacked Bar Chart (Items by Date & Type, Year >= 1800) -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white">Items by Date Stacked by Type</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Distribution of artifacts post-1800</p>
+              </div>
+              <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 self-start sm:self-auto">Filter: Year ≥ 1800</span>
+            </div>
+          </div>
+          <div class="chart-container relative h-[380px] w-full">
+            <canvas id="chartStackedDateType"></canvas>
+          </div>
         </div>
-        <div class="chart-container relative h-[320px] w-full">
-          <canvas id="chartLocations"></canvas>
+
+        <!-- Chart 2: Origin Locations Bar Chart (Index 17 - Combined Countries) -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="mb-4">
+              <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1">Origin Locations (Where Made)</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Top manufacturing and production places</p>
+            </div>
+          </div>
+          <div class="chart-container relative h-[380px] w-full">
+            <canvas id="chartLocations"></canvas>
+          </div>
         </div>
+
       </div>
 
     </div>
@@ -1128,7 +1149,7 @@
       }
     }
 
-    // Render Collection Hubs Grid (Renders 7 main category cards + Gramophone card = 8 cards total on one line)
+    // Render Collection Hubs Grid (7 main category cards + Gramophone card = 8 cards total on one line)
     function renderCollectionHubs(rows) {
       const hubsGrid = document.getElementById('hubsGrid');
       if (!hubsGrid) return;
@@ -1803,7 +1824,7 @@
       }
 
       if (targetRow2) {
-        // Extract Details Notes text from Index 19 of Row 2
+        // Extract Notes text from Index 19 of Row 2
         const row2NotesText = unescapeHTML(getVal(targetRow2, 19));
         const row2Card = document.getElementById('statRow2NotesCard');
         const row2TextElem = document.getElementById('statRow2NotesText');
@@ -2273,7 +2294,7 @@
         window.location.hash = '#stats';
       });
 
-      // UPDATED: "Surprise Me!" button works seamlessly from any tab (including stats tab)
+      // "Surprise Me!" button works seamlessly from any tab (including stats tab)
       document.getElementById('btnSurprise').addEventListener('click', () => {
         const rows = (currentTab === 'gramophone') ? rawGramophoneRows : rawExhibitsRows;
         if (!rows || rows.length === 0) return;
