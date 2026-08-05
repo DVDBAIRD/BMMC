@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
@@ -251,7 +251,7 @@
           </button>
         </div>
 
-        <!-- Collection Hubs Grid (8 columns on lg screens so all 8 cards fit on a single line) -->
+        <!-- Collection Hubs Grid -->
         <div id="collectionHubsSection" class="hidden pt-2 border-t border-slate-200/60 dark:border-slate-800">
           <div id="hubsGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2"></div>
         </div>
@@ -314,7 +314,7 @@
       </div>
     </div>
 
-    <!-- Exhibit Cards Grid or Desktop 3-Column Audio Grid -->
+    <!-- Exhibit Cards Grid -->
     <div id="gridSection">
       <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden"></div>
     </div>
@@ -322,11 +322,11 @@
     <!-- Museum Showcase Statistics Dashboard Section -->
     <div id="statsSection" class="hidden space-y-6">
       
-      <!-- Details Card (2 Column Grid: Column 1 = Row 2 Notes Text, Column 2 = Clickable Image from Row 2 Index 24) -->
+      <!-- Details Card -->
       <div id="statRow2NotesCard" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
           
-          <!-- Column 1: Details Text (Index 19, Row 2) - Prominent 20% Larger Header & Text -->
+          <!-- Column 1: Details Text -->
           <div class="flex flex-col justify-center">
             <h3 class="text-base sm:text-lg font-extrabold text-blue-900 dark:text-blue-300 uppercase tracking-wider mb-2.5 flex items-center gap-2">
               <span>📝</span> Details
@@ -334,7 +334,7 @@
             <p id="statRow2NotesText" class="text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed font-medium whitespace-pre-line"></p>
           </div>
 
-          <!-- Column 2: Clickable Featured Image (Index 24, Row 2) -->
+          <!-- Column 2: Clickable Featured Image -->
           <div id="statRow2ImageCol" class="hidden flex flex-col items-center justify-center border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-2 h-56 sm:h-64 relative overflow-hidden">
             <a id="statRow2ImgLink" href="#" target="_blank" title="Click to view full size image in new tab" class="block group/img w-full h-full relative flex items-center justify-center">
               <img id="statRow2Img" src="" alt="Featured Catalog Image" class="max-w-full max-h-full object-contain rounded-xl shadow-sm group-hover/img:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" />
@@ -345,10 +345,10 @@
         </div>
       </div>
 
-      <!-- KPI Metric Cards Bar (4 Columns: Total Items, Date Span, Pre/Post 1950 Ratio, External Links) -->
+      <!-- KPI Metric Cards Bar -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <!-- Card 1: Total Items (Sum of Index 2 = 1,157) -->
+        <!-- Card 1: Total Items -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-1.5">
@@ -360,7 +360,7 @@
           <p class="text-[10px] text-slate-500 mt-1">Total number of preserved items</p>
         </div>
 
-        <!-- Card 2: Date Span (Same text-2xl size as Total Items) -->
+        <!-- Card 2: Date Span -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-1.5">
@@ -372,7 +372,7 @@
           <p class="text-[10px] text-slate-500 mt-1">Earliest to newest date in catalog</p>
         </div>
 
-        <!-- Card 3: Pre-1950 % / Post-1950 % Ratio (Parsed from Column Index 5, text-2xl size) -->
+        <!-- Card 3: Pre-1950 % / Post-1950 % Ratio -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-1.5">
@@ -384,7 +384,7 @@
           <p class="text-[10px] text-slate-500 mt-1">Pre-1950 % / Post-1950 % ratio</p>
         </div>
 
-        <!-- Card 4: Highlighted External Links (Aligned vertically in line with metric numbers) -->
+        <!-- Card 4: Highlighted External Links -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-1.5">
@@ -406,10 +406,10 @@
 
       </div>
 
-      <!-- Side-by-Side Charts Container (2 Columns: Stacked Bar Chart & Origin Locations Chart) -->
+      <!-- Side-by-Side Charts Container -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <!-- Chart 1: Horizontal Stacked Bar Chart (Items by Date & Type, Year >= 1800) -->
+        <!-- Chart 1: Horizontal Stacked Bar Chart -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
           <div>
             <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -425,7 +425,7 @@
           </div>
         </div>
 
-        <!-- Chart 2: Origin Locations Bar Chart (Index 17 - Combined Countries) -->
+        <!-- Chart 2: Origin Locations Bar Chart -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
           <div>
             <div class="mb-4">
@@ -544,7 +544,6 @@
       return escapeHTML(raw);
     }
 
-    // Helper: Normalize location strings into combined parent countries
     function normalizeCountry(rawLoc) {
       if (!rawLoc) return '';
       let loc = unescapeHTML(rawLoc).replace(/[\.\?]/g, '').trim();
@@ -787,7 +786,6 @@
       }
     }
 
-    // Speech Synthesis
     function loadVoices() {
       if (!('speechSynthesis' in window)) return;
       const voices = speechSynthesis.getVoices();
@@ -966,7 +964,6 @@
       currentTab = tabName;
       stopAudioGuide();
 
-      // Clear #stats from URL if navigating away from stats tab
       if (tabName !== 'stats' && window.location.hash === '#stats') {
         window.history.replaceState(null, '', window.location.pathname);
       }
@@ -1020,7 +1017,7 @@
         searchSortBar.classList.add('hidden');
         statsSection.classList.remove('hidden');
 
-        headerTitle.textContent = 'Museum Insights Live'; // UPDATED Header Title
+        headerTitle.textContent = 'Museum Insights Live';
         headerIcon.textContent = '📊';
         subhead.textContent = 'Explore live analytics, origin distribution, and chronological evolution from the Bonniefields Museum catalog.';
 
@@ -1110,7 +1107,6 @@
         renderCollectionHubs(rawExhibitsRows);
         updateDynamicDropdowns();
 
-        document.getElementById('loading').classList.add('hidden');
         document.getElementById('gridPrompt').classList.remove('hidden');
 
         updateFavoritesBadge();
@@ -1127,6 +1123,11 @@
             </button>
           </div>
         `;
+      } finally {
+        const loadingElem = document.getElementById('loading');
+        if (loadingElem && !loadingElem.innerHTML.includes('Error loading')) {
+          loadingElem.classList.add('hidden');
+        }
       }
     }
 
@@ -1149,7 +1150,6 @@
       }
     }
 
-    // Render Collection Hubs Grid (7 main category cards + Gramophone card = 8 cards total on one line)
     function renderCollectionHubs(rows) {
       const hubsGrid = document.getElementById('hubsGrid');
       if (!hubsGrid) return;
@@ -1447,7 +1447,7 @@
           const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
           const artistMatch = !artistVal || getVal(row, 1) === artistVal;
           const labelMatch = !labelVal || getVal(row, 3) === labelMatch;
-          const formatMatch = !formatVal || getVal(row, 4) === formatVal;
+          const formatMatch = !formatVal || getVal(row, 4) === formatMatch;
           const yearMatch = !yearVal || getVal(row, 6) === yearVal;
           const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
 
@@ -1559,7 +1559,6 @@
       }
     }
 
-    // Helper: Switch active image on exhibit cards between img1 and img2
     function switchCardImage(originalIndex, dir, event) {
       if (event) event.stopPropagation();
       const imgElem = document.getElementById(`card-img-${originalIndex}`);
@@ -1677,7 +1676,7 @@
               </div>
               
               <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">${slashFormattedTitle}</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed">${details || 'Click for full details and museum notes.'}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed">${notes ? notes.replace(/^#\s*/, '') : (details || 'Click for full details and museum notes.')}</p>
             </div>
 
             <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
@@ -1789,9 +1788,6 @@
       });
     }
 
-    // -------------------------------------------------------------
-    // MUSEUM SHOWCASE STATISTICS COMPUTATION & CHART RENDERING
-    // -------------------------------------------------------------
     function renderMuseumStatistics() {
       if (typeof Chart === 'undefined') {
         console.warn("Chart.js library is not loaded.");
@@ -1815,7 +1811,6 @@
       const dateTypeMap = {};
       const allTypesSet = new Set();
 
-      // Extract Row 2 Specifics (Index 1 of array = Spreadsheet Row 2)
       let targetRow2 = null;
       if (rawFullCatalogData.length >= 2) {
         targetRow2 = rawFullCatalogData[1];
@@ -1824,7 +1819,6 @@
       }
 
       if (targetRow2) {
-        // Extract Notes text from Index 19 of Row 2
         const row2NotesText = unescapeHTML(getVal(targetRow2, 19));
         const row2Card = document.getElementById('statRow2NotesCard');
         const row2TextElem = document.getElementById('statRow2NotesText');
@@ -1839,7 +1833,6 @@
           row2Card.classList.add('hidden');
         }
 
-        // Featured Image from Index 24 of Row 2 (Clickable to enlarge)
         let img24Raw = getVal(targetRow2, 24);
         if (!img24Raw) {
           img24Raw = 'https://drive.google.com/thumbnail?id=1LczuV7vwseFwLwSp8FLrLejJOJ8OAxMT&sz=s1000';
@@ -1853,7 +1846,6 @@
           row2ImgCol.classList.remove('hidden');
         }
 
-        // Highlighted Item-Tab Style Links (Index 22 & 23 Row 2)
         const docUrl = getVal(targetRow2, 22);
         const webUrl = getVal(targetRow2, 23);
 
@@ -1879,7 +1871,6 @@
       }
 
       catalogSource.forEach(row => {
-        // Sum values in Index 2 (#items)
         const col2Val = getVal(row, 2);
         const col2Num = parseInt(col2Val.replace(/[^0-9]/g, ''), 10);
         if (!isNaN(col2Num)) {
@@ -1888,7 +1879,6 @@
           itemsSumIndex2 += 1;
         }
 
-        // Column Index 5 parsing (1950 column: Pre 1950 vs Post 1950 %)
         const col5Val = getVal(row, 5).toLowerCase();
         if (col5Val.includes('pre')) {
           col5PreCount++;
@@ -1902,7 +1892,6 @@
           }
         }
 
-        // Date parsing (Index 7)
         const rawDate = getVal(row, 7);
         let yearNum = null;
         const yearMatch = rawDate.match(/\b(1[0-9]{3}|20[0-9]{2})\b/);
@@ -1914,8 +1903,6 @@
           validYears.push(yearNum);
         }
 
-        // Stacked Chart Grouping (Index 7 Date, Index 9 Type)
-        // STRICT FILTER: Ignore anything prior to 1800 (Year >= 1800)
         if (yearNum && yearNum >= 1800) {
           const typeName = getVal(row, 9) || getVal(row, 14) || 'General';
           allTypesSet.add(typeName);
@@ -1926,7 +1913,6 @@
           dateTypeMap[roundedPeriod][typeName] = (dateTypeMap[roundedPeriod][typeName] || 0) + 1;
         }
 
-        // Location Parsing (Index 17) -> Combined into parent countries
         let rawLoc = getVal(row, 17);
         if (rawLoc) {
           const country = normalizeCountry(rawLoc);
@@ -1936,7 +1922,6 @@
         }
       });
 
-      // Display Total Items (Sum of Index 2 = 1,157)
       document.getElementById('statTotalItems').textContent = itemsSumIndex2 > 0 ? itemsSumIndex2.toLocaleString() : '1,157';
 
       if (validYears.length > 0) {
@@ -1947,7 +1932,6 @@
         document.getElementById('statDateRange').textContent = 'N/A';
       }
 
-      // Display Pre 1950 % / Post 1950 % calculated from Index 5
       const totalCol5 = col5PreCount + col5PostCount;
       const prePostElem = document.getElementById('statPrePost1950');
       if (totalCol5 > 0 && prePostElem) {
@@ -1958,11 +1942,9 @@
         prePostElem.textContent = '62% / 38%';
       }
 
-      // Destroy previous chart instances
       if (chartStackedInstance) chartStackedInstance.destroy();
       if (chartLocationsInstance) chartLocationsInstance.destroy();
 
-      // 1. Render Horizontal Stacked Bar Chart (Date vs Type, Year >= 1800)
       const periodsSorted = Object.keys(dateTypeMap).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
       const typesArray = Array.from(allTypesSet);
 
@@ -1984,7 +1966,7 @@
           datasets: stackedDatasets
         },
         options: {
-          indexAxis: 'y', // Horizontal Stacked Chart
+          indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
@@ -2006,7 +1988,6 @@
         }
       });
 
-      // 2. Render Origin Locations Bar Chart (Index 17 - Combined Countries)
       const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
       const topLocations = sortedLocations.slice(0, 10);
       const ctxLoc = document.getElementById('chartLocations').getContext('2d');
@@ -2069,9 +2050,7 @@
 
         const notes = getVal(row, 4);
         const age = getVal(row, 13);
-        const type = getVal(row, 14);
         const category = getVal(row, 15);
-        const subcategory = getVal(row, 16);
         const d3d = getVal(row, 17);
         const ddoc = getVal(row, 18);
         const dweb = getVal(row, 19);
@@ -2106,9 +2085,6 @@
 
           <div class="flex flex-wrap gap-2 text-xs mb-3.5">
             ${age ? `<span class="${ageBadgeClass} px-3 py-0.5 rounded-full"><strong>Age:</strong> ${age}</span>` : ''}
-            ${type ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-0.5 rounded-full font-medium"><strong>Type:</strong> ${type}</span>` : ''}
-            ${category ? `<span class="bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 border border-blue-100 dark:border-blue-900 px-3 py-0.5 rounded-full font-medium"><strong>Category:</strong> ${category}</span>` : ''}
-            ${subcategory ? `<span class="bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-100 dark:border-emerald-900 px-3 py-0.5 rounded-full font-medium"><strong>Subcategory:</strong> ${subcategory}</span>` : ''}
           </div>
 
           <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-4">
@@ -2281,7 +2257,6 @@
 
     // Bind Event Listeners on DOM Ready
     document.addEventListener('DOMContentLoaded', () => {
-      // Navigation & Header
       document.getElementById('brandLogoLink').addEventListener('click', (e) => {
         e.preventDefault();
         browseAllExhibits();
@@ -2294,7 +2269,6 @@
         window.location.hash = '#stats';
       });
 
-      // "Surprise Me!" button works seamlessly from any tab (including stats tab)
       document.getElementById('btnSurprise').addEventListener('click', () => {
         const rows = (currentTab === 'gramophone') ? rawGramophoneRows : rawExhibitsRows;
         if (!rows || rows.length === 0) return;
@@ -2343,14 +2317,12 @@
         scrollToGrid();
       });
 
-      // Search & Filters
       document.getElementById('searchInput').addEventListener('input', () => filterCatalog(true));
       document.getElementById('clearSearch').addEventListener('click', () => {
         document.getElementById('searchInput').value = '';
         filterCatalog(true);
       });
 
-      // Modal Handlers
       document.getElementById('closeModal').addEventListener('click', closeModal);
       document.getElementById('detailModal').addEventListener('click', (e) => {
         if (e.target === document.getElementById('detailModal')) closeModal();
@@ -2364,7 +2336,6 @@
         if (currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1);
       });
 
-      // Keyboard Shortcuts & Focus Trap Navigation
       window.addEventListener('keydown', (e) => {
         const modal = document.getElementById('detailModal');
         if (modal.classList.contains('hidden')) return;
@@ -2389,9 +2360,8 @@
         }
       });
 
-      // Start Catalog Fetch & Initialization
       loadCatalogData();
     });
   </script>
 </body>
-</html>
+</html> -->
