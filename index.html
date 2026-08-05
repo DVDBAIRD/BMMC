@@ -251,7 +251,7 @@
           </button>
         </div>
 
-        <!-- Collection Hubs Grid (Set to 8 columns on lg screens so all 8 cards fit on a single line) -->
+        <!-- Collection Hubs Grid (8 columns on lg screens so all 8 cards fit on a single line) -->
         <div id="collectionHubsSection" class="hidden pt-2 border-t border-slate-200/60 dark:border-slate-800">
           <div id="hubsGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2"></div>
         </div>
@@ -322,12 +322,24 @@
     <!-- Museum Showcase Statistics Dashboard Section -->
     <div id="statsSection" class="hidden space-y-6">
       
-      <!-- Details Card (From Row 2 Notes - Index 19) -->
-      <div id="statRow2NotesCard" class="hidden bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 rounded-2xl p-4 shadow-sm">
-        <h4 class="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-          <span>📝</span> Details
-        </h4>
-        <p id="statRow2NotesText" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium whitespace-pre-line"></p>
+      <!-- Details Card (2 Column Grid: Column 1 = Row 2 Notes Text, Column 2 = Row 2 Index 24 Image) -->
+      <div id="statRow2NotesCard" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          
+          <!-- Column 1: Details Text (Index 19, Row 2) -->
+          <div class="flex flex-col justify-center">
+            <h4 class="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <span>📝</span> Details
+            </h4>
+            <p id="statRow2NotesText" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium whitespace-pre-line"></p>
+          </div>
+
+          <!-- Column 2: Featured Image (Index 24, Row 2) -->
+          <div id="statRow2ImageCol" class="hidden flex flex-col items-center justify-center border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-2 h-56 sm:h-64 relative overflow-hidden">
+            <img id="statRow2Img" src="" alt="Featured Catalog Image" class="max-w-full max-h-full object-contain rounded-xl shadow-sm" onError="this.src='${NO_IMAGE_SVG}'" />
+          </div>
+
+        </div>
       </div>
 
       <!-- KPI Metric Cards Bar -->
@@ -383,7 +395,7 @@
         </div>
       </div>
 
-      <!-- Chart 2: Origin Locations Bar Chart (Index 17) -->
+      <!-- Chart 2: Origin Locations Bar Chart (Index 17 - Combined Countries) -->
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <div class="mb-4">
           <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1">Origin Locations (Where Made)</h3>
@@ -496,6 +508,48 @@
       if (!row || !Array.isArray(row)) return '';
       const raw = colIndex < row.length && row[colIndex] != null ? String(row[colIndex]).trim() : '';
       return escapeHTML(raw);
+    }
+
+    // Helper: Normalize location strings into combined parent countries
+    function normalizeCountry(rawLoc) {
+      if (!rawLoc) return '';
+      let loc = unescapeHTML(rawLoc).replace(/[\.\?]/g, '').trim();
+      let lower = loc.toLowerCase();
+
+      if (lower.includes('england') || lower.includes('london') || lower.includes('sheffield') || lower.includes('uk') || lower.includes('united kingdom') || lower.includes('scotland') || lower.includes('wales') || lower.includes('great britain')) {
+        return 'England / UK';
+      }
+      if (lower.includes('usa') || lower.includes('united states') || lower.includes('america') || lower.includes('new york') || lower.includes('n.y.')) {
+        return 'USA';
+      }
+      if (lower.includes('germany') || lower.includes('deutschland')) {
+        return 'Germany';
+      }
+      if (lower.includes('france') || lower.includes('paris')) {
+        return 'France';
+      }
+      if (lower.includes('australia')) {
+        return 'Australia';
+      }
+      if (lower.includes('new zealand') || lower.includes('nz')) {
+        return 'New Zealand';
+      }
+      if (lower.includes('japan')) {
+        return 'Japan';
+      }
+      if (lower.includes('canada')) {
+        return 'Canada';
+      }
+      if (lower.includes('switzerland') || lower.includes('swiss')) {
+        return 'Switzerland';
+      }
+      if (lower.includes('austria')) {
+        return 'Austria';
+      }
+      if (lower.includes('sweden')) {
+        return 'Sweden';
+      }
+      return loc.split(' ')[0].split(',')[0].split('/')[0].trim();
     }
 
     function buildArchiveSearchUrl(rawTitle, catalogNum) {
@@ -927,7 +981,7 @@
         searchSortBar.classList.add('hidden');
         statsSection.classList.remove('hidden');
 
-        headerTitle.textContent = 'Museum Showcase Analytics & Insights Live'; // UPDATED Header Title
+        headerTitle.textContent = 'Museum Insights Live'; // UPDATED Main Header Title
         headerIcon.textContent = '📊';
         subhead.textContent = 'Explore live analytics, origin distribution, and chronological evolution from the Bonniefields Museum catalog.';
 
@@ -1685,12 +1739,27 @@
         const row2NotesText = unescapeHTML(getVal(targetRow2, 19));
         const row2Card = document.getElementById('statRow2NotesCard');
         const row2TextElem = document.getElementById('statRow2NotesText');
-        
+        const row2ImgElem = document.getElementById('statRow2Img');
+        const row2ImgCol = document.getElementById('statRow2ImageCol');
+
         if (row2NotesText && row2TextElem && row2Card) {
           row2TextElem.textContent = row2NotesText;
           row2Card.classList.remove('hidden');
         } else if (row2Card) {
           row2Card.classList.add('hidden');
+        }
+
+        // UPDATED: Featured Image from Index 24 of Row 2
+        let img24Raw = getVal(targetRow2, 24);
+        if (!img24Raw) {
+          img24Raw = 'https://drive.google.com/thumbnail?id=1LczuV7vwseFwLwSp8FLrLejJOJ8OAxMT&sz=s1000';
+        } else {
+          img24Raw = formatImageUrl(img24Raw);
+        }
+
+        if (row2ImgElem && row2ImgCol) {
+          row2ImgElem.src = img24Raw;
+          row2ImgCol.classList.remove('hidden');
         }
 
         // Highlighted Item-Tab Style Links (Index 22 & 23 Row 2)
@@ -1752,12 +1821,12 @@
           dateTypeMap[roundedPeriod][typeName] = (dateTypeMap[roundedPeriod][typeName] || 0) + 1;
         }
 
-        // Location Parsing (Index 17)
+        // Location Parsing (Index 17) -> Combined into parent countries
         let rawLoc = getVal(row, 17);
         if (rawLoc) {
-          const locClean = unescapeHTML(rawLoc).replace(/[\.\?]/g, '').trim();
-          if (locClean) {
-            locationCounts[locClean] = (locationCounts[locClean] || 0) + 1;
+          const country = normalizeCountry(rawLoc);
+          if (country) {
+            locationCounts[country] = (locationCounts[country] || 0) + 1;
           }
         }
       });
@@ -1821,7 +1890,7 @@
         }
       });
 
-      // 2. Render Origin Locations Bar Chart (Index 17)
+      // 2. Render Origin Locations Bar Chart (Index 17 - Combined Countries)
       const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
       const topLocations = sortedLocations.slice(0, 10);
       const ctxLoc = document.getElementById('chartLocations').getContext('2d');
