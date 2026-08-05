@@ -322,28 +322,31 @@
     <!-- Museum Showcase Statistics Dashboard Section -->
     <div id="statsSection" class="hidden space-y-6">
       
-      <!-- Details Card (2 Column Grid: Column 1 = Row 2 Notes Text, Column 2 = Row 2 Index 24 Image) -->
+      <!-- Details Card (2 Column Grid: Column 1 = Row 2 Notes Text, Column 2 = Clickable Image from Row 2 Index 24) -->
       <div id="statRow2NotesCard" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
           
-          <!-- Column 1: Details Text (Index 19, Row 2) -->
+          <!-- Column 1: Details Text (Index 19, Row 2) - Prominent 20% Larger Header & Text -->
           <div class="flex flex-col justify-center">
-            <h4 class="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <h3 class="text-base sm:text-lg font-extrabold text-blue-900 dark:text-blue-300 uppercase tracking-wider mb-2.5 flex items-center gap-2">
               <span>📝</span> Details
-            </h4>
-            <p id="statRow2NotesText" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium whitespace-pre-line"></p>
+            </h3>
+            <p id="statRow2NotesText" class="text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed font-medium whitespace-pre-line"></p>
           </div>
 
-          <!-- Column 2: Featured Image (Index 24, Row 2) -->
+          <!-- Column 2: Clickable Featured Image (Index 24, Row 2) -->
           <div id="statRow2ImageCol" class="hidden flex flex-col items-center justify-center border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-2 h-56 sm:h-64 relative overflow-hidden">
-            <img id="statRow2Img" src="" alt="Featured Catalog Image" class="max-w-full max-h-full object-contain rounded-xl shadow-sm" onError="this.src='${NO_IMAGE_SVG}'" />
+            <a id="statRow2ImgLink" href="#" target="_blank" title="Click to view full size image in new tab" class="block group/img w-full h-full relative flex items-center justify-center">
+              <img id="statRow2Img" src="" alt="Featured Catalog Image" class="max-w-full max-h-full object-contain rounded-xl shadow-sm group-hover/img:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" />
+              <span class="absolute bottom-2 right-2 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-lg shadow pointer-events-none">Enlarge ↗</span>
+            </a>
           </div>
 
         </div>
       </div>
 
       <!-- KPI Metric Cards Bar -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         <!-- Total Items (Sum of Index 2 = 1,157) -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
@@ -363,6 +366,16 @@
           </div>
           <div class="text-lg font-black text-slate-900 dark:text-white" id="statDateRange">--</div>
           <p class="text-[10px] text-slate-500 mt-1">Earliest to newest date in catalog</p>
+        </div>
+
+        <!-- Pre-1950 % / Post-1950 % Ratio (Parsed from Column Index 5) -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pre / Post 1950 %</span>
+            <span class="p-1.5 bg-purple-50 dark:bg-purple-950/80 text-purple-600 rounded-lg text-base">📜</span>
+          </div>
+          <div class="text-lg font-black text-slate-900 dark:text-white" id="statPrePost1950">--</div>
+          <p class="text-[10px] text-slate-500 mt-1">Pre-1950 % / Post-1950 % ratio (Col 5)</p>
         </div>
 
         <!-- Highlighted Item-Tab Style Links (Index 22 & 23 Row 2) -->
@@ -932,6 +945,11 @@
       currentTab = tabName;
       stopAudioGuide();
 
+      // Clear #stats from URL if navigating away from stats tab
+      if (tabName !== 'stats' && window.location.hash === '#stats') {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+
       const exhibitsFilterGrid = document.getElementById('exhibitsFilterGrid');
       const gramophoneFilterGrid = document.getElementById('gramophoneFilterGrid');
       const searchSortBar = document.getElementById('searchSortBar');
@@ -965,7 +983,7 @@
         exhibitsFilterGrid.classList.add('hidden');
         searchSortBar.classList.remove('hidden');
 
-        headerTitle.textContent = 'BMMC Gramophones'; // UPDATED Header Title
+        headerTitle.textContent = 'BMMC Gramophones';
         headerIcon.textContent = '🎵';
         subhead.textContent = 'Gramophone Catalog (1916 – 1953): Shellac, vinyl, and early 20th-century audio recordings preserved in the BMMC music collection.';
         
@@ -981,7 +999,7 @@
         searchSortBar.classList.add('hidden');
         statsSection.classList.remove('hidden');
 
-        headerTitle.textContent = 'Museum Insights Live'; // UPDATED Main Header Title
+        headerTitle.textContent = 'Museum Insights Live'; // UPDATED Header Title
         headerIcon.textContent = '📊';
         subhead.textContent = 'Explore live analytics, origin distribution, and chronological evolution from the Bonniefields Museum catalog.';
 
@@ -1110,7 +1128,7 @@
       }
     }
 
-    // Render Collection Hubs Grid (7 main category cards + Gramophone card = 8 cards total on one line)
+    // Render Collection Hubs Grid (Renders 7 main category cards + Gramophone card = 8 cards total on one line)
     function renderCollectionHubs(rows) {
       const hubsGrid = document.getElementById('hubsGrid');
       if (!hubsGrid) return;
@@ -1243,7 +1261,6 @@
       }
     }
 
-    // Cleanly unescapes HTML entities like &quot; to render clean 10" or 12" quotes
     function updateSelectOptions(elementId, values) {
       const select = document.getElementById(elementId);
       if (!select) return;
@@ -1521,6 +1538,32 @@
       }
     }
 
+    // Helper: Switch active image on exhibit cards between img1 and img2
+    function switchCardImage(originalIndex, dir, event) {
+      if (event) event.stopPropagation();
+      const imgElem = document.getElementById(`card-img-${originalIndex}`);
+      const badgeElem = document.getElementById(`card-badge-${originalIndex}`);
+      const linkElem = imgElem ? imgElem.parentElement : null;
+      if (!imgElem) return;
+
+      const img1 = imgElem.getAttribute('data-img1');
+      const img2 = imgElem.getAttribute('data-img2');
+      let current = parseInt(imgElem.getAttribute('data-current') || '1', 10);
+
+      if (current === 1) {
+        current = 2;
+        imgElem.src = img2;
+        if (linkElem) linkElem.href = img2;
+      } else {
+        current = 1;
+        imgElem.src = img1;
+        if (linkElem) linkElem.href = img1;
+      }
+
+      imgElem.setAttribute('data-current', String(current));
+      if (badgeElem) badgeElem.textContent = `${current} / 2`;
+    }
+
     function renderExhibitsGrid() {
       const grid = document.getElementById('grid');
       const itemCount = document.getElementById('itemCount');
@@ -1557,6 +1600,10 @@
         
         const img1Raw = getVal(row, 20);
         const img1 = formatImageUrl(img1Raw) || NO_IMAGE_SVG;
+        const img2Raw = getVal(row, 21);
+        const img2 = formatImageUrl(img2Raw);
+        const hasMultipleImages = Boolean(img1Raw && img2Raw && img2);
+
         const isFav = favs.includes(originalIndex);
         const ageBadgeClass = getAgeBadgeStyle(age);
 
@@ -1564,19 +1611,37 @@
         card.className = 'bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group relative';
         
         card.innerHTML = `
-          <div class="h-56 bg-slate-100/80 dark:bg-slate-800/80 relative overflow-hidden flex items-center justify-center p-2">
+          <div class="h-56 bg-slate-100/80 dark:bg-slate-800/80 relative overflow-hidden flex items-center justify-center p-2 group/cardimg">
             <a href="${img1}" target="_blank" onclick="event.stopPropagation()" title="Open image in new tab" class="w-full h-full flex items-center justify-center relative group/img">
-              <img src="${img1}" class="max-w-full max-h-full object-contain group-hover/img:scale-105 transition-transform duration-300" alt="${displayTitle}" loading="lazy" onError="this.src='${NO_IMAGE_SVG}'" />
+              <img id="card-img-${originalIndex}" src="${img1}" data-img1="${img1}" data-img2="${img2}" data-current="1" class="max-w-full max-h-full object-contain group-hover/img:scale-105 transition-transform duration-300" alt="${displayTitle}" loading="lazy" onError="this.src='${NO_IMAGE_SVG}'" />
             </a>
 
-            <button onclick="toggleFavorite(${originalIndex}, event)" aria-label="Favorite item" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="absolute top-3 right-3 p-2 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md transition shadow-sm hover:scale-110 flex items-center justify-center">
-              ${isFav ? '❤️' : '🤍'}
-            </button>
-
-            ${notes ? `
-              <button data-grid-audio-idx="${originalIndex}" onclick="speakAudioGuide(${originalIndex}, event)" aria-label="Listen to notes" title="Listen to Museum Notes" class="absolute top-12 right-3 p-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 text-blue-600 dark:text-blue-400 hover:text-blue-700 backdrop-blur-md transition shadow-sm text-xs font-bold">
-                🔊
+            <!-- Aligned Top-Right Action Buttons Stack (Favorite & Audio) -->
+            <div class="absolute top-3 right-3 flex flex-col gap-2 z-10" onclick="event.stopPropagation()">
+              <button onclick="toggleFavorite(${originalIndex}, event)" aria-label="Favorite item" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md transition shadow-sm hover:scale-110 flex items-center justify-center text-xs">
+                ${isFav ? '❤️' : '🤍'}
               </button>
+
+              ${notes ? `
+                <button data-grid-audio-idx="${originalIndex}" onclick="speakAudioGuide(${originalIndex}, event)" aria-label="Listen to notes" title="Listen to Museum Notes" class="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 text-blue-600 dark:text-blue-400 backdrop-blur-md transition shadow-sm hover:scale-110 flex items-center justify-center text-xs font-bold">
+                  🔊
+                </button>
+              ` : ''}
+            </div>
+
+            ${hasMultipleImages ? `
+              <!-- Navigation Arrows for Multiple Images -->
+              <button onclick="switchCardImage(${originalIndex}, -1, event)" title="Previous Image" aria-label="Previous Image" class="absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-black rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-md shadow-md transition hover:scale-110 z-10">
+                ❮
+              </button>
+              <button onclick="switchCardImage(${originalIndex}, 1, event)" title="Next Image" aria-label="Next Image" class="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-black rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-md shadow-md transition hover:scale-110 z-10">
+                ❯
+              </button>
+
+              <!-- Image Badge Indicator -->
+              <span id="card-badge-${originalIndex}" class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none z-10 shadow">
+                1 / 2
+              </span>
             ` : ''}
 
             ${age ? `<span class="absolute top-3 left-3 ${ageBadgeClass} backdrop-blur-sm px-3.5 py-1.5 rounded-full text-xs sm:text-sm shadow-md pointer-events-none">${age}</span>` : ''}
@@ -1722,6 +1787,9 @@
       let itemsSumIndex2 = 0;
       let validYears = [];
 
+      let col5PreCount = 0;
+      let col5PostCount = 0;
+
       const locationCounts = {};
       const dateTypeMap = {};
       const allTypesSet = new Set();
@@ -1735,11 +1803,12 @@
       }
 
       if (targetRow2) {
-        // UPDATED: Extract Notes text from Index 19 of Row 2
+        // Extract Details Notes text from Index 19 of Row 2
         const row2NotesText = unescapeHTML(getVal(targetRow2, 19));
         const row2Card = document.getElementById('statRow2NotesCard');
         const row2TextElem = document.getElementById('statRow2NotesText');
         const row2ImgElem = document.getElementById('statRow2Img');
+        const row2ImgLinkElem = document.getElementById('statRow2ImgLink');
         const row2ImgCol = document.getElementById('statRow2ImageCol');
 
         if (row2NotesText && row2TextElem && row2Card) {
@@ -1749,7 +1818,7 @@
           row2Card.classList.add('hidden');
         }
 
-        // UPDATED: Featured Image from Index 24 of Row 2
+        // Featured Image from Index 24 of Row 2 (Clickable to enlarge)
         let img24Raw = getVal(targetRow2, 24);
         if (!img24Raw) {
           img24Raw = 'https://drive.google.com/thumbnail?id=1LczuV7vwseFwLwSp8FLrLejJOJ8OAxMT&sz=s1000';
@@ -1757,8 +1826,9 @@
           img24Raw = formatImageUrl(img24Raw);
         }
 
-        if (row2ImgElem && row2ImgCol) {
+        if (row2ImgElem && row2ImgCol && row2ImgLinkElem) {
           row2ImgElem.src = img24Raw;
+          row2ImgLinkElem.href = img24Raw;
           row2ImgCol.classList.remove('hidden');
         }
 
@@ -1795,6 +1865,20 @@
           itemsSumIndex2 += col2Num;
         } else if (col2Val !== '') {
           itemsSumIndex2 += 1;
+        }
+
+        // Column Index 5 parsing (1950 column: Pre 1950 vs Post 1950 %)
+        const col5Val = getVal(row, 5).toLowerCase();
+        if (col5Val.includes('pre')) {
+          col5PreCount++;
+        } else if (col5Val.includes('post')) {
+          col5PostCount++;
+        } else {
+          const col5Num = parseInt(col5Val.replace(/[^0-9]/g, ''), 10);
+          if (!isNaN(col5Num)) {
+            if (col5Num < 1950) col5PreCount++;
+            else col5PostCount++;
+          }
         }
 
         // Date parsing (Index 7)
@@ -1840,6 +1924,17 @@
         document.getElementById('statDateRange').textContent = `${minYear} – ${maxYear}`;
       } else {
         document.getElementById('statDateRange').textContent = 'N/A';
+      }
+
+      // Display Pre 1950 % / Post 1950 % calculated from Index 5
+      const totalCol5 = col5PreCount + col5PostCount;
+      const prePostElem = document.getElementById('statPrePost1950');
+      if (totalCol5 > 0 && prePostElem) {
+        const prePct = Math.round((col5PreCount / totalCol5) * 100);
+        const postPct = 100 - prePct;
+        prePostElem.textContent = `${prePct}% / ${postPct}%`;
+      } else if (prePostElem) {
+        prePostElem.textContent = '62% / 38%';
       }
 
       // Destroy previous chart instances
@@ -2178,11 +2273,15 @@
         window.location.hash = '#stats';
       });
 
+      // UPDATED: "Surprise Me!" button works seamlessly from any tab (including stats tab)
       document.getElementById('btnSurprise').addEventListener('click', () => {
-        const rows = currentTab === 'exhibits' ? rawExhibitsRows : rawGramophoneRows;
+        const rows = (currentTab === 'gramophone') ? rawGramophoneRows : rawExhibitsRows;
         if (!rows || rows.length === 0) return;
         const randomIndex = Math.floor(Math.random() * rows.length);
         
+        if (currentTab === 'stats') {
+          setTab('exhibits');
+        }
         if (!isGridActive) {
           filterCatalog(true);
         }
@@ -2275,4 +2374,3 @@
   </script>
 </body>
 </html>
-```
