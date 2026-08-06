@@ -101,12 +101,12 @@
         <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <!-- Permanent Browse All Button -->
           <button id="btnBrowseAllHeader" class="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800/80 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl transition shadow-sm">
-            <span>🌐 Browse All Exhibits</span>
+            <span>🌐 Browse All</span>
           </button>
 
-          <!-- Statistics Page Button -->
+          <!-- Info Page Button (Formerly Stats) -->
           <button id="btnStatsHeader" class="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/80 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl transition shadow-sm">
-            <span>📊 Stats</span>
+            <span>ℹ️ Info</span>
           </button>
 
           <!-- Surprise Me Button -->
@@ -121,9 +121,9 @@
           </button>
 
           <!-- Theme Toggle -->
-          <button id="btnThemeToggle" aria-label="Toggle Night Mode" class="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl transition shadow-sm">
+          <button id="btnThemeToggle" aria-label="Toggle Mode" class="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl transition shadow-sm">
             <span id="themeToggleIcon">🌙</span>
-            <span id="themeToggleText" class="hidden sm:inline">Night Mode</span>
+            <span id="themeToggleText" class="hidden sm:inline">Mode</span>
           </button>
 
           <!-- Search & Controls Collapse Toggle Button -->
@@ -297,7 +297,7 @@
           Select a Collection Hub above, search by keyword, or view all items in the BMMC archive.
         </p>
         <button id="btnBrowseAllPrompt" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-md hover:shadow-lg transition">
-          Browse All Exhibits →
+          Browse All →
         </button>
       </div>
     </div>
@@ -307,9 +307,26 @@
       <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 hidden"></div>
     </div>
 
-    <!-- Museum Showcase Statistics Dashboard Section -->
+    <!-- Museum Showcase Statistics / Info Dashboard Section -->
     <div id="statsSection" class="hidden space-y-6">
       
+      <!-- Styled Top Introduction Card (Gets content from Catalog!AF2) -->
+      <div id="statIntroCard" class="hidden bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-blue-800/50 relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-10 -bottom-10 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div class="relative z-10 max-w-4xl">
+          <div class="flex items-center gap-2 text-blue-300 text-xs font-extrabold uppercase tracking-widest mb-2">
+            <span class="p-1.5 bg-blue-500/20 rounded-lg text-sm border border-blue-400/30">ℹ️</span>
+            <span>Museum Overview & Catalog Info</span>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight mb-3">
+            Welcome to the Bonniefields Museum Catalog
+          </h2>
+          <p id="statIntroText" class="text-sm sm:text-base text-slate-200 leading-relaxed font-normal whitespace-pre-line"></p>
+        </div>
+      </div>
+
       <!-- Details Card -->
       <div id="statRow2NotesCard" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
@@ -787,7 +804,7 @@
       const text = document.getElementById('themeToggleText');
       if (icon && text) {
         icon.textContent = isDark ? '☀️' : '🌙';
-        text.textContent = isDark ? 'Day Mode' : 'Night Mode';
+        text.textContent = 'Mode';
       }
       if (currentTab === 'stats') {
         renderMuseumStatistics();
@@ -1028,7 +1045,7 @@
         statsSection.classList.remove('hidden');
 
         headerTitle.textContent = 'Museum Insights Live';
-        headerIcon.textContent = '📊';
+        headerIcon.textContent = 'ℹ️';
         subhead.textContent = 'Explore live analytics, origin distribution, and chronological evolution from the Bonniefields Museum catalog.';
 
         renderMuseumStatistics();
@@ -1825,6 +1842,18 @@
       }
 
       if (targetRow2) {
+        // Extract Introduction text from Catalog!AF2 (Index 31 in Row 2)
+        const introTextAF2 = unescapeHTML(getVal(targetRow2, 31));
+        const introCard = document.getElementById('statIntroCard');
+        const introTextElem = document.getElementById('statIntroText');
+
+        if (introTextAF2 && introTextElem && introCard) {
+          introTextElem.textContent = introTextAF2;
+          introCard.classList.remove('hidden');
+        } else if (introCard) {
+          introCard.classList.add('hidden');
+        }
+
         const row2NotesText = unescapeHTML(getVal(targetRow2, 19));
         const row2Card = document.getElementById('statRow2NotesCard');
         const row2TextElem = document.getElementById('statRow2NotesText');
@@ -2326,7 +2355,9 @@
         filterCatalog(true);
       });
 
+      // Mobile Floating Jump Button: Hides filters before jumping down to items
       document.getElementById('floatingJumpBtn').addEventListener('click', () => {
+        toggleCollapsibleControls(false);
         scrollToGrid();
       });
 
