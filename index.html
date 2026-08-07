@@ -322,7 +322,7 @@
     <!-- Museum Showcase Statistics / Info Dashboard Section -->
     <div id="statsSection" class="hidden space-y-6">
       
-      <!-- Styled Top Introduction Card (Gets content from Catalog!AF2) -->
+      <!-- Styled Top Introduction Card -->
       <div id="statIntroCard" class="hidden bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/30 border border-indigo-500/30 relative overflow-hidden backdrop-blur-md">
         <div class="absolute -right-10 -top-10 w-52 h-52 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -left-10 -bottom-10 w-52 h-52 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -517,6 +517,7 @@
           shadow-intensity="1.2"
           exposure="1.1"
           touch-action="pan-y"
+          style="width: 100%; height: 100%; display: block; --poster-color: transparent;"
           class="w-full h-full">
         </model-viewer>
       </div>
@@ -528,7 +529,7 @@
     const EXHIBITS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
     const GRAMOPHONE_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=606568772';
     const CATALOG_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=425957921';
-    const THREE_D_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/export?format=csv&gid=2093054295';
+    const THREE_D_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=2093054295';
     const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
 
     const MAIN_HUB_CATEGORIES = ["War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"];
@@ -598,7 +599,6 @@
     let rawGramophoneRows = [];
     let rawCatalogRows = [];
     let rawFullCatalogData = [];
-    let raw3DRows = [];
     let threeDMap = new Map(); // Maps Item "No" (Catalog Col A) -> 3D Model GLB URL
     let currentFilteredRows = [];
     let currentModalIndex = -1;
@@ -1050,16 +1050,50 @@
 
     // Helper: Lookup 3D GLB link for a catalog item number ("No" in Col A)
     function get3DUrlForItem(row) {
+      if (!row) return '';
+
+      // 1. Direct URL in Column R (Index 17) if present
       let d3dColVal = getVal(row, 17);
       if (d3dColVal && d3dColVal.startsWith('http')) {
         return formatImageUrl(d3dColVal);
       }
 
-      const itemNo = unescapeHTML(getVal(row, 0)).trim().toLowerCase();
-      if (itemNo && threeDMap.has(itemNo)) {
-        return threeDMap.get(itemNo);
+      // 2. Check Lookup Map by Column A (Index 0)
+      const itemNoColA = unescapeHTML(getVal(row, 0)).replace(/^#\s*/, '').trim().toLowerCase();
+      if (itemNoColA && threeDMap.has(itemNoColA)) {
+        return threeDMap.get(itemNoColA);
       }
+
+      // 3. Check Lookup Map by Column B (Index 1) fallback
+      const itemNoColB = unescapeHTML(getVal(row, 1)).replace(/^#\s*/, '').trim().toLowerCase();
+      if (itemNoColB && threeDMap.has(itemNoColB)) {
+        return threeDMap.get(itemNoColB);
+      }
+
       return '';
+    }
+
+    // Helper: Robustly retrieve image 1 & image 2 for an exhibit item
+    function getImagesForItem(row) {
+      let img1 = formatImageUrl(getVal(row, 20));
+      let img2 = formatImageUrl(getVal(row, 21));
+
+      // Fallback: If img1 is empty, search row columns for any image URL
+      if (!img1 && row) {
+        for (let i = 2; i < row.length; i++) {
+          const val = getVal(row, i);
+          if (val && val.startsWith('http') && (val.includes('drive.google') || val.includes('lh3.google') || val.includes('dropbox') || /\.(jpg|jpeg|png|webp|gif)/i.test(val))) {
+            if (!img1) {
+              img1 = formatImageUrl(val);
+            } else if (!img2 && val !== img1) {
+              img2 = formatImageUrl(val);
+              break;
+            }
+          }
+        }
+      }
+
+      return { img1, img2 };
     }
 
     function parseTitleAndDetails(rawText) {
@@ -1235,31 +1269,34 @@
         // Load 3D Models sheet (gid=2093054295) for Cross-referencing
         try {
           const threeDData = await fetchCSVWithCache(THREE_D_CSV_URL, 'bMMC_cached_3d');
-          raw3DRows = threeDData;
           threeDMap.clear();
 
-          let refColIdx = 3;  // Col D default ("Ref")
-          let urlColIdx = 1;  // Col B default ("Origin")
+          if (threeDData && threeDData.length > 0) {
+            let refColIdx = 3;  // Column D default ("Ref")
+            let urlColIdx = 1;  // Column B default ("Origin")
 
-          if (threeDData.length > 0) {
             const header = threeDData[0];
-            const refIdx = header.findIndex(c => c.toLowerCase().trim() === 'ref' || c.toLowerCase().includes('ref'));
-            if (refIdx !== -1) refColIdx = refIdx;
-
-            const urlIdx = header.findIndex(c => {
-              const str = c.toLowerCase().trim();
-              return str === 'origin' || str.includes('3d model') || str === 'model';
+            header.forEach((cell, idx) => {
+              const c = String(cell).toLowerCase().trim();
+              if (c === 'ref' || c.includes('ref')) refColIdx = idx;
+              if (c === 'origin' || c.includes('3d model') || c === 'model' || c === 'glb') urlColIdx = idx;
             });
-            if (urlIdx !== -1) urlColIdx = urlIdx;
 
-            for (let i = 1; i < threeDData.length; i++) {
+            for (let i = 0; i < threeDData.length; i++) {
               const r = threeDData[i];
-              if (!r || r.length <= Math.max(refColIdx, urlColIdx)) continue;
+              if (!r) continue;
 
-              const refVal = unescapeHTML(r[refColIdx] || '').trim().toLowerCase();
+              const refVal = unescapeHTML(r[refColIdx] || '').replace(/^#\s*/, '').trim().toLowerCase();
               let rawUrl = unescapeHTML(r[urlColIdx] || '').trim();
 
               if (refVal && rawUrl && rawUrl.startsWith('http')) {
+                // Dropbox direct raw link conversion
+                if (rawUrl.includes('dropbox.com')) {
+                  rawUrl = rawUrl.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
+                  if (!rawUrl.includes('raw=1')) {
+                    rawUrl += (rawUrl.includes('?') ? '&raw=1' : '?raw=1');
+                  }
+                }
                 const formattedUrl = formatImageUrl(rawUrl);
                 threeDMap.set(refVal, formattedUrl);
               }
@@ -1827,10 +1864,7 @@
         const dweb = getVal(row, 19);
         
         const d3d = get3DUrlForItem(row);
-        const img1Raw = getVal(row, 20);
-        const img1 = formatImageUrl(img1Raw);
-        const img2Raw = getVal(row, 21);
-        const img2 = formatImageUrl(img2Raw);
+        const { img1, img2 } = getImagesForItem(row);
 
         const has3D = Boolean(d3d);
         const hasImg1 = Boolean(img1);
@@ -1876,6 +1910,7 @@
                   rotation-per-second="20deg" 
                   interaction-prompt="none" 
                   shadow-intensity="0.4"
+                  style="width: 100%; height: 100%; display: block; --poster-color: transparent;"
                   class="w-full h-full">
                 </model-viewer>
                 <span class="absolute top-2 left-2 bg-purple-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-full shadow border border-purple-400/40">3D Interactive</span>
@@ -2303,21 +2338,43 @@
       const viewer = document.getElementById('lightboxViewer');
       const spinner = document.getElementById('lightboxSpinner');
 
-      if (!modal || !viewer) return;
+      if (!modal || !viewer || !url) return;
 
       titleElem.textContent = title || 'Interactive 3D Model';
       spinner.style.opacity = '1';
       spinner.style.display = 'flex';
 
-      viewer.src = url;
-      modal.classList.remove('hidden');
-
-      const onLoad = () => {
+      function hideSpinner() {
         spinner.style.opacity = '0';
         setTimeout(() => { spinner.style.display = 'none'; }, 300);
-        viewer.removeEventListener('load', onLoad);
+      }
+
+      // Attach event listeners BEFORE setting viewer src
+      const handleLoad = () => {
+        hideSpinner();
+        viewer.removeEventListener('load', handleLoad);
+        viewer.removeEventListener('error', handleError);
       };
-      viewer.addEventListener('load', onLoad);
+
+      const handleError = () => {
+        hideSpinner();
+        showToast('Failed to load 3D model file', '⚠️');
+        viewer.removeEventListener('load', handleLoad);
+        viewer.removeEventListener('error', handleError);
+      };
+
+      viewer.addEventListener('load', handleLoad);
+      viewer.addEventListener('error', handleError);
+
+      // Safety timer fallback so spinner never hangs indefinitely
+      setTimeout(() => {
+        if (spinner.style.display !== 'none') {
+          hideSpinner();
+        }
+      }, 4500);
+
+      viewer.src = url;
+      modal.classList.remove('hidden');
     }
 
     function close3DLightbox() {
@@ -2372,8 +2429,7 @@
         const dweb = getVal(row, 19);
         
         const d3d = get3DUrlForItem(row);
-        const img1 = formatImageUrl(getVal(row, 20));
-        const img2 = formatImageUrl(getVal(row, 21));
+        const { img1, img2 } = getImagesForItem(row);
         const ageBadgeClass = getAgeBadgeStyle(age);
 
         const has3D = Boolean(d3d);
@@ -2470,6 +2526,7 @@
                       auto-rotate 
                       shadow-intensity="1.2" 
                       exposure="1.1" 
+                      style="width: 100%; height: 100%; display: block; --poster-color: transparent;"
                       class="w-full h-full">
                     </model-viewer>
                   </div>
