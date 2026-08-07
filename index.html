@@ -109,10 +109,16 @@
             <span>ℹ️ Info</span>
           </button>
 
-          <!-- 3D Only Button (In Header) -->
-          <button id="btn3DOnly" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 border border-purple-500/30 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-purple-500/20 active:scale-95">
-            <span>👓 3D Only</span>
-          </button>
+          <!-- Segmented 3D Button Group (3D Only Filter + 3D Overview Link) -->
+          <div class="inline-flex items-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 p-0.5 shadow-md shadow-purple-500/20 text-white font-extrabold text-[11px] sm:text-xs">
+            <button id="btn3DOnly" title="Filter to 3D Models Only" class="flex items-center gap-1 hover:bg-white/20 px-2.5 py-1.5 rounded-lg transition active:scale-95">
+              <span>👓 3D Only</span>
+            </button>
+            <span class="w-[1px] h-4 bg-white/30"></span>
+            <a href="https://dvdbaird.github.io/BMMC/3D" target="_blank" title="Open 3D Overview page in new tab" class="flex items-center gap-1 hover:bg-white/20 px-2 py-1.5 rounded-lg transition">
+              <span>3D Overview ↗</span>
+            </a>
+          </div>
 
           <!-- Surprise Me Button -->
           <button id="btnSurprise" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-pink-500/20 active:scale-95">
@@ -455,7 +461,7 @@
 
   <!-- Modernized & Adaptive Pop-up Modal (Light/Dark Mode Theme Adaptive) -->
   <div id="detailModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-50 flex items-center justify-center p-3 sm:p-6 hidden transition-opacity" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-indigo-500/40 relative flex flex-col backdrop-blur-2xl" id="modalContainer">
+    <div class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-indigo-500/40 relative flex flex-col backdrop-blur-2xl" id="modalContainer">
       
       <!-- Modal Navigation Bar -->
       <div class="sticky top-0 z-20 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-indigo-500/20 px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -493,7 +499,7 @@
 
     const MAIN_HUB_CATEGORIES = ["War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"];
     
-    // Explicit Hex Color Palette Specification
+    // Updated Refined Color Palette
     const CATEGORY_PALETTE = {
       war: { hex: '#C85A32', text: '#FFFFFF', name: 'War' },
       photography: { hex: '#3B7A57', text: '#FFFFFF', name: 'Photography' },
@@ -519,7 +525,7 @@
       return CATEGORY_PALETTE.general;
     }
 
-    // Harmonized Badge Styling (Category = Solid, Type = Tinted Outline, Subcategory = Soft Accent)
+    // Harmonized Badge Styling
     function createCategoryBadge(label, kind = 'category') {
       if (!label) return '';
       const theme = getCategoryTheme(label);
@@ -530,6 +536,28 @@
         return `<span class="px-2.5 py-0.5 rounded-full font-extrabold text-[11px] shadow-sm inline-block tracking-wide border" style="background-color: ${theme.hex}18; color: ${theme.hex}; border-color: ${theme.hex}80;">${kind === 'Type' ? 'Type: ' : ''}${label}</span>`;
       } else {
         return `<span class="px-2.5 py-0.5 rounded-full font-extrabold text-[11px] shadow-sm inline-block tracking-wide border" style="background-color: ${theme.hex}25; color: ${theme.hex}; border-color: ${theme.hex}aa;">${kind === 'Subcategory' ? 'Subcategory: ' : ''}${label}</span>`;
+      }
+    }
+
+    // 50% Reduced Solid Tint Generator for Light/Dark Mode (No Gradients)
+    function getSolidTint(hex, isDark) {
+      let c = hex.replace('#', '');
+      let r = parseInt(c.substring(0, 2), 16);
+      let g = parseInt(c.substring(2, 4), 16);
+      let b = parseInt(c.substring(4, 6), 16);
+      
+      if (isDark) {
+        // Blend 4% category tint over dark slate (#0f172a)
+        let nr = Math.round(15 * 0.96 + r * 0.04);
+        let ng = Math.round(23 * 0.96 + g * 0.04);
+        let nb = Math.round(42 * 0.96 + b * 0.04);
+        return `rgb(${nr}, ${ng}, ${nb})`;
+      } else {
+        // Blend 4% category tint over white (#ffffff)
+        let nr = Math.round(255 * 0.96 + r * 0.04);
+        let ng = Math.round(255 * 0.96 + g * 0.04);
+        let nb = Math.round(255 * 0.96 + b * 0.04);
+        return `rgb(${nr}, ${ng}, ${nb})`;
       }
     }
 
@@ -848,6 +876,8 @@
       }
       if (currentTab === 'stats') {
         renderMuseumStatistics();
+      } else if (isGridActive) {
+        filterCatalog(true);
       }
     }
 
@@ -1359,7 +1389,7 @@
 
       let uniqueValues = [...new Set(values.filter(Boolean))].sort();
       
-      // Strict filter to exclude "Info" or "Info:" from filter dropdown options
+      // Filter out any "Info" or "Info:" entries from filter options
       uniqueValues = uniqueValues.filter(val => {
         const lower = val.toLowerCase().trim();
         return lower !== 'info' && !lower.startsWith('info:');
@@ -1666,6 +1696,7 @@
       const grid = document.getElementById('grid');
       const itemCount = document.getElementById('itemCount');
       const favs = getFavorites();
+      const isDark = document.documentElement.classList.contains('dark');
 
       grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6';
       grid.innerHTML = '';
@@ -1705,16 +1736,16 @@
         const isFav = favs.includes(originalIndex);
         const ageBadgeClass = getAgeBadgeStyle(age);
 
-        // Get Category Color Theme for Card Outlining and Tinting
+        // Get Category Color Theme for Card Outlining & 50% Reduced Solid Tinting
         const theme = getCategoryTheme(category || type || subcategory);
 
         const card = document.createElement('div');
         card.className = 'rounded-3xl shadow-sm hover:shadow-2xl overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group relative backdrop-blur-sm';
         card.style.border = `2px solid ${theme.hex}80`;
-        card.style.background = `linear-gradient(180deg, ${theme.hex}15 0%, rgba(255,255,255,0.92) 100%)`;
+        card.style.backgroundColor = getSolidTint(theme.hex, isDark);
 
         card.innerHTML = `
-          <div class="h-56 relative overflow-hidden flex items-center justify-center p-2 group/cardimg" style="background: linear-gradient(180deg, ${theme.hex}25 0%, rgba(15,23,42,0.8) 100%);">
+          <div class="h-56 relative overflow-hidden flex items-center justify-center p-2 group/cardimg" style="background-color: ${theme.hex}18;">
             <a href="${img1}" target="_blank" onclick="event.stopPropagation()" title="Open image in new tab" class="w-full h-full flex items-center justify-center relative group/img">
               <img id="card-img-${originalIndex}" src="${img1}" data-img1="${img1}" data-img2="${img2}" data-current="1" class="max-w-full max-h-full object-contain group-hover/img:scale-105 transition-transform duration-300 drop-shadow-md" alt="${displayTitle}" loading="lazy" onError="this.src='${NO_IMAGE_SVG}'" />
             </a>
@@ -1785,6 +1816,7 @@
       const grid = document.getElementById('grid');
       const itemCount = document.getElementById('itemCount');
       const favs = getFavorites();
+      const isDark = document.documentElement.classList.contains('dark');
 
       grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5';
       grid.innerHTML = '';
@@ -1821,7 +1853,7 @@
         const card = document.createElement('div');
         card.className = 'rounded-3xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer group relative backdrop-blur-sm';
         card.style.border = `2px solid ${gramTheme.hex}A0`;
-        card.style.background = `linear-gradient(180deg, ${gramTheme.hex}18 0%, rgba(255,255,255,0.92) 100%)`;
+        card.style.backgroundColor = getSolidTint(gramTheme.hex, isDark);
 
         card.innerHTML = `
           <div>
@@ -2147,6 +2179,7 @@
       const nextBtn = document.getElementById('modalNextBtn');
       const favs = getFavorites();
       const isFav = favs.includes(originalIndex);
+      const isDark = document.documentElement.classList.contains('dark');
 
       if (currentTab === 'exhibits') {
         window.history.replaceState(null, '', `#exhibit-${originalIndex}`);
@@ -2171,10 +2204,11 @@
 
         const cleanedDetails = cleanDetailsForModal(details);
 
-        // Apply Category Theme Tinting & Outlining to Pop-Up Modal Container
+        // Category Color Outlining (3px) and Solid 50% Reduced Tinting for Pop-up Modal Container
         const theme = getCategoryTheme(category || type || subcategory);
         modalContainer.style.borderColor = theme.hex;
         modalContainer.style.borderWidth = '3px';
+        modalContainer.style.backgroundColor = getSolidTint(theme.hex, isDark);
 
         if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
           counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
@@ -2222,7 +2256,7 @@
                   ` : ''}
                   ${!hasTwoImages ? `<button id="btnGoogleSearchMain" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 shrink-0 ml-auto">🔍 Google Item</button>` : ''}
                 </div>
-                <a href="${img1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2.5 shadow-md" style="border-color: ${theme.hex}60;">
+                <a href="${img1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2.5 shadow-md" style="border-color: ${theme.hex}80;">
                   <img src="${img1}" class="w-full h-56 sm:h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
                   <span class="absolute bottom-3 right-3 bg-blue-600/90 text-white backdrop-blur-md text-[10px] font-black px-3 py-1 rounded-xl shadow border border-blue-400/40 pointer-events-none">Open Full Image ↗</span>
                 </a>
@@ -2234,7 +2268,7 @@
                   <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest shrink-0">Second Image</p>
                   <button id="btnGoogleSearchSec" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 shrink-0 ml-auto">🔍 Google Item</button>
                 </div>
-                <a href="${img2}" target="_blank" title="Click to view second image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2.5 shadow-md" style="border-color: ${theme.hex}60;">
+                <a href="${img2}" target="_blank" title="Click to view second image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2.5 shadow-md" style="border-color: ${theme.hex}80;">
                   <img src="${img2}" class="w-full h-56 sm:h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
                   <span class="absolute bottom-3 right-3 bg-blue-600/90 text-white backdrop-blur-md text-[10px] font-black px-3 py-1 rounded-xl shadow border border-blue-400/40 pointer-events-none">Open Full Image ↗</span>
                 </a>
@@ -2283,6 +2317,7 @@
         const gramTheme = CATEGORY_PALETTE.gramophones;
         modalContainer.style.borderColor = gramTheme.hex;
         modalContainer.style.borderWidth = '3px';
+        modalContainer.style.backgroundColor = getSolidTint(gramTheme.hex, isDark);
 
         if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
           counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
