@@ -39,7 +39,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <!-- 3D Model Viewer Web Component -->
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
 
   <!-- Google Font: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -70,6 +70,19 @@
     .chart-container canvas {
       width: 100% !important;
       height: 100% !important;
+    }
+
+    /* Lightbox Spinner Animation */
+    @keyframes spin3d {
+      to { transform: rotate(360deg); }
+    }
+    .spinner-3d {
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(2, 132, 199, 0.15);
+      border-top-color: #0284c7;
+      border-radius: 50%;
+      animation: spin3d 1s linear infinite;
     }
   </style>
 </head>
@@ -109,16 +122,10 @@
             <span>ℹ️ Info</span>
           </button>
 
-          <!-- Segmented 3D Button Group (3D Only Filter + 3D Overview Link) -->
-          <div class="inline-flex items-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 p-0.5 shadow-md shadow-purple-500/20 text-white font-extrabold text-[11px] sm:text-xs">
-            <button id="btn3DOnly" title="Filter to 3D Models Only" class="flex items-center gap-1 hover:bg-white/20 px-2.5 py-1.5 rounded-lg transition active:scale-95">
-              <span>👓 3D Only</span>
-            </button>
-            <span class="w-[1px] h-4 bg-white/30"></span>
-            <a href="https://dvdbaird.github.io/BMMC/3D" target="_blank" title="Open 3D Overview page in new tab" class="flex items-center gap-1 hover:bg-white/20 px-2 py-1.5 rounded-lg transition">
-              <span>3D Overview ↗</span>
-            </a>
-          </div>
+          <!-- Single 3D Only Filter Button -->
+          <button id="btn3DOnly" title="Filter to 3D Models Only" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-purple-500/20 active:scale-95">
+            <span>👓 3D Only</span>
+          </button>
 
           <!-- Surprise Me Button -->
           <button id="btnSurprise" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-pink-500/20 active:scale-95">
@@ -459,9 +466,9 @@
     <span>⬇️ View Archive</span>
   </button>
 
-  <!-- Modernized & Adaptive Pop-up Modal (Light/Dark Mode Theme Adaptive) -->
+  <!-- Item Detail Pop-up Modal -->
   <div id="detailModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-50 flex items-center justify-center p-3 sm:p-6 hidden transition-opacity" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-indigo-500/40 relative flex flex-col backdrop-blur-2xl" id="modalContainer">
+    <div class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-3xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-indigo-500/40 relative flex flex-col backdrop-blur-2xl" id="modalContainer">
       
       <!-- Modal Navigation Bar -->
       <div class="sticky top-0 z-20 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-indigo-500/20 px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -490,6 +497,40 @@
     </div>
   </div>
 
+  <!-- Standalone Fullscreen 3D Lightbox Modal -->
+  <div id="lightbox3DModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-2xl z-[60] flex items-center justify-center p-3 sm:p-6 hidden transition-opacity" role="dialog" aria-modal="true">
+    <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-3xl max-w-5xl w-full h-[85vh] shadow-2xl border-2 border-indigo-500/50 relative flex flex-col overflow-hidden">
+      
+      <div class="px-5 py-3.5 bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/80 flex items-center justify-between z-10">
+        <div class="flex items-center gap-2 overflow-hidden">
+          <span class="text-xl">👓</span>
+          <h3 id="lightboxTitle" class="text-sm sm:text-base font-extrabold truncate text-slate-900 dark:text-white">Interactive 3D Model</h3>
+        </div>
+        <button id="close3DLightbox" title="Close 3D View" aria-label="Close 3D View" class="p-1.5 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 font-extrabold transition">
+          ✕
+        </button>
+      </div>
+
+      <div class="relative w-full h-full flex items-center justify-center bg-slate-950 overflow-hidden">
+        <!-- Spinner Overlay -->
+        <div id="lightboxSpinner" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/90 z-20 transition-opacity duration-300">
+          <div class="spinner-3d"></div>
+          <p class="text-xs font-bold text-sky-400">Loading High-Resolution 3D Model...</p>
+        </div>
+
+        <model-viewer 
+          id="lightboxViewer" 
+          camera-controls 
+          auto-rotate 
+          shadow-intensity="1.2"
+          exposure="1.1"
+          touch-action="pan-y"
+          class="w-full h-full">
+        </model-viewer>
+      </div>
+    </div>
+  </div>
+
   <!-- Combined JavaScript Logic -->
   <script>
     const EXHIBITS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
@@ -499,7 +540,7 @@
 
     const MAIN_HUB_CATEGORIES = ["War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"];
     
-    // Updated Refined Color Palette
+    // Refined Color Palette
     const CATEGORY_PALETTE = {
       war: { hex: '#C85A32', text: '#FFFFFF', name: 'War' },
       photography: { hex: '#3B7A57', text: '#FFFFFF', name: 'Photography' },
@@ -525,7 +566,6 @@
       return CATEGORY_PALETTE.general;
     }
 
-    // Harmonized Badge Styling
     function createCategoryBadge(label, kind = 'category') {
       if (!label) return '';
       const theme = getCategoryTheme(label);
@@ -539,7 +579,6 @@
       }
     }
 
-    // 50% Reduced Solid Tint Generator for Light/Dark Mode (No Gradients)
     function getSolidTint(hex, isDark) {
       let c = hex.replace('#', '');
       let r = parseInt(c.substring(0, 2), 16);
@@ -547,13 +586,11 @@
       let b = parseInt(c.substring(4, 6), 16);
       
       if (isDark) {
-        // Blend 4% category tint over dark slate (#0f172a)
         let nr = Math.round(15 * 0.96 + r * 0.04);
         let ng = Math.round(23 * 0.96 + g * 0.04);
         let nb = Math.round(42 * 0.96 + b * 0.04);
         return `rgb(${nr}, ${ng}, ${nb})`;
       } else {
-        // Blend 4% category tint over white (#ffffff)
         let nr = Math.round(255 * 0.96 + r * 0.04);
         let ng = Math.round(255 * 0.96 + g * 0.04);
         let nb = Math.round(255 * 0.96 + b * 0.04);
@@ -997,6 +1034,16 @@
     function formatImageUrl(url) {
       if (!url) return '';
       url = String(url).trim();
+
+      // Process Dropbox URLs to direct raw links
+      if (url.includes('dropbox.com')) {
+        url = url.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
+        if (!url.includes('raw=1')) {
+          url += (url.includes('?') ? '&raw=1' : '?raw=1');
+        }
+        return url;
+      }
+
       if (!url.startsWith('http://') && !url.startsWith('https://')) return '';
       
       const driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
@@ -1046,7 +1093,7 @@
       
       const btn3D = document.getElementById('btn3DOnly');
       if (btn3D) {
-        btn3D.classList.remove('ring-2', 'ring-purple-300');
+        btn3D.classList.remove('ring-2', 'ring-purple-300', 'from-purple-700', 'to-indigo-700');
       }
       
       updateFavoritesBadge();
@@ -1389,7 +1436,6 @@
 
       let uniqueValues = [...new Set(values.filter(Boolean))].sort();
       
-      // Filter out any "Info" or "Info:" entries from filter options
       uniqueValues = uniqueValues.filter(val => {
         const lower = val.toLowerCase().trim();
         return lower !== 'info' && !lower.startsWith('info:');
@@ -1506,7 +1552,7 @@
           const typeMatch = !typeVal || getVal(row, 14).toLowerCase().includes(typeVal.toLowerCase());
           const catMatch = !catVal || getVal(row, 15).toLowerCase().includes(catVal.toLowerCase());
           const subCatMatch = !subCatVal || getVal(row, 16) === subCatVal;
-          const match3D = !only3DActive || getVal(row, 17) !== '';
+          const match3D = !only3DActive || (getVal(row, 17) !== '' && getVal(row, 17).startsWith('http'));
           const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
 
           return searchMatch && ageMatch && typeMatch && catMatch && subCatMatch && match3D && matchFav;
@@ -1575,7 +1621,7 @@
         } else if (sortBy === 'title-asc') {
           currentFilteredRows.sort((a, b) => getGramophoneRawTitle(a.row).localeCompare(getGramophoneRawTitle(b.row)));
         } else if (sortBy === 'title-desc') {
-          currentFilteredRows.sort((a, b) => getGramophoneRawTitle(b.row).localeCompare(getGramophoneRawTitle(a.row)));
+          currentFilteredRows.sort((a, b) => getGramophoneRawTitle(b.row).localeCompare(getGramophoneRawTitle(b.row)));
         }
 
         renderGramophoneGrid();
@@ -1667,29 +1713,34 @@
       }
     }
 
+    // Card Media Switching logic (Handles 3D -> Img1 -> Img2)
     function switchCardImage(originalIndex, dir, event) {
       if (event) event.stopPropagation();
-      const imgElem = document.getElementById(`card-img-${originalIndex}`);
+      const cardThumb = document.getElementById(`card-media-box-${originalIndex}`);
       const badgeElem = document.getElementById(`card-badge-${originalIndex}`);
-      const linkElem = imgElem ? imgElem.parentElement : null;
-      if (!imgElem) return;
+      if (!cardThumb) return;
 
-      const img1 = imgElem.getAttribute('data-img1');
-      const img2 = imgElem.getAttribute('data-img2');
-      let current = parseInt(imgElem.getAttribute('data-current') || '1', 10);
+      const totalSlots = parseInt(cardThumb.getAttribute('data-total-slots') || '1', 10);
+      let currentSlot = parseInt(cardThumb.getAttribute('data-current-slot') || '1', 10);
 
-      if (current === 1) {
-        current = 2;
-        imgElem.src = img2;
-        if (linkElem) linkElem.href = img2;
-      } else {
-        current = 1;
-        imgElem.src = img1;
-        if (linkElem) linkElem.href = img1;
-      }
+      currentSlot += dir;
+      if (currentSlot > totalSlots) currentSlot = 1;
+      if (currentSlot < 1) currentSlot = totalSlots;
 
-      imgElem.setAttribute('data-current', String(current));
-      if (badgeElem) badgeElem.textContent = `${current} / 2`;
+      cardThumb.setAttribute('data-current-slot', String(currentSlot));
+
+      cardThumb.querySelectorAll('.card-media-item').forEach(item => {
+        const slotIdx = parseInt(item.getAttribute('data-slot-idx'), 10);
+        if (slotIdx === currentSlot) {
+          item.classList.remove('hidden');
+          item.classList.add('flex');
+        } else {
+          item.classList.add('hidden');
+          item.classList.remove('flex');
+        }
+      });
+
+      if (badgeElem) badgeElem.textContent = `${currentSlot} / ${totalSlots}`;
     }
 
     function renderExhibitsGrid() {
@@ -1723,20 +1774,43 @@
         const type = getVal(row, 14);
         const category = getVal(row, 15);
         const subcategory = getVal(row, 16);
-        const d3d = getVal(row, 17);
+        let d3d = getVal(row, 17);
         const ddoc = getVal(row, 18);
         const dweb = getVal(row, 19);
         
         const img1Raw = getVal(row, 20);
-        const img1 = formatImageUrl(img1Raw) || NO_IMAGE_SVG;
+        const img1 = formatImageUrl(img1Raw);
         const img2Raw = getVal(row, 21);
         const img2 = formatImageUrl(img2Raw);
-        const hasMultipleImages = Boolean(img1Raw && img2Raw && img2);
 
+        // Process Dropbox 3D links
+        if (d3d && d3d.includes('dropbox.com')) {
+          d3d = d3d.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
+          if (!d3d.includes('raw=1')) d3d += (d3d.includes('?') ? '&raw=1' : '?raw=1');
+        }
+
+        const has3D = Boolean(d3d && d3d.startsWith('http'));
+        const hasImg1 = Boolean(img1);
+        const hasImg2 = Boolean(img2);
+
+        // Calculate media slots
+        // If has3D: Slot 1 = Live 3D, Slot 2 = Img1, Slot 3 = Img2
+        // If no 3D: Slot 1 = Img1, Slot 2 = Img2
+        let slots = [];
+        if (has3D) {
+          slots.push({ type: '3d', url: d3d });
+          if (hasImg1) slots.push({ type: 'img', url: img1 });
+          if (hasImg2) slots.push({ type: 'img', url: img2 });
+        } else {
+          if (hasImg1) slots.push({ type: 'img', url: img1 });
+          if (hasImg2) slots.push({ type: 'img', url: img2 });
+          if (slots.length === 0) slots.push({ type: 'img', url: NO_IMAGE_SVG });
+        }
+
+        const totalSlots = slots.length;
         const isFav = favs.includes(originalIndex);
         const ageBadgeClass = getAgeBadgeStyle(age);
 
-        // Get Category Color Theme for Card Outlining & 50% Reduced Solid Tinting
         const theme = getCategoryTheme(category || type || subcategory);
 
         const card = document.createElement('div');
@@ -1744,11 +1818,40 @@
         card.style.border = `2px solid ${theme.hex}80`;
         card.style.backgroundColor = getSolidTint(theme.hex, isDark);
 
+        let mediaItemsHTML = '';
+        slots.forEach((s, sIdx) => {
+          const slotNum = sIdx + 1;
+          const isHidden = slotNum > 1 ? 'hidden' : 'flex';
+
+          if (s.type === '3d') {
+            mediaItemsHTML += `
+              <div class="card-media-item ${isHidden} w-full h-full items-center justify-center relative pointer-events-none" data-slot-idx="${slotNum}">
+                <model-viewer 
+                  src="${s.url}" 
+                  loading="lazy" 
+                  auto-rotate 
+                  rotation-per-second="20deg" 
+                  interaction-prompt="none" 
+                  shadow-intensity="0.4"
+                  class="w-full h-full">
+                </model-viewer>
+                <span class="absolute top-2 left-2 bg-purple-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-full shadow border border-purple-400/40">3D Interactive</span>
+              </div>
+            `;
+          } else {
+            mediaItemsHTML += `
+              <div class="card-media-item ${isHidden} w-full h-full items-center justify-center relative group/img" data-slot-idx="${slotNum}">
+                <a href="${s.url}" target="_blank" onclick="event.stopPropagation()" title="Open image in new tab" class="w-full h-full flex items-center justify-center">
+                  <img src="${s.url}" class="max-w-full max-h-full object-contain group-hover/img:scale-105 transition-transform duration-300 drop-shadow-md" alt="${displayTitle}" loading="lazy" onError="this.src='${NO_IMAGE_SVG}'" />
+                </a>
+              </div>
+            `;
+          }
+        });
+
         card.innerHTML = `
-          <div class="h-56 relative overflow-hidden flex items-center justify-center p-2 group/cardimg" style="background-color: ${theme.hex}18;">
-            <a href="${img1}" target="_blank" onclick="event.stopPropagation()" title="Open image in new tab" class="w-full h-full flex items-center justify-center relative group/img">
-              <img id="card-img-${originalIndex}" src="${img1}" data-img1="${img1}" data-img2="${img2}" data-current="1" class="max-w-full max-h-full object-contain group-hover/img:scale-105 transition-transform duration-300 drop-shadow-md" alt="${displayTitle}" loading="lazy" onError="this.src='${NO_IMAGE_SVG}'" />
-            </a>
+          <div id="card-media-box-${originalIndex}" data-total-slots="${totalSlots}" data-current-slot="1" class="h-56 relative overflow-hidden flex items-center justify-center p-2 group/cardimg" style="background-color: ${theme.hex}18;">
+            ${mediaItemsHTML}
 
             <!-- Action Buttons Stack -->
             <div class="absolute top-3 right-3 flex flex-col gap-2 z-10" onclick="event.stopPropagation()">
@@ -1763,16 +1866,16 @@
               ` : ''}
             </div>
 
-            ${hasMultipleImages ? `
-              <button onclick="switchCardImage(${originalIndex}, -1, event)" title="Previous Image" aria-label="Previous Image" class="absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-black rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-md shadow-md transition hover:scale-110 z-10">
+            ${totalSlots > 1 ? `
+              <button onclick="switchCardImage(${originalIndex}, -1, event)" title="Previous Media" aria-label="Previous Media" class="absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-black rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-md shadow-md transition hover:scale-110 z-10">
                 ❮
               </button>
-              <button onclick="switchCardImage(${originalIndex}, 1, event)" title="Next Image" aria-label="Next Image" class="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-black rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-md shadow-md transition hover:scale-110 z-10">
+              <button onclick="switchCardImage(${originalIndex}, 1, event)" title="Next Media" aria-label="Next Media" class="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-black rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-md shadow-md transition hover:scale-110 z-10">
                 ❯
               </button>
 
               <span id="card-badge-${originalIndex}" class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none z-10 shadow">
-                1 / 2
+                1 / ${totalSlots}
               </span>
             ` : ''}
 
@@ -1797,7 +1900,7 @@
               </span>
               
               <div class="flex gap-1.5" onclick="event.stopPropagation()">
-                ${d3d ? `<a href="${d3d}" target="_blank" title="3D Model" class="bg-purple-50 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 hover:bg-purple-600 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold border border-purple-200 dark:border-purple-800 transition shadow-sm">3D</a>` : ''}
+                ${has3D ? `<button onclick="open3DLightbox('${d3d}', '${displayTitle.replace(/'/g, "\\'")}')" title="Open 3D Lightbox" class="bg-purple-50 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 hover:bg-purple-600 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold border border-purple-200 dark:border-purple-800 transition shadow-sm">👓 3D View</button>` : ''}
                 ${ddoc ? `<a href="${ddoc}" target="_blank" title="Documentation" class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-800 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold transition shadow-sm">Doc</a>` : ''}
                 ${dweb ? `<a href="${dweb}" target="_blank" title="Website" class="bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold border border-blue-200 dark:border-blue-800 transition shadow-sm">Web</a>` : ''}
               </div>
@@ -1936,7 +2039,6 @@
       }
 
       if (targetRow2) {
-        // Extract Introduction text from Catalog!AF2 (Index 31 in Row 2)
         const introTextAF2 = unescapeHTML(getVal(targetRow2, 31));
         const introCard = document.getElementById('statIntroCard');
         const introTextElem = document.getElementById('statIntroText');
@@ -2034,7 +2136,6 @@
 
         if (yearNum && yearNum >= 1800) {
           const rawType = getVal(row, 9) || getVal(row, 14);
-          // EXCLUDE 'General' from Stacked Types Chart
           if (rawType && rawType.toLowerCase().trim() !== 'general') {
             allTypesSet.add(rawType);
             const roundedPeriod = `${Math.floor(yearNum / 20) * 20}s`;
@@ -2152,6 +2253,37 @@
       }, 50);
     }
 
+    // Standalone Fullscreen 3D Lightbox Viewer Logic
+    function open3DLightbox(url, title) {
+      const modal = document.getElementById('lightbox3DModal');
+      const titleElem = document.getElementById('lightboxTitle');
+      const viewer = document.getElementById('lightboxViewer');
+      const spinner = document.getElementById('lightboxSpinner');
+
+      if (!modal || !viewer) return;
+
+      titleElem.textContent = title || 'Interactive 3D Model';
+      spinner.style.opacity = '1';
+      spinner.style.display = 'flex';
+
+      viewer.src = url;
+      modal.classList.remove('hidden');
+
+      const onLoad = () => {
+        spinner.style.opacity = '0';
+        setTimeout(() => { spinner.style.display = 'none'; }, 300);
+        viewer.removeEventListener('load', onLoad);
+      };
+      viewer.addEventListener('load', onLoad);
+    }
+
+    function close3DLightbox() {
+      const modal = document.getElementById('lightbox3DModal');
+      const viewer = document.getElementById('lightboxViewer');
+      if (modal) modal.classList.add('hidden');
+      if (viewer) viewer.removeAttribute('src');
+    }
+
     function openModalByOriginalIndex(origIdx) {
       const filteredIndex = currentFilteredRows.findIndex(item => item.originalIndex === origIdx);
       if (filteredIndex !== -1) {
@@ -2193,18 +2325,23 @@
         const type = getVal(row, 14);
         const category = getVal(row, 15);
         const subcategory = getVal(row, 16);
-        const d3d = getVal(row, 17);
+        let d3d = getVal(row, 17);
         const ddoc = getVal(row, 18);
         const dweb = getVal(row, 19);
         
         const img1 = formatImageUrl(getVal(row, 20));
         const img2 = formatImageUrl(getVal(row, 21));
         const ageBadgeClass = getAgeBadgeStyle(age);
-        const hasTwoImages = Boolean(img1 && img2);
 
+        // Process Dropbox 3D link
+        if (d3d && d3d.includes('dropbox.com')) {
+          d3d = d3d.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
+          if (!d3d.includes('raw=1')) d3d += (d3d.includes('?') ? '&raw=1' : '?raw=1');
+        }
+
+        const has3D = Boolean(d3d && d3d.startsWith('http'));
         const cleanedDetails = cleanDetailsForModal(details);
 
-        // Category Color Outlining (3px) and Solid 50% Reduced Tinting for Pop-up Modal Container
         const theme = getCategoryTheme(category || type || subcategory);
         modalContainer.style.borderColor = theme.hex;
         modalContainer.style.borderWidth = '3px';
@@ -2225,71 +2362,113 @@
           navigator.clipboard.writeText(url).then(() => showToast('Link copied to clipboard!', '🔗'));
         };
 
+        // Render Side-by-Side Responsive Modal Layout
+        // Column 1 = Details & Description First
+        // Column 2 = Live 3D Model Viewer + Images Second
         modalContent.innerHTML = `
-          <div class="flex items-start justify-between gap-4 mb-2.5">
-            <h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
-            <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">
-              ${isFav ? '❤️ Saved' : '🤍 Save'}
-            </button>
-          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            
+            <!-- LEFT COLUMN: Item Details First -->
+            <div class="flex flex-col space-y-4">
+              <div class="flex items-start justify-between gap-3">
+                <h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
+                <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">
+                  ${isFav ? '❤️ Saved' : '🤍 Save'}
+                </button>
+              </div>
 
-          <div class="flex flex-wrap gap-2 text-xs mb-4">
-            ${age ? `<span class="${ageBadgeClass} px-3 py-0.5 rounded-full shadow-sm"><strong>Age:</strong> ${age}</span>` : ''}
-            ${category ? createCategoryBadge(category, 'category') : ''}
-            ${type ? createCategoryBadge(type, 'type') : ''}
-            ${subcategory ? createCategoryBadge(subcategory, 'subcategory') : ''}
-          </div>
+              <div class="flex flex-wrap gap-2 text-xs">
+                ${age ? `<span class="${ageBadgeClass} px-3 py-0.5 rounded-full shadow-sm"><strong>Age:</strong> ${age}</span>` : ''}
+                ${category ? createCategoryBadge(category, 'category') : ''}
+                ${type ? createCategoryBadge(type, 'type') : ''}
+                ${subcategory ? createCategoryBadge(subcategory, 'subcategory') : ''}
+              </div>
 
-          <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-4">
-            ${img1 ? `
-              <div>
-                <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
-                  <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest shrink-0">Primary Image</p>
-                  ${notes ? `
-                    <div class="flex items-center gap-1 shrink-0">
+              ${cleanedDetails ? `
+                <div>
+                  <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
+                  <div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl shadow-inner">${cleanedDetails}</div>
+                </div>
+              ` : ''}
+
+              ${notes ? `
+                <div>
+                  <div class="flex items-center justify-between gap-2 mb-1.5">
+                    <h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Museum Notes</h4>
+                    <div class="flex items-center gap-1">
                       <button id="btnAudioGuide" data-row="${originalIndex}" onclick="speakAudioGuide(${originalIndex})" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-black transition shadow">
                         🔊 Listen
                       </button>
                       <select id="voiceSelect" class="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg p-0.5 font-medium max-w-[100px] truncate outline-none">
                       </select>
                     </div>
-                  ` : ''}
-                  ${!hasTwoImages ? `<button id="btnGoogleSearchMain" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 shrink-0 ml-auto">🔍 Google Item</button>` : ''}
+                  </div>
+                  <div class="text-sm text-amber-900 dark:text-amber-200 leading-relaxed whitespace-pre-line bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-500/40 p-4 sm:p-5 rounded-2xl shadow-inner">${notes}</div>
                 </div>
-                <a href="${img1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2.5 shadow-md" style="border-color: ${theme.hex}80;">
-                  <img src="${img1}" class="w-full h-56 sm:h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
-                  <span class="absolute bottom-3 right-3 bg-blue-600/90 text-white backdrop-blur-md text-[10px] font-black px-3 py-1 rounded-xl shadow border border-blue-400/40 pointer-events-none">Open Full Image ↗</span>
-                </a>
-              </div>` : ''}
+              ` : ''}
 
-            ${img2 ? `
-              <div>
-                <div class="flex items-center justify-between gap-1.5 mb-2">
-                  <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest shrink-0">Second Image</p>
-                  <button id="btnGoogleSearchSec" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 shrink-0 ml-auto">🔍 Google Item</button>
+              <div class="flex flex-wrap items-center gap-2.5 pt-2">
+                <button id="btnGoogleSearchMain" class="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">🔍 Google Item</button>
+              </div>
+
+              <div class="flex flex-wrap gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                ${has3D ? `<button onclick="open3DLightbox('${d3d}', '${displayTitle.replace(/'/g, "\\'")}')" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-purple-500/25 transition">👓 Fullscreen 3D View ↗</button>` : ''}
+                ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition">Documentation ↗</a>` : ''}
+                ${dweb ? `<a href="${dweb}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-blue-500/25 transition">Web Link ↗</a>` : ''}
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Interactive 3D Model First, Followed by Images -->
+            <div class="flex flex-col space-y-4">
+              ${has3D ? `
+                <div class="relative group/model">
+                  <div class="flex items-center justify-between mb-2">
+                    <p class="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-widest">Interactive 3D Model</p>
+                    <button onclick="open3DLightbox('${d3d}', '${displayTitle.replace(/'/g, "\\'")}')" class="text-[10px] font-bold text-purple-600 dark:text-purple-300 hover:underline">Expand Fullscreen ⤢</button>
+                  </div>
+                  <div class="w-full h-64 sm:h-72 bg-slate-900 rounded-2xl overflow-hidden shadow-inner border border-indigo-500/30 relative">
+                    <model-viewer 
+                      src="${d3d}" 
+                      camera-controls 
+                      auto-rotate 
+                      shadow-intensity="1.2" 
+                      exposure="1.1" 
+                      class="w-full h-full">
+                    </model-viewer>
+                  </div>
                 </div>
-                <a href="${img2}" target="_blank" title="Click to view second image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2.5 shadow-md" style="border-color: ${theme.hex}80;">
-                  <img src="${img2}" class="w-full h-56 sm:h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
-                  <span class="absolute bottom-3 right-3 bg-blue-600/90 text-white backdrop-blur-md text-[10px] font-black px-3 py-1 rounded-xl shadow border border-blue-400/40 pointer-events-none">Open Full Image ↗</span>
-                </a>
-              </div>` : ''}
-          </div>
+              ` : ''}
 
-          ${cleanedDetails ? `<div class="mb-4"><h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4><div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl shadow-inner">${cleanedDetails}</div></div>` : ''}
-          ${notes ? `<div class="mb-4"><h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1.5">Museum Notes</h4><div class="text-sm text-amber-900 dark:text-amber-200 leading-relaxed whitespace-pre-line bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-500/40 p-4 sm:p-5 rounded-2xl shadow-inner">${notes}</div></div>` : ''}
-          ${d3d && (d3d.endsWith('.glb') || d3d.endsWith('.gltf')) ? `<div class="mb-4"><h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1.5">Interactive 3D Viewer</h4><model-viewer src="${d3d}" camera-controls auto-rotate class="w-full h-72 bg-slate-900 rounded-2xl overflow-hidden shadow-inner border border-slate-300 dark:border-indigo-500/30"></model-viewer></div>` : ''}
+              <!-- Additional Media Images Grid -->
+              <div class="grid grid-cols-1 ${img1 && img2 ? 'sm:grid-cols-2' : ''} gap-3">
+                ${img1 ? `
+                  <div>
+                    <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${has3D ? 'Second Media (Image 1)' : 'Primary Image'}</p>
+                    <a href="${img1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md" style="border-color: ${theme.hex}80;">
+                      <img src="${img1}" class="w-full h-44 sm:h-48 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                      <span class="absolute bottom-2 right-2 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-lg shadow pointer-events-none">Full Image ↗</span>
+                    </a>
+                  </div>
+                ` : ''}
 
-          <div class="flex flex-wrap gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-            ${d3d ? `<a href="${d3d}" target="_blank" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-purple-500/25 transition">3D Model ↗</a>` : ''}
-            ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition">Documentation ↗</a>` : ''}
-            ${dweb ? `<a href="${dweb}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-blue-500/25 transition">Web Link ↗</a>` : ''}
+                ${img2 ? `
+                  <div>
+                    <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${has3D ? 'Third Media (Image 2)' : 'Secondary Image'}</p>
+                    <a href="${img2}" target="_blank" title="Click to view image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md" style="border-color: ${theme.hex}80;">
+                      <img src="${img2}" class="w-full h-44 sm:h-48 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                      <span class="absolute bottom-2 right-2 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-lg shadow pointer-events-none">Full Image ↗</span>
+                    </a>
+                  </div>
+                ` : ''}
+              </div>
+
+            </div>
+
           </div>
         `;
 
         const btnMain = document.getElementById('btnGoogleSearchMain');
-        const btnSec = document.getElementById('btnGoogleSearchSec');
         if (btnMain) btnMain.onclick = () => googleItemSearch(displayTitle, category, details);
-        if (btnSec) btnSec.onclick = () => googleItemSearch(displayTitle, category, details);
         populateVoiceDropdown();
 
       } else {
@@ -2471,7 +2650,6 @@
         filterCatalog(true);
       });
 
-      // Mobile Floating Jump Button: Hides filters before jumping down to items
       document.getElementById('floatingJumpBtn').addEventListener('click', () => {
         toggleCollapsibleControls(false);
         scrollToGrid();
@@ -2488,6 +2666,11 @@
         if (e.target === document.getElementById('detailModal')) closeModal();
       });
 
+      document.getElementById('close3DLightbox').addEventListener('click', close3DLightbox);
+      document.getElementById('lightbox3DModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('lightbox3DModal')) close3DLightbox();
+      });
+
       document.getElementById('modalPrevBtn').addEventListener('click', () => {
         if (currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1);
       });
@@ -2498,26 +2681,23 @@
 
       window.addEventListener('keydown', (e) => {
         const modal = document.getElementById('detailModal');
-        if (modal.classList.contains('hidden')) return;
+        const lightbox = document.getElementById('lightbox3DModal');
 
-        if (e.key === 'Escape') closeModal();
-        if (e.key === 'ArrowLeft' && currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1);
-        if (e.key === 'ArrowRight' && currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1);
-
-        if (e.key === 'Tab') {
-          const focusables = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-          if (focusables.length === 0) return;
-          const first = focusables[0];
-          const last = focusables[focusables.length - 1];
-
-          if (e.shiftKey && document.activeElement === first) {
-            last.focus();
-            e.preventDefault();
-          } else if (!e.shiftKey && document.activeElement === last) {
-            first.focus();
-            e.preventDefault();
+        if (e.key === 'Escape') {
+          if (!lightbox.classList.contains('hidden')) {
+            close3DLightbox();
+            return;
+          }
+          if (!modal.classList.contains('hidden')) {
+            closeModal();
+            return;
           }
         }
+
+        if (modal.classList.contains('hidden')) return;
+
+        if (e.key === 'ArrowLeft' && currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1);
+        if (e.key === 'ArrowRight' && currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1);
       });
 
       loadCatalogData();
