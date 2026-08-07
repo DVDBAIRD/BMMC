@@ -100,17 +100,22 @@
         <!-- Action Buttons Bar -->
         <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <!-- Permanent Browse All Button -->
-          <button id="btnBrowseAllHeader" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-blue-500/20 active:scale-95">
+          <button id="btnBrowseAllHeader" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-blue-500/20 active:scale-95">
             <span>🌐 Browse All</span>
           </button>
 
           <!-- Info Page Button -->
-          <button id="btnStatsHeader" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-emerald-500/20 active:scale-95">
+          <button id="btnStatsHeader" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-emerald-500/20 active:scale-95">
             <span>ℹ️ Info</span>
           </button>
 
+          <!-- 3D Only Button (Moved to Header) -->
+          <button id="btn3DOnly" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 border border-purple-500/30 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-purple-500/20 active:scale-95">
+            <span>👓 3D Only</span>
+          </button>
+
           <!-- Surprise Me Button -->
-          <button id="btnSurprise" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-purple-500/20 active:scale-95">
+          <button id="btnSurprise" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-pink-500/20 active:scale-95">
             <span>✨ Surprise Me!</span>
           </button>
 
@@ -180,8 +185,8 @@
           </div>
         </div>
 
-        <!-- Museum Filter Controls Grid -->
-        <div id="exhibitsFilterGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2.5">
+        <!-- Museum Filter Controls Grid (Compact 2x2 / 4-Col Layout) -->
+        <div id="exhibitsFilterGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
           <div>
             <label for="filterAge" class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Age</label>
             <select id="filterAge" class="w-full p-2 bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-700/80 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
@@ -205,12 +210,6 @@
             <select id="filterSubcategory" class="w-full p-2 bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-700/80 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
               <option value="">All Subcategories</option>
             </select>
-          </div>
-          
-          <div class="col-span-2 sm:col-span-1 flex items-end">
-            <button id="btn3DOnly" class="w-full p-2 bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm h-[36px]">
-              <span>👓 3D Models Only</span>
-            </button>
           </div>
         </div>
 
@@ -454,27 +453,27 @@
     <span>⬇️ View Archive</span>
   </button>
 
-  <!-- Modernized Detail Pop-up Modal -->
+  <!-- Modernized & Adaptive Pop-up Modal (Light/Dark Mode Theme Adaptive) -->
   <div id="detailModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-50 flex items-center justify-center p-3 sm:p-6 hidden transition-opacity" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="bg-slate-950/95 text-slate-100 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-[0_0_50px_rgba(99,102,241,0.25)] border-2 border-indigo-500/40 relative flex flex-col backdrop-blur-2xl" id="modalContainer">
+    <div class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-indigo-500/40 relative flex flex-col backdrop-blur-2xl" id="modalContainer">
       
       <!-- Modal Navigation Bar -->
-      <div class="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-md border-b border-indigo-500/20 px-4 sm:px-6 py-3 flex items-center justify-between">
+      <div class="sticky top-0 z-20 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-indigo-500/20 px-4 sm:px-6 py-3 flex items-center justify-between">
         <div class="flex items-center gap-1.5">
-          <button id="modalPrevBtn" title="Previous Item (Left Arrow)" aria-label="Previous Item" class="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-extrabold transition flex items-center gap-1">
+          <button id="modalPrevBtn" title="Previous Item (Left Arrow)" aria-label="Previous Item" class="p-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-extrabold transition flex items-center gap-1">
             <span>←</span> <span class="hidden sm:inline">Prev</span>
           </button>
-          <span id="modalCounter" class="text-[11px] font-extrabold text-indigo-300 px-2"></span>
-          <button id="modalNextBtn" title="Next Item (Right Arrow)" aria-label="Next Item" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-extrabold transition flex items-center gap-1">
+          <span id="modalCounter" class="text-[11px] font-extrabold text-indigo-600 dark:text-indigo-300 px-2"></span>
+          <button id="modalNextBtn" title="Next Item (Right Arrow)" aria-label="Next Item" class="p-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-extrabold transition flex items-center gap-1">
             <span class="hidden sm:inline">Next</span> <span>→</span>
           </button>
         </div>
 
         <div class="flex items-center gap-2">
-          <button id="btnShareExhibit" title="Copy Link" aria-label="Copy Link" class="p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-extrabold transition">
+          <button id="btnShareExhibit" title="Copy Link" aria-label="Copy Link" class="p-2 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-extrabold transition">
             🔗
           </button>
-          <button id="closeModal" title="Close (Esc)" aria-label="Close modal" class="p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 font-extrabold transition">
+          <button id="closeModal" title="Close (Esc)" aria-label="Close modal" class="p-2 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 font-extrabold transition">
             ✕
           </button>
         </div>
@@ -494,16 +493,38 @@
 
     const MAIN_HUB_CATEGORIES = ["War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"];
     
-    // Custom High-Contrast Color Themes for Collection Hubs
-    const HUB_COLOR_THEMES = {
-      war: { bg: 'from-rose-500/25 via-rose-500/15 to-transparent', border: 'border-rose-400/60 hover:border-rose-500', text: 'text-rose-900 dark:text-rose-200 group-hover:text-rose-600' },
-      photography: { bg: 'from-cyan-500/25 via-cyan-500/15 to-transparent', border: 'border-cyan-400/60 hover:border-cyan-500', text: 'text-cyan-900 dark:text-cyan-200 group-hover:text-cyan-600' },
-      survey: { bg: 'from-emerald-500/25 via-emerald-500/15 to-transparent', border: 'border-emerald-400/60 hover:border-emerald-500', text: 'text-emerald-900 dark:text-emerald-200 group-hover:text-emerald-600' },
-      general: { bg: 'from-indigo-500/25 via-indigo-500/15 to-transparent', border: 'border-indigo-400/60 hover:border-indigo-500', text: 'text-indigo-900 dark:text-indigo-200 group-hover:text-indigo-600' },
-      documentation: { bg: 'from-amber-500/25 via-amber-500/15 to-transparent', border: 'border-amber-400/60 hover:border-amber-500', text: 'text-amber-900 dark:text-amber-200 group-hover:text-amber-600' },
-      household: { bg: 'from-purple-500/25 via-purple-500/15 to-transparent', border: 'border-purple-400/60 hover:border-purple-500', text: 'text-purple-900 dark:text-purple-200 group-hover:text-purple-600' },
-      collection: { bg: 'from-fuchsia-500/25 via-fuchsia-500/15 to-transparent', border: 'border-fuchsia-400/60 hover:border-fuchsia-500', text: 'text-fuchsia-900 dark:text-fuchsia-200 group-hover:text-fuchsia-600' }
+    // Explicit Hex Color Palette Specification
+    const CATEGORY_PALETTE = {
+      war: { hex: '#9F5C39', text: '#FFFFFF', name: 'War' },
+      photography: { hex: '#22290F', text: '#FFFFFF', name: 'Photography' },
+      survey: { hex: '#916F3B', text: '#FFFFFF', name: 'Survey' },
+      general: { hex: '#2C6DA7', text: '#FFFFFF', name: 'General' },
+      documentation: { hex: '#AAB192', text: '#1E281E', name: 'Documentation' },
+      household: { hex: '#176564', text: '#FFFFFF', name: 'Household' },
+      collections: { hex: '#1E281E', text: '#FFFFFF', name: 'Collections' },
+      gramophones: { hex: '#DCB481', text: '#22290F', name: 'Gramophones' }
     };
+
+    function getCategoryTheme(str) {
+      if (!str) return CATEGORY_PALETTE.general;
+      const s = String(str).toLowerCase().trim();
+      if (s.includes('war')) return CATEGORY_PALETTE.war;
+      if (s.includes('photo') || s.includes('camera')) return CATEGORY_PALETTE.photography;
+      if (s.includes('survey')) return CATEGORY_PALETTE.survey;
+      if (s.includes('doc')) return CATEGORY_PALETTE.documentation;
+      if (s.includes('house')) return CATEGORY_PALETTE.household;
+      if (s.includes('collection')) return CATEGORY_PALETTE.collections;
+      if (s.includes('gramophone') || s.includes('record') || s.includes('audio')) return CATEGORY_PALETTE.gramophones;
+      if (s.includes('general')) return CATEGORY_PALETTE.general;
+      return CATEGORY_PALETTE.general;
+    }
+
+    function createCategoryBadge(label, prefix = '') {
+      if (!label) return '';
+      const theme = getCategoryTheme(label);
+      const fullLabel = prefix ? `${prefix}: ${label}` : label;
+      return `<span class="px-2.5 py-0.5 rounded-full font-black text-[11px] shadow-sm inline-block tracking-wide" style="background-color: ${theme.hex}; color: ${theme.text};">${fullLabel}</span>`;
+    }
 
     const CACHE_TTL_MS = 60 * 60 * 1000;
 
@@ -988,8 +1009,7 @@
       
       const btn3D = document.getElementById('btn3DOnly');
       if (btn3D) {
-        btn3D.classList.remove('bg-purple-600', 'text-white', 'border-purple-600');
-        btn3D.classList.add('bg-white', 'dark:bg-slate-900', 'text-slate-700', 'dark:text-slate-200', 'border-slate-200', 'dark:border-slate-700');
+        btn3D.classList.remove('ring-2', 'ring-purple-300');
       }
       
       updateFavoritesBadge();
@@ -1206,18 +1226,20 @@
         const firstImgRaw = firstImgRow ? getVal(firstImgRow, 20) : '';
         const previewImg = formatImageUrl(firstImgRaw) || NO_IMAGE_SVG;
 
-        const theme = HUB_COLOR_THEMES[baseName] || HUB_COLOR_THEMES.general;
+        const theme = getCategoryTheme(baseName);
 
         const hubCard = document.createElement('div');
-        hubCard.className = `bg-gradient-to-b ${theme.bg} bg-white dark:bg-slate-900 rounded-2xl border-2 ${theme.border} overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col group relative`;
+        hubCard.className = `bg-white dark:bg-slate-900 rounded-2xl border-2 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col group relative`;
+        hubCard.style.borderColor = theme.hex;
+
         hubCard.innerHTML = `
-          <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5">
+          <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5" style="background-color: ${theme.hex}22;">
             <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${catName}" />
-            <span class="absolute top-1.5 right-1.5 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow-md">${count}</span>
+            <span class="absolute top-1.5 right-1.5 text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${theme.hex}; color: ${theme.text};">${count}</span>
           </div>
           <div class="p-2.5 flex-1 flex flex-col justify-between">
-            <h3 class="font-extrabold text-slate-900 dark:text-slate-100 text-xs ${theme.text} transition-colors line-clamp-1">${catName}</h3>
-            <span class="text-[10px] text-blue-700 dark:text-blue-300 font-extrabold mt-1 flex items-center gap-0.5">Explore →</span>
+            <h3 class="font-black text-xs line-clamp-1" style="color: ${theme.hex};">${catName}</h3>
+            <span class="text-[10px] font-extrabold mt-1 flex items-center gap-0.5" style="color: ${theme.hex};">Explore →</span>
           </div>
         `;
 
@@ -1257,16 +1279,19 @@
         hubsGrid.appendChild(hubCard);
       });
 
+      const gramTheme = CATEGORY_PALETTE.gramophones;
       const gramophoneHubCard = document.createElement('div');
-      gramophoneHubCard.className = 'bg-gradient-to-b from-amber-500/25 via-amber-500/15 to-transparent bg-white dark:bg-slate-900 rounded-2xl border-2 border-amber-400/60 hover:border-amber-500 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col group relative';
+      gramophoneHubCard.className = 'bg-white dark:bg-slate-900 rounded-2xl border-2 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col group relative';
+      gramophoneHubCard.style.borderColor = gramTheme.hex;
+
       gramophoneHubCard.innerHTML = `
-        <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5 text-3xl">
+        <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5 text-3xl" style="background-color: ${gramTheme.hex}22;">
           🎵
-          <span class="absolute top-1.5 right-1.5 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow-md">${rawGramophoneRows.length}</span>
+          <span class="absolute top-1.5 right-1.5 text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${gramTheme.hex}; color: ${gramTheme.text};">${rawGramophoneRows.length}</span>
         </div>
         <div class="p-2.5 flex-1 flex flex-col justify-between">
-          <h3 class="font-extrabold text-slate-900 dark:text-slate-100 text-xs text-amber-900 dark:text-amber-200 group-hover:text-amber-600 transition-colors line-clamp-1">Gramophones</h3>
-          <span class="text-[10px] text-amber-700 dark:text-amber-300 font-extrabold mt-1 flex items-center gap-0.5">1916–1953 →</span>
+          <h3 class="font-black text-xs line-clamp-1" style="color: ${gramTheme.hex};">Gramophones</h3>
+          <span class="text-[10px] font-extrabold mt-1 flex items-center gap-0.5" style="color: ${gramTheme.hex};">1916–1953 →</span>
         </div>
       `;
 
@@ -1327,10 +1352,11 @@
 
       let uniqueValues = [...new Set(values.filter(Boolean))].sort();
       
-      // Clean "Info" from Age Filter Options
-      if (elementId === 'filterAge') {
-        uniqueValues = uniqueValues.filter(val => val.toLowerCase().trim() !== 'info');
-      }
+      // Filter out any "Info" or "Info:" entries
+      uniqueValues = uniqueValues.filter(val => {
+        const lower = val.toLowerCase().trim();
+        return lower !== 'info' && !lower.startsWith('info:');
+      });
 
       select.innerHTML = `<option value="">All ${elementId.replace('filter', '')}s</option>`;
 
@@ -1713,9 +1739,9 @@
           <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
             <div>
               <div class="flex gap-1.5 flex-wrap text-[11px] mb-2.5 font-bold">
-                ${category ? `<span class="bg-blue-100/80 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 px-2.5 py-0.5 rounded-full border border-blue-200/80 dark:border-blue-800/80">${category}</span>` : ''}
-                ${type ? `<span class="bg-indigo-100/80 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200/80 dark:border-indigo-800/80">${type}</span>` : ''}
-                ${subcategory ? `<span class="bg-emerald-100/80 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-200/80 dark:border-emerald-800/80">${subcategory}</span>` : ''}
+                ${category ? createCategoryBadge(category) : ''}
+                ${type ? createCategoryBadge(type) : ''}
+                ${subcategory ? createCategoryBadge(subcategory) : ''}
               </div>
               
               <h3 class="font-extrabold text-slate-900 dark:text-slate-100 text-sm mb-1.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">${slashFormattedTitle}</h3>
@@ -1947,7 +1973,7 @@
           }
         }
 
-        // Year extraction with robust multi-column fallbacks (Index 7, 13, or row string)
+        // Robust Year extraction
         let rawDate = getVal(row, 7) || getVal(row, 13) || row.join(' ');
         let yearNum = null;
         const yearMatch = rawDate.match(/\b(1[89][0-9]{2}|20[0-2][0-9])\b/);
@@ -1960,13 +1986,14 @@
         }
 
         if (yearNum && yearNum >= 1800) {
-          const typeName = getVal(row, 9) || getVal(row, 14) || 'General';
-          allTypesSet.add(typeName);
-
-          const roundedPeriod = `${Math.floor(yearNum / 20) * 20}s`;
-
-          if (!dateTypeMap[roundedPeriod]) dateTypeMap[roundedPeriod] = {};
-          dateTypeMap[roundedPeriod][typeName] = (dateTypeMap[roundedPeriod][typeName] || 0) + 1;
+          const rawType = getVal(row, 9) || getVal(row, 14);
+          // FIX: Exclude 'General' from Stacked Types Chart
+          if (rawType && rawType.toLowerCase().trim() !== 'general') {
+            allTypesSet.add(rawType);
+            const roundedPeriod = `${Math.floor(yearNum / 20) * 20}s`;
+            if (!dateTypeMap[roundedPeriod]) dateTypeMap[roundedPeriod] = {};
+            dateTypeMap[roundedPeriod][rawType] = (dateTypeMap[roundedPeriod][rawType] || 0) + 1;
+          }
         }
 
         let rawLoc = getVal(row, 17) || getVal(row, 18) || getVal(row, 16);
@@ -2001,7 +2028,7 @@
       if (chartStackedInstance) chartStackedInstance.destroy();
       if (chartLocationsInstance) chartLocationsInstance.destroy();
 
-      // Defer Chart.js canvas creation so DOM dimensions are fully computed
+      // Defer Chart creation slightly to guarantee computed container dimensions
       setTimeout(() => {
         const periodsSorted = Object.keys(dateTypeMap).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
         const typesArray = Array.from(allTypesSet);
@@ -2146,36 +2173,36 @@
 
         modalContent.innerHTML = `
           <div class="flex items-start justify-between gap-4 mb-2.5">
-            <h2 id="modalTitle" class="text-xl sm:text-2xl font-black bg-gradient-to-r from-blue-300 via-indigo-200 to-purple-300 bg-clip-text text-transparent leading-tight">${displayTitle}</h2>
-            <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700'}">
+            <h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
+            <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">
               ${isFav ? '❤️ Saved' : '🤍 Save'}
             </button>
           </div>
 
           <div class="flex flex-wrap gap-2 text-xs mb-4">
-            ${age ? `<span class="${ageBadgeClass} px-3 py-1 rounded-full shadow-sm"><strong>Age:</strong> ${age}</span>` : ''}
-            ${type ? `<span class="bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 px-3 py-1 rounded-full font-extrabold shadow-sm"><strong>Type:</strong> ${type}</span>` : ''}
-            ${category ? `<span class="bg-blue-500/20 text-blue-300 border border-blue-400/40 px-3 py-1 rounded-full font-extrabold shadow-sm"><strong>Category:</strong> ${category}</span>` : ''}
-            ${subcategory ? `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 px-3 py-1 rounded-full font-extrabold shadow-sm"><strong>Subcategory:</strong> ${subcategory}</span>` : ''}
+            ${age ? `<span class="${ageBadgeClass} px-3 py-0.5 rounded-full shadow-sm"><strong>Age:</strong> ${age}</span>` : ''}
+            ${type ? createCategoryBadge(type, 'Type') : ''}
+            ${category ? createCategoryBadge(category, 'Category') : ''}
+            ${subcategory ? createCategoryBadge(subcategory, 'Subcategory') : ''}
           </div>
 
           <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-4">
             ${img1 ? `
               <div>
                 <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
-                  <p class="text-[10px] font-extrabold text-indigo-300 uppercase tracking-widest shrink-0">Primary Image</p>
+                  <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest shrink-0">Primary Image</p>
                   ${notes ? `
                     <div class="flex items-center gap-1 shrink-0">
                       <button id="btnAudioGuide" data-row="${originalIndex}" onclick="speakAudioGuide(${originalIndex})" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-black transition shadow">
                         🔊 Listen
                       </button>
-                      <select id="voiceSelect" class="text-[10px] bg-slate-900 text-slate-100 border border-indigo-500/30 rounded-lg p-0.5 font-medium max-w-[100px] truncate outline-none">
+                      <select id="voiceSelect" class="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg p-0.5 font-medium max-w-[100px] truncate outline-none">
                       </select>
                     </div>
                   ` : ''}
-                  ${!hasTwoImages ? `<button id="btnGoogleSearchMain" class="text-[10px] font-bold text-blue-400 hover:underline flex items-center gap-0.5 shrink-0 ml-auto">🔍 Google Item</button>` : ''}
+                  ${!hasTwoImages ? `<button id="btnGoogleSearchMain" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 shrink-0 ml-auto">🔍 Google Item</button>` : ''}
                 </div>
-                <a href="${img1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-slate-900 to-slate-950 p-2.5 shadow-xl">
+                <a href="${img1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2.5 shadow-md">
                   <img src="${img1}" class="w-full h-56 sm:h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
                   <span class="absolute bottom-3 right-3 bg-blue-600/90 text-white backdrop-blur-md text-[10px] font-black px-3 py-1 rounded-xl shadow border border-blue-400/40 pointer-events-none">Open Full Image ↗</span>
                 </a>
@@ -2184,21 +2211,21 @@
             ${img2 ? `
               <div>
                 <div class="flex items-center justify-between gap-1.5 mb-2">
-                  <p class="text-[10px] font-extrabold text-indigo-300 uppercase tracking-widest shrink-0">Second Image</p>
-                  <button id="btnGoogleSearchSec" class="text-[10px] font-bold text-blue-400 hover:underline flex items-center gap-0.5 shrink-0 ml-auto">🔍 Google Item</button>
+                  <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest shrink-0">Second Image</p>
+                  <button id="btnGoogleSearchSec" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 shrink-0 ml-auto">🔍 Google Item</button>
                 </div>
-                <a href="${img2}" target="_blank" title="Click to view second image" class="block group relative overflow-hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-slate-900 to-slate-950 p-2.5 shadow-xl">
+                <a href="${img2}" target="_blank" title="Click to view second image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2.5 shadow-md">
                   <img src="${img2}" class="w-full h-56 sm:h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
                   <span class="absolute bottom-3 right-3 bg-blue-600/90 text-white backdrop-blur-md text-[10px] font-black px-3 py-1 rounded-xl shadow border border-blue-400/40 pointer-events-none">Open Full Image ↗</span>
                 </a>
               </div>` : ''}
           </div>
 
-          ${cleanedDetails ? `<div class="mb-4"><h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4><div class="text-sm text-slate-200 leading-relaxed whitespace-pre-line bg-slate-900/90 border border-indigo-500/25 p-4 sm:p-5 rounded-2xl shadow-inner">${cleanedDetails}</div></div>` : ''}
-          ${notes ? `<div class="mb-4"><h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-1.5">Museum Notes</h4><div class="text-sm text-amber-200 leading-relaxed whitespace-pre-line bg-amber-950/40 border border-amber-500/40 p-4 sm:p-5 rounded-2xl shadow-inner">${notes}</div></div>` : ''}
-          ${d3d && (d3d.endsWith('.glb') || d3d.endsWith('.gltf')) ? `<div class="mb-4"><h4 class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-1.5">Interactive 3D Viewer</h4><model-viewer src="${d3d}" camera-controls auto-rotate class="w-full h-72 bg-slate-900 rounded-2xl overflow-hidden shadow-inner border border-indigo-500/30"></model-viewer></div>` : ''}
+          ${cleanedDetails ? `<div class="mb-4"><h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4><div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-indigo-500/25 p-4 sm:p-5 rounded-2xl shadow-inner">${cleanedDetails}</div></div>` : ''}
+          ${notes ? `<div class="mb-4"><h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1.5">Museum Notes</h4><div class="text-sm text-amber-900 dark:text-amber-200 leading-relaxed whitespace-pre-line bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-500/40 p-4 sm:p-5 rounded-2xl shadow-inner">${notes}</div></div>` : ''}
+          ${d3d && (d3d.endsWith('.glb') || d3d.endsWith('.gltf')) ? `<div class="mb-4"><h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1.5">Interactive 3D Viewer</h4><model-viewer src="${d3d}" camera-controls auto-rotate class="w-full h-72 bg-slate-900 rounded-2xl overflow-hidden shadow-inner border border-slate-300 dark:border-indigo-500/30"></model-viewer></div>` : ''}
 
-          <div class="flex flex-wrap gap-3 pt-3 border-t border-indigo-500/20">
+          <div class="flex flex-wrap gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
             ${d3d ? `<a href="${d3d}" target="_blank" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-purple-500/25 transition">3D Model ↗</a>` : ''}
             ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition">Documentation ↗</a>` : ''}
             ${dweb ? `<a href="${dweb}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-blue-500/25 transition">Web Link ↗</a>` : ''}
@@ -2251,17 +2278,17 @@
         modalContent.innerHTML = `
           <div class="flex items-start justify-between gap-4 mb-2">
             <div>
-              <h2 id="modalTitle" class="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-orange-200 to-amber-400 bg-clip-text text-transparent leading-tight">${formattedTitleHTML}</h2>
+              <h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${formattedTitleHTML}</h2>
             </div>
-            <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700'}">
+            <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">
               ${isFav ? '❤️ Saved' : '🤍 Save'}
             </button>
           </div>
 
           <div class="flex flex-wrap items-center gap-2 text-xs mb-4">
-            ${released ? `<span class="bg-amber-500/20 text-amber-300 border border-amber-400/40 px-3 py-0.5 rounded-full font-black"><strong>Year:</strong> ${released}</span>` : ''}
-            ${label ? `<span class="bg-slate-800 text-slate-200 border border-slate-700 px-3 py-0.5 rounded-full font-medium"><strong>Label:</strong> ${label}</span>` : ''}
-            ${format ? `<span class="bg-blue-500/20 text-blue-300 border border-blue-400/40 px-3 py-0.5 rounded-full font-medium"><strong>Format:</strong> ${format}</span>` : ''}
+            ${released ? `<span class="bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-400/40 px-3 py-0.5 rounded-full font-black"><strong>Year:</strong> ${released}</span>` : ''}
+            ${label ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 px-3 py-0.5 rounded-full font-medium"><strong>Label:</strong> ${label}</span>` : ''}
+            ${format ? `<span class="bg-blue-500/20 text-blue-900 dark:text-blue-300 border border-blue-400/40 px-3 py-0.5 rounded-full font-medium"><strong>Format:</strong> ${format}</span>` : ''}
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 items-stretch">
@@ -2273,23 +2300,23 @@
               </div>
             </div>
 
-            <div class="bg-slate-900/90 rounded-2xl p-4 border border-indigo-500/20 text-xs text-slate-300 space-y-2 flex flex-col justify-center">
-              <p><strong>Artist:</strong> <span class="font-bold text-white">${artist}</span></p>
+            <div class="bg-slate-50 dark:bg-slate-900/90 rounded-2xl p-4 border border-slate-200 dark:border-indigo-500/20 text-xs text-slate-700 dark:text-slate-300 space-y-2 flex flex-col justify-center">
+              <p><strong>Artist:</strong> <span class="font-bold text-slate-900 dark:text-white">${artist}</span></p>
               <p><strong>Record Label:</strong> ${label}</p>
               ${format ? `<p><strong>Format:</strong> ${format}</p>` : ''}
               <p><strong>Release Year:</strong> ${released || 'Unknown'}</p>
-              ${catalogNum ? `<p><strong>Catalog No.:</strong> <span class="font-mono font-bold text-amber-300">${catalogNum}</span></p>` : ''}
+              ${catalogNum ? `<p><strong>Catalog No.:</strong> <span class="font-mono font-bold text-amber-600 dark:text-amber-300">${catalogNum}</span></p>` : ''}
             </div>
           </div>
 
           ${colMDetails ? `
             <div class="mb-5">
               <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
-              <div class="text-sm text-slate-200 leading-relaxed whitespace-pre-line bg-slate-900/90 border border-indigo-500/25 p-4 sm:p-5 rounded-2xl shadow-inner">${colMDetails}</div>
+              <div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-indigo-500/25 p-4 sm:p-5 rounded-2xl shadow-inner">${colMDetails}</div>
             </div>
           ` : ''}
 
-          <div class="flex flex-wrap items-center gap-2.5 pt-3 border-t border-indigo-500/20">
+          <div class="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-200 dark:border-indigo-500/20">
             ${discogsUrl ? `
               <a href="${discogsUrl}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2">
                 <span>${hasDiscogsRecording ? '📀 Discogs Recording ↗' : '📀 Discogs ↗'}</span>
@@ -2366,15 +2393,15 @@
         toggleControlsBtn.addEventListener('click', () => toggleCollapsibleControls());
       }
 
+      // 3D Only Header Button Logic
       document.getElementById('btn3DOnly').addEventListener('click', () => {
         only3DActive = !only3DActive;
         const btn = document.getElementById('btn3DOnly');
         if (only3DActive) {
-          btn.classList.add('bg-purple-600', 'text-white', 'border-purple-600');
-          btn.classList.remove('bg-white', 'dark:bg-slate-900', 'text-slate-700', 'dark:text-slate-200', 'border-slate-200', 'dark:border-slate-700');
+          btn.classList.add('ring-2', 'ring-purple-300', 'from-purple-700', 'to-indigo-700');
+          showToast('Showing 3D Models Only', '👓');
         } else {
-          btn.classList.remove('bg-purple-600', 'text-white', 'border-purple-600');
-          btn.classList.add('bg-white', 'dark:bg-slate-900', 'text-slate-700', 'dark:text-slate-200', 'border-slate-200', 'dark:border-slate-700');
+          btn.classList.remove('ring-2', 'ring-purple-300', 'from-purple-700', 'to-indigo-700');
         }
         filterCatalog(true);
       });
