@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Interactive Collection</title>
+
+  <!-- Google <model-viewer> Library -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --accent: #38bdf8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 32px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: var(--text-sub);
+    }
+
+    /* Gallery Grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Card Styling */
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #334155;
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.2);
+    }
+
+    .card-thumb {
+      width: 100%;
+      height: 200px;
+      background-color: #090d16;
+      position: relative;
+      pointer-events: none;
+    }
+
+    .card-thumb model-viewer {
+      width: 100%;
+      height: 100%;
+      --poster-color: transparent;
+    }
+
+    .card-info {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border-top: 1px solid #334155;
+      background: var(--card-bg);
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .btn-view {
+      align-self: flex-start;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent);
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .card:hover .btn-view {
+      background: var(--accent);
+      color: #000;
+    }
+
+    /* Modal Overlay */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #1e293b;
+      width: 100%;
+      max-width: 1000px;
+      height: 80vh;
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #475569;
+    }
+
+    .modal-header {
+      padding: 16px 24px;
+      background: #0f172a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+      z-index: 10;
+    }
+
+    .modal-header h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      font-size: 28px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .close-btn:hover { color: #fff; }
+
+    .viewer-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background-color: #090d16;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Spinner */
+    .spinner-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #090d16;
+      gap: 16px;
+      z-index: 5;
+      transition: opacity 0.3s ease;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(56, 189, 248, 0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #modal-viewer {
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #modal-viewer.loaded {
+      opacity: 1;
+    }
+
+    .status-msg {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 40px;
+      color: var(--text-sub);
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>3D Interactive Collection</h1>
+    <p>Live collection fetched directly from Google Sheets</p>
+  </header>
+
+  <div class="gallery-grid" id="gallery">
+    <div class="status-msg">Fetching models from Google Sheet...</div>
+  </div>
+
+  <!-- Lightbox Modal -->
+  <div class="modal" id="viewer-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="modal-title">Loading...</h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      
+      <div class="viewer-container">
+        <div class="spinner-overlay" id="modal-loader">
+          <div class="spinner"></div>
+          <p style="color: var(--text-sub); font-size: 0.9rem;">Loading 3D Model...</p>
+        </div>
+
+        <model-viewer 
+          id="modal-viewer" 
+          camera-controls 
+          auto-rotate 
+          shadow-intensity="1"
+          exposure="1"
+          touch-action="pan-y">
+        </model-viewer>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Google Sheets Direct CSV Export Link
+    const SHEET_ID = '1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s';
+    const GID = '2093054295';
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+
+    const gallery = document.getElementById('gallery');
+    const modal = document.getElementById('viewer-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalViewer = document.getElementById('modal-viewer');
+    const modalLoader = document.getElementById('modal-loader');
+
+    // Simple RFC-compliant CSV Parser
+    function parseCSV(text) {
+      const lines = text.split(/\r?\n/);
+      return lines.map(line => {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            result.push(current.trim().replace(/^"|"$/g, ''));
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        result.push(current.trim().replace(/^"|"$/g, ''));
+        return result;
+      });
+    }
+
+    // Extract clean human-readable title from URL
+    function extractTitle(url) {
+      const fileName = url.split('/').pop().split('?')[0];
+      return fileName
+        .replace('.glb', '')
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    // Fetch Google Sheet & Render
+    async function loadGalleryFromCSV() {
+      try {
+        const response = await fetch(CSV_URL);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch Google Sheet (Status: ${response.status}). Make sure the sheet sharing is set to "Anyone with the link can view".`);
+        }
+
+        const csvText = await response.text();
+        const rows = parseCSV(csvText);
+
+        if (rows.length === 0) {
+          gallery.innerHTML = '<div class="status-msg">No data found in Google Sheet.</div>';
+          return;
+        }
+
+        // Determine origin column index (default to index 1 / Column B)
+        let originColIndex = 1;
+        const headerRow = rows[0];
+        const foundIndex = headerRow.findIndex(cell => cell.toLowerCase().trim() === 'origin');
+        if (foundIndex !== -1) {
+          originColIndex = foundIndex;
+        }
+
+        const startRow = foundIndex !== -1 ? 1 : 0; // Skip header row if labeled
+        const items = [];
+
+        for (let i = startRow; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || row.length <= originColIndex) continue;
+
+          let rawUrl = row[originColIndex]?.trim();
+          if (!rawUrl || !rawUrl.startsWith('http')) continue;
+
+          // Convert Dropbox URLs to direct binary stream links
+          if (rawUrl.includes('dropbox.com')) {
+            rawUrl = rawUrl.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
+            if (!rawUrl.includes('raw=1')) {
+              rawUrl += (rawUrl.includes('?') ? '&raw=1' : '?raw=1');
+            }
+          }
+
+          items.push({
+            title: extractTitle(rawUrl),
+            url: rawUrl
+          });
+        }
+
+        gallery.innerHTML = ''; // Clear loading indicator
+
+        if (items.length === 0) {
+          gallery.innerHTML = '<div class="status-msg">No valid model links found in Column B (origin).</div>';
+          return;
+        }
+
+        // Build Gallery Cards
+        items.forEach((item) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.onclick = () => openModal(item);
+
+          card.innerHTML = `
+            <div class="card-thumb">
+              <model-viewer 
+                src="${item.url}" 
+                loading="lazy" 
+                auto-rotate 
+                rotation-per-second="20deg" 
+                interaction-prompt="none" 
+                shadow-intensity="0.3">
+              </model-viewer>
+            </div>
+            <div class="card-info">
+              <div class="card-title" title="${item.title}">${item.title}</div>
+              <button class="btn-view">View Interactive 3D</button>
+            </div>
+          `;
+
+          gallery.appendChild(card);
+        });
+
+      } catch (err) {
+        console.error("CSV Fetch Error:", err);
+        gallery.innerHTML = `
+          <div class="status-msg" style="color: #f87171;">
+            <p>⚠️ Failed to load Google Sheet.</p>
+            <p style="font-size: 0.85rem; margin-top: 8px;">${err.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Open Modal
+    function openModal(item) {
+      modalTitle.textContent = item.title;
+      modalViewer.classList.remove('loaded');
+      modalLoader.style.display = 'flex';
+      modalLoader.style.opacity = '1';
+      
+      modalViewer.src = item.url;
+      modal.classList.add('active');
+    }
+
+    // Reveal when loaded
+    modalViewer.addEventListener('load', () => {
+      modalLoader.style.opacity = '0';
+      setTimeout(() => {
+        modalLoader.style.display = 'none';
+        modalViewer.classList.add('loaded');
+      }, 300);
+    });
+
+    // Close Modal
+    function closeModal() {
+      modal.classList.remove('active');
+      modalViewer.classList.remove('loaded');
+      modalViewer.removeAttribute('src');
+    }
+
+    // Key & backdrop listeners
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // Load data on start
+    loadGalleryFromCSV();
+  </script>
+</body>
+</html>
