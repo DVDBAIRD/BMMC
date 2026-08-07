@@ -198,7 +198,7 @@
           </div>
         </div>
 
-        <!-- Museum Filter Controls Grid (Compact 2x2 / 4-Col Layout) -->
+        <!-- Museum Filter Controls Grid -->
         <div id="exhibitsFilterGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
           <div>
             <label for="filterAge" class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Age</label>
@@ -599,7 +599,7 @@
     let rawGramophoneRows = [];
     let rawCatalogRows = [];
     let rawFullCatalogData = [];
-    let threeDMap = new Map(); // Maps Item "No" (Catalog Col A) -> 3D Model GLB URL
+    let threeDMap = new Map(); // Maps Item "Ref" / "#" -> 3D Model GLB URL
     let currentFilteredRows = [];
     let currentModalIndex = -1;
     let currentlySpeakingIndex = null;
@@ -1048,23 +1048,35 @@
       return url;
     }
 
-    // Helper: Lookup 3D GLB link for a catalog item number ("No" in Col A)
+    // Updated Helper: Lookup 3D GLB link for a catalog exhibit item
+    // Check 1: If Column R (Index 17) is non-empty:
+    //          - If direct http URL, return it
+    //          - Otherwise, read Column M (Index 12, '#') and look up in 3D tab ('Ref' / Col D)
+    // Check 2: Check Column A (Index 0) in 3D tab
+    // Check 3: Check Column B (Index 1) in 3D tab
     function get3DUrlForItem(row) {
       if (!row) return '';
 
-      // 1. Direct URL in Column R (Index 17) if present
-      let d3dColVal = getVal(row, 17);
-      if (d3dColVal && d3dColVal.startsWith('http')) {
-        return formatImageUrl(d3dColVal);
+      // Check 1: Column R (Index 17) non-empty
+      const colRVal = getVal(row, 17);
+      if (colRVal) {
+        if (colRVal.startsWith('http')) {
+          return formatImageUrl(colRVal);
+        }
+        // Read Column M (Index 12, '#')
+        const colMRef = unescapeHTML(getVal(row, 12)).replace(/^#\s*/, '').trim().toLowerCase();
+        if (colMRef && threeDMap.has(colMRef)) {
+          return threeDMap.get(colMRef);
+        }
       }
 
-      // 2. Check Lookup Map by Column A (Index 0)
+      // Check 2: Check Column A (Index 0)
       const itemNoColA = unescapeHTML(getVal(row, 0)).replace(/^#\s*/, '').trim().toLowerCase();
       if (itemNoColA && threeDMap.has(itemNoColA)) {
         return threeDMap.get(itemNoColA);
       }
 
-      // 3. Check Lookup Map by Column B (Index 1) fallback
+      // Check 3: Check Column B (Index 1)
       const itemNoColB = unescapeHTML(getVal(row, 1)).replace(/^#\s*/, '').trim().toLowerCase();
       if (itemNoColB && threeDMap.has(itemNoColB)) {
         return threeDMap.get(itemNoColB);
@@ -1286,10 +1298,11 @@
               const r = threeDData[i];
               if (!r) continue;
 
-              const refVal = unescapeHTML(r[refColIdx] || '').replace(/^#\s*/, '').trim().toLowerCase();
+              const rawRef = unescapeHTML(r[refColIdx] || '').trim();
+              const cleanRef = rawRef.replace(/^#\s*/, '').trim().toLowerCase();
               let rawUrl = unescapeHTML(r[urlColIdx] || '').trim();
 
-              if (refVal && rawUrl && rawUrl.startsWith('http')) {
+              if (cleanRef && rawUrl && rawUrl.startsWith('http')) {
                 // Dropbox direct raw link conversion
                 if (rawUrl.includes('dropbox.com')) {
                   rawUrl = rawUrl.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
@@ -1298,7 +1311,8 @@
                   }
                 }
                 const formattedUrl = formatImageUrl(rawUrl);
-                threeDMap.set(refVal, formattedUrl);
+                threeDMap.set(cleanRef, formattedUrl);
+                threeDMap.set(rawRef.toLowerCase(), formattedUrl);
               }
             }
           }
@@ -2457,7 +2471,7 @@
 
         // Render Side-by-Side Responsive Modal Layout
         // Column 1 = Details & Description First
-        // Column 2 = Live 3D Model Viewer + Images Second
+        // Column 2 = Live 3D Model Viewer + Images Second (Strict 1x1 Single-Column Stack)
         modalContent.innerHTML = `
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             
@@ -2511,10 +2525,10 @@
               </div>
             </div>
 
-            <!-- RIGHT COLUMN: Interactive 3D Model First, Followed by Images -->
-            <div class="flex flex-col space-y-4">
+            <!-- RIGHT COLUMN: Interactive 3D Model First, Followed by Images (Strict 1x1 Single-Column Layout) -->
+            <div class="flex flex-col space-y-4 w-full">
               ${has3D ? `
-                <div class="relative group/model">
+                <div class="relative group/model w-full">
                   <div class="flex items-center justify-between mb-2">
                     <p class="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-widest">Interactive 3D Model</p>
                     <button onclick="open3DLightbox('${d3d}', '${displayTitle.replace(/'/g, "\\'")}')" class="text-[10px] font-bold text-purple-600 dark:text-purple-300 hover:underline">Expand Fullscreen ⤢</button>
@@ -2533,24 +2547,24 @@
                 </div>
               ` : ''}
 
-              <!-- Additional Media Images Grid -->
-              <div class="grid grid-cols-1 ${img1 && img2 ? 'sm:grid-cols-2' : ''} gap-3">
+              <!-- Additional Media Images (Strict 1x1 Single-Column Vertical Stack) -->
+              <div class="grid grid-cols-1 gap-4 w-full">
                 ${img1 ? `
-                  <div>
+                  <div class="w-full">
                     <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${has3D ? 'Second Media (Image 1)' : 'Primary Image'}</p>
-                    <a href="${img1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md" style="border-color: ${theme.hex}80;">
-                      <img src="${img1}" class="w-full h-44 sm:h-48 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
-                      <span class="absolute bottom-2 right-2 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-lg shadow pointer-events-none">Full Image ↗</span>
+                    <a href="${img1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
+                      <img src="${img1}" class="w-full h-52 sm:h-56 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                      <span class="absolute bottom-2.5 right-2.5 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow pointer-events-none">Full Image ↗</span>
                     </a>
                   </div>
                 ` : ''}
 
                 ${img2 ? `
-                  <div>
+                  <div class="w-full">
                     <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${has3D ? 'Third Media (Image 2)' : 'Secondary Image'}</p>
-                    <a href="${img2}" target="_blank" title="Click to view image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md" style="border-color: ${theme.hex}80;">
-                      <img src="${img2}" class="w-full h-44 sm:h-48 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
-                      <span class="absolute bottom-2 right-2 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-lg shadow pointer-events-none">Full Image ↗</span>
+                    <a href="${img2}" target="_blank" title="Click to view image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
+                      <img src="${img2}" class="w-full h-52 sm:h-56 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                      <span class="absolute bottom-2.5 right-2.5 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow pointer-events-none">Full Image ↗</span>
                     </a>
                   </div>
                 ` : ''}
