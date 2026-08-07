@@ -335,11 +335,10 @@
         </div>
       </div>
 
-      <!-- Details Card (Colored similar to Welcome Card) -->
+      <!-- Details Card -->
       <div id="statRow2NotesCard" class="hidden bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/30 border border-indigo-500/30 relative overflow-hidden backdrop-blur-md">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
           
-          <!-- Column 1: Details Text -->
           <div class="flex flex-col justify-center">
             <h3 class="text-base sm:text-lg font-black text-blue-300 uppercase tracking-wider mb-2.5 flex items-center gap-2">
               <span>📝</span> Details
@@ -347,7 +346,6 @@
             <p id="statRow2NotesText" class="text-sm sm:text-base text-slate-100 leading-relaxed font-medium whitespace-pre-line"></p>
           </div>
 
-          <!-- Column 2: Clickable Featured Image -->
           <div id="statRow2ImageCol" class="hidden flex flex-col items-center justify-center border border-indigo-500/30 bg-slate-900/80 rounded-2xl p-2.5 h-56 sm:h-64 relative overflow-hidden shadow-inner">
             <a id="statRow2ImgLink" href="#" target="_blank" title="Click to view full size image in new tab" class="block group/img w-full h-full relative flex items-center justify-center">
               <img id="statRow2Img" src="" alt="Featured Catalog Image" class="max-w-full max-h-full object-contain rounded-xl shadow-md group-hover/img:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" />
@@ -361,7 +359,6 @@
       <!-- KPI Metric Cards Bar -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <!-- Card 1: Total Items -->
         <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-blue-500/50 transition">
           <div class="w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500 absolute top-0 left-0"></div>
           <div>
@@ -374,7 +371,6 @@
           <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1.5">Total number of preserved items</p>
         </div>
 
-        <!-- Card 2: Date Span -->
         <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-amber-500/50 transition">
           <div class="w-full h-1 bg-gradient-to-r from-amber-500 to-orange-500 absolute top-0 left-0"></div>
           <div>
@@ -387,7 +383,6 @@
           <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1.5">Earliest to newest date in catalog</p>
         </div>
 
-        <!-- Card 3: Pre-1950 % / Post-1950 % Ratio -->
         <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-purple-500/50 transition">
           <div class="w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500 absolute top-0 left-0"></div>
           <div>
@@ -400,7 +395,6 @@
           <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1.5">Pre-1950 % / Post-1950 % ratio</p>
         </div>
 
-        <!-- Card 4: Highlighted External Links -->
         <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-emerald-500/50 transition">
           <div class="w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500 absolute top-0 left-0"></div>
           <div>
@@ -426,7 +420,6 @@
       <!-- Side-by-Side Charts Container -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <!-- Chart 1: Horizontal Stacked Bar Chart -->
         <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between backdrop-blur-sm">
           <div>
             <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -442,7 +435,6 @@
           </div>
         </div>
 
-        <!-- Chart 2: Origin Locations Bar Chart -->
         <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between backdrop-blur-sm">
           <div>
             <div class="mb-4">
@@ -536,6 +528,7 @@
     const EXHIBITS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
     const GRAMOPHONE_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=606568772';
     const CATALOG_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=425957921';
+    const THREE_D_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/export?format=csv&gid=2093054295';
     const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
 
     const MAIN_HUB_CATEGORIES = ["War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"];
@@ -605,6 +598,8 @@
     let rawGramophoneRows = [];
     let rawCatalogRows = [];
     let rawFullCatalogData = [];
+    let raw3DRows = [];
+    let threeDMap = new Map(); // Maps Item "No" (Catalog Col A) -> 3D Model GLB URL
     let currentFilteredRows = [];
     let currentModalIndex = -1;
     let currentlySpeakingIndex = null;
@@ -1053,6 +1048,20 @@
       return url;
     }
 
+    // Helper: Lookup 3D GLB link for a catalog item number ("No" in Col A)
+    function get3DUrlForItem(row) {
+      let d3dColVal = getVal(row, 17);
+      if (d3dColVal && d3dColVal.startsWith('http')) {
+        return formatImageUrl(d3dColVal);
+      }
+
+      const itemNo = unescapeHTML(getVal(row, 0)).trim().toLowerCase();
+      if (itemNo && threeDMap.has(itemNo)) {
+        return threeDMap.get(itemNo);
+      }
+      return '';
+    }
+
     function parseTitleAndDetails(rawText) {
       if (!rawText) return { title: '', details: '' };
       const lines = String(rawText).split('\n').map(l => l.trim()).filter(Boolean);
@@ -1223,6 +1232,43 @@
       initTheme();
 
       try {
+        // Load 3D Models sheet (gid=2093054295) for Cross-referencing
+        try {
+          const threeDData = await fetchCSVWithCache(THREE_D_CSV_URL, 'bMMC_cached_3d');
+          raw3DRows = threeDData;
+          threeDMap.clear();
+
+          let refColIdx = 3;  // Col D default ("Ref")
+          let urlColIdx = 1;  // Col B default ("Origin")
+
+          if (threeDData.length > 0) {
+            const header = threeDData[0];
+            const refIdx = header.findIndex(c => c.toLowerCase().trim() === 'ref' || c.toLowerCase().includes('ref'));
+            if (refIdx !== -1) refColIdx = refIdx;
+
+            const urlIdx = header.findIndex(c => {
+              const str = c.toLowerCase().trim();
+              return str === 'origin' || str.includes('3d model') || str === 'model';
+            });
+            if (urlIdx !== -1) urlColIdx = urlIdx;
+
+            for (let i = 1; i < threeDData.length; i++) {
+              const r = threeDData[i];
+              if (!r || r.length <= Math.max(refColIdx, urlColIdx)) continue;
+
+              const refVal = unescapeHTML(r[refColIdx] || '').trim().toLowerCase();
+              let rawUrl = unescapeHTML(r[urlColIdx] || '').trim();
+
+              if (refVal && rawUrl && rawUrl.startsWith('http')) {
+                const formattedUrl = formatImageUrl(rawUrl);
+                threeDMap.set(refVal, formattedUrl);
+              }
+            }
+          }
+        } catch (threeDErr) {
+          console.warn("Could not load 3D sheet:", threeDErr);
+        }
+
         const exhibitsData = await fetchCSVWithCache(EXHIBITS_CSV_URL, 'bMMC_cached_exhibits');
         rawExhibitsRows = exhibitsData.slice(1);
         populateInitialDropdowns();
@@ -1552,7 +1598,10 @@
           const typeMatch = !typeVal || getVal(row, 14).toLowerCase().includes(typeVal.toLowerCase());
           const catMatch = !catVal || getVal(row, 15).toLowerCase().includes(catVal.toLowerCase());
           const subCatMatch = !subCatVal || getVal(row, 16) === subCatVal;
-          const match3D = !only3DActive || (getVal(row, 17) !== '' && getVal(row, 17).startsWith('http'));
+          
+          const d3dUrl = get3DUrlForItem(row);
+          const match3D = !only3DActive || Boolean(d3dUrl);
+
           const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
 
           return searchMatch && ageMatch && typeMatch && catMatch && subCatMatch && match3D && matchFav;
@@ -1602,7 +1651,7 @@
           const artistMatch = !artistVal || getVal(row, 1) === artistVal;
           const labelMatch = !labelVal || getVal(row, 3) === labelMatch;
           const formatMatch = !formatVal || getVal(row, 4) === formatMatch;
-          const yearMatch = !yearVal || getVal(row, 6) === yearVal;
+          const yearMatch = !yearVal || getVal(row, 6) === yearMatch;
           const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
 
           return searchMatch && artistMatch && labelMatch && formatMatch && yearMatch && matchFav;
@@ -1774,26 +1823,20 @@
         const type = getVal(row, 14);
         const category = getVal(row, 15);
         const subcategory = getVal(row, 16);
-        let d3d = getVal(row, 17);
         const ddoc = getVal(row, 18);
         const dweb = getVal(row, 19);
         
+        const d3d = get3DUrlForItem(row);
         const img1Raw = getVal(row, 20);
         const img1 = formatImageUrl(img1Raw);
         const img2Raw = getVal(row, 21);
         const img2 = formatImageUrl(img2Raw);
 
-        // Process Dropbox 3D links
-        if (d3d && d3d.includes('dropbox.com')) {
-          d3d = d3d.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
-          if (!d3d.includes('raw=1')) d3d += (d3d.includes('?') ? '&raw=1' : '?raw=1');
-        }
-
-        const has3D = Boolean(d3d && d3d.startsWith('http'));
+        const has3D = Boolean(d3d);
         const hasImg1 = Boolean(img1);
         const hasImg2 = Boolean(img2);
 
-        // Calculate media slots
+        // Calculate media slots:
         // If has3D: Slot 1 = Live 3D, Slot 2 = Img1, Slot 3 = Img2
         // If no 3D: Slot 1 = Img1, Slot 2 = Img2
         let slots = [];
@@ -2325,21 +2368,15 @@
         const type = getVal(row, 14);
         const category = getVal(row, 15);
         const subcategory = getVal(row, 16);
-        let d3d = getVal(row, 17);
         const ddoc = getVal(row, 18);
         const dweb = getVal(row, 19);
         
+        const d3d = get3DUrlForItem(row);
         const img1 = formatImageUrl(getVal(row, 20));
         const img2 = formatImageUrl(getVal(row, 21));
         const ageBadgeClass = getAgeBadgeStyle(age);
 
-        // Process Dropbox 3D link
-        if (d3d && d3d.includes('dropbox.com')) {
-          d3d = d3d.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
-          if (!d3d.includes('raw=1')) d3d += (d3d.includes('?') ? '&raw=1' : '?raw=1');
-        }
-
-        const has3D = Boolean(d3d && d3d.startsWith('http'));
+        const has3D = Boolean(d3d);
         const cleanedDetails = cleanDetailsForModal(details);
 
         const theme = getCategoryTheme(category || type || subcategory);
@@ -2426,7 +2463,7 @@
                     <p class="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-widest">Interactive 3D Model</p>
                     <button onclick="open3DLightbox('${d3d}', '${displayTitle.replace(/'/g, "\\'")}')" class="text-[10px] font-bold text-purple-600 dark:text-purple-300 hover:underline">Expand Fullscreen ⤢</button>
                   </div>
-                  <div class="w-full h-64 sm:h-72 bg-slate-900 rounded-2xl overflow-hidden shadow-inner border border-indigo-500/30 relative">
+                  <div class="w-full h-64 sm:h-72 bg-slate-900 rounded-2xl overflow-hidden shadow-inner border border-indigo-500/30 relative cursor-pointer" onclick="open3DLightbox('${d3d}', '${displayTitle.replace(/'/g, "\\'")}')">
                     <model-viewer 
                       src="${d3d}" 
                       camera-controls 
