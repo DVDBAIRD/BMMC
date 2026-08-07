@@ -1048,10 +1048,9 @@
       return url;
     }
 
-    // Updated Helper: Lookup 3D GLB link for a catalog exhibit item
-    // Check 1: If Column R (Index 17) is non-empty:
-    //          - If direct http URL, return it
-    //          - Otherwise, read Column M (Index 12, '#') and look up in 3D tab ('Ref' / Col D)
+    // Helper: Lookup 3D GLB link for a catalog exhibit item
+    // Check 1: Check Column R (Index 17). If non-empty:
+    //          Read Column M (Index 12, '#'), clean ref, and lookup in 3D tab ('Ref' / Col D)
     // Check 2: Check Column A (Index 0) in 3D tab
     // Check 3: Check Column B (Index 1) in 3D tab
     function get3DUrlForItem(row) {
@@ -1060,9 +1059,6 @@
       // Check 1: Column R (Index 17) non-empty
       const colRVal = getVal(row, 17);
       if (colRVal) {
-        if (colRVal.startsWith('http')) {
-          return formatImageUrl(colRVal);
-        }
         // Read Column M (Index 12, '#')
         const colMRef = unescapeHTML(getVal(row, 12)).replace(/^#\s*/, '').trim().toLowerCase();
         if (colMRef && threeDMap.has(colMRef)) {
@@ -2469,14 +2465,14 @@
           navigator.clipboard.writeText(url).then(() => showToast('Link copied to clipboard!', '🔗'));
         };
 
-        // Render Side-by-Side Responsive Modal Layout
-        // Column 1 = Details & Description First
-        // Column 2 = Live 3D Model Viewer + Images Second (Strict 1x1 Single-Column Stack)
+        // Render Responsive Modal Layout
+        // Mobile: Media First (order-1), Details Second (order-2)
+        // Desktop (lg:): Details Left (lg:order-1), Media Right (lg:order-2)
         modalContent.innerHTML = `
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             
-            <!-- LEFT COLUMN: Item Details First -->
-            <div class="flex flex-col space-y-4">
+            <!-- DETAILS COLUMN (Desktop: Left/First | Mobile: Below Media) -->
+            <div class="flex flex-col space-y-4 order-2 lg:order-1">
               <div class="flex items-start justify-between gap-3">
                 <h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
                 <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">
@@ -2525,8 +2521,8 @@
               </div>
             </div>
 
-            <!-- RIGHT COLUMN: Interactive 3D Model First, Followed by Images (Strict 1x1 Single-Column Layout) -->
-            <div class="flex flex-col space-y-4 w-full">
+            <!-- MEDIA COLUMN (Desktop: Right/Second | Mobile: Top/First - Strict 1x1 Single-Column Layout) -->
+            <div class="flex flex-col space-y-4 w-full order-1 lg:order-2">
               ${has3D ? `
                 <div class="relative group/model w-full">
                   <div class="flex items-center justify-between mb-2">
