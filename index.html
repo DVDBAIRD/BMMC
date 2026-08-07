@@ -48,8 +48,8 @@
 
   <style>
     body { font-family: 'Inter', sans-serif; }
-    .solid-header { background-color: rgba(255, 255, 255, 0.85); }
-    .dark .solid-header { background-color: rgba(15, 23, 42, 0.85); }
+    .solid-header { background-color: rgba(255, 255, 255, 0.88); }
+    .dark .solid-header { background-color: rgba(15, 23, 42, 0.88); }
     
     /* Audio Equalizer Animation */
     @keyframes barPulse {
@@ -109,7 +109,7 @@
             <span>ℹ️ Info</span>
           </button>
 
-          <!-- 3D Only Button (Moved to Header) -->
+          <!-- 3D Only Button (In Header) -->
           <button id="btn3DOnly" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 border border-purple-500/30 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-purple-500/20 active:scale-95">
             <span>👓 3D Only</span>
           </button>
@@ -495,14 +495,14 @@
     
     // Explicit Hex Color Palette Specification
     const CATEGORY_PALETTE = {
-      war: { hex: '#9F5C39', text: '#FFFFFF', name: 'War' },
-      photography: { hex: '#22290F', text: '#FFFFFF', name: 'Photography' },
-      survey: { hex: '#916F3B', text: '#FFFFFF', name: 'Survey' },
-      general: { hex: '#2C6DA7', text: '#FFFFFF', name: 'General' },
-      documentation: { hex: '#AAB192', text: '#1E281E', name: 'Documentation' },
-      household: { hex: '#176564', text: '#FFFFFF', name: 'Household' },
-      collections: { hex: '#1E281E', text: '#FFFFFF', name: 'Collections' },
-      gramophones: { hex: '#DCB481', text: '#22290F', name: 'Gramophones' }
+      war: { hex: '#C85A32', text: '#FFFFFF', name: 'War' },
+      photography: { hex: '#3B7A57', text: '#FFFFFF', name: 'Photography' },
+      survey: { hex: '#B57C1E', text: '#FFFFFF', name: 'Survey' },
+      general: { hex: '#3182CE', text: '#FFFFFF', name: 'General' },
+      documentation: { hex: '#708259', text: '#FFFFFF', name: 'Documentation' },
+      household: { hex: '#20807E', text: '#FFFFFF', name: 'Household' },
+      collections: { hex: '#4A5568', text: '#FFFFFF', name: 'Collections' },
+      gramophones: { hex: '#D99B43', text: '#0F172A', name: 'Gramophones' }
     };
 
     function getCategoryTheme(str) {
@@ -519,11 +519,18 @@
       return CATEGORY_PALETTE.general;
     }
 
-    function createCategoryBadge(label, prefix = '') {
+    // Harmonized Badge Styling (Category = Solid, Type = Tinted Outline, Subcategory = Soft Accent)
+    function createCategoryBadge(label, kind = 'category') {
       if (!label) return '';
       const theme = getCategoryTheme(label);
-      const fullLabel = prefix ? `${prefix}: ${label}` : label;
-      return `<span class="px-2.5 py-0.5 rounded-full font-black text-[11px] shadow-sm inline-block tracking-wide" style="background-color: ${theme.hex}; color: ${theme.text};">${fullLabel}</span>`;
+      
+      if (kind === 'category') {
+        return `<span class="px-2.5 py-0.5 rounded-full font-black text-[11px] shadow-sm inline-block tracking-wide" style="background-color: ${theme.hex}; color: ${theme.text};">${label}</span>`;
+      } else if (kind === 'type' || kind === 'Type') {
+        return `<span class="px-2.5 py-0.5 rounded-full font-extrabold text-[11px] shadow-sm inline-block tracking-wide border" style="background-color: ${theme.hex}18; color: ${theme.hex}; border-color: ${theme.hex}80;">${kind === 'Type' ? 'Type: ' : ''}${label}</span>`;
+      } else {
+        return `<span class="px-2.5 py-0.5 rounded-full font-extrabold text-[11px] shadow-sm inline-block tracking-wide border" style="background-color: ${theme.hex}25; color: ${theme.hex}; border-color: ${theme.hex}aa;">${kind === 'Subcategory' ? 'Subcategory: ' : ''}${label}</span>`;
+      }
     }
 
     const CACHE_TTL_MS = 60 * 60 * 1000;
@@ -549,8 +556,8 @@
     let fuseGramophone = null;
 
     const CHART_PALETTE = [
-      '#2563eb', '#7c3aed', '#db2777', '#ea580c', '#059669', 
-      '#0284c7', '#d97706', '#65a30d', '#4f46e5', '#c026d3'
+      '#C85A32', '#3B7A57', '#B57C1E', '#3182CE', '#708259', 
+      '#20807E', '#4A5568', '#D99B43', '#7c3aed', '#db2777'
     ];
 
     function escapeHTML(str) {
@@ -1233,7 +1240,7 @@
         hubCard.style.borderColor = theme.hex;
 
         hubCard.innerHTML = `
-          <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5" style="background-color: ${theme.hex}22;">
+          <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5" style="background-color: ${theme.hex}25;">
             <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${catName}" />
             <span class="absolute top-1.5 right-1.5 text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${theme.hex}; color: ${theme.text};">${count}</span>
           </div>
@@ -1285,7 +1292,7 @@
       gramophoneHubCard.style.borderColor = gramTheme.hex;
 
       gramophoneHubCard.innerHTML = `
-        <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5 text-3xl" style="background-color: ${gramTheme.hex}22;">
+        <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5 text-3xl" style="background-color: ${gramTheme.hex}25;">
           🎵
           <span class="absolute top-1.5 right-1.5 text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${gramTheme.hex}; color: ${gramTheme.text};">${rawGramophoneRows.length}</span>
         </div>
@@ -1352,7 +1359,7 @@
 
       let uniqueValues = [...new Set(values.filter(Boolean))].sort();
       
-      // Filter out any "Info" or "Info:" entries
+      // Strict filter to exclude "Info" or "Info:" from filter dropdown options
       uniqueValues = uniqueValues.filter(val => {
         const lower = val.toLowerCase().trim();
         return lower !== 'info' && !lower.startsWith('info:');
@@ -1698,13 +1705,18 @@
         const isFav = favs.includes(originalIndex);
         const ageBadgeClass = getAgeBadgeStyle(age);
 
+        // Get Category Color Theme for Card Outlining and Tinting
+        const theme = getCategoryTheme(category || type || subcategory);
+
         const card = document.createElement('div');
-        card.className = 'bg-white/90 dark:bg-slate-900/90 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 border border-slate-200/80 dark:border-slate-800/80 hover:border-blue-400/50 dark:hover:border-indigo-500/50 overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group relative backdrop-blur-sm';
-        
+        card.className = 'rounded-3xl shadow-sm hover:shadow-2xl overflow-hidden flex flex-col transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group relative backdrop-blur-sm';
+        card.style.border = `2px solid ${theme.hex}80`;
+        card.style.background = `linear-gradient(180deg, ${theme.hex}15 0%, rgba(255,255,255,0.92) 100%)`;
+
         card.innerHTML = `
-          <div class="h-56 bg-gradient-to-b from-slate-100/90 to-slate-200/40 dark:from-slate-800/60 dark:to-slate-900/90 relative overflow-hidden flex items-center justify-center p-2 group/cardimg">
+          <div class="h-56 relative overflow-hidden flex items-center justify-center p-2 group/cardimg" style="background: linear-gradient(180deg, ${theme.hex}25 0%, rgba(15,23,42,0.8) 100%);">
             <a href="${img1}" target="_blank" onclick="event.stopPropagation()" title="Open image in new tab" class="w-full h-full flex items-center justify-center relative group/img">
-              <img id="card-img-${originalIndex}" src="${img1}" data-img1="${img1}" data-img2="${img2}" data-current="1" class="max-w-full max-h-full object-contain group-hover/img:scale-105 transition-transform duration-300 drop-shadow" alt="${displayTitle}" loading="lazy" onError="this.src='${NO_IMAGE_SVG}'" />
+              <img id="card-img-${originalIndex}" src="${img1}" data-img1="${img1}" data-img2="${img2}" data-current="1" class="max-w-full max-h-full object-contain group-hover/img:scale-105 transition-transform duration-300 drop-shadow-md" alt="${displayTitle}" loading="lazy" onError="this.src='${NO_IMAGE_SVG}'" />
             </a>
 
             <!-- Action Buttons Stack -->
@@ -1739,17 +1751,17 @@
           <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
             <div>
               <div class="flex gap-1.5 flex-wrap text-[11px] mb-2.5 font-bold">
-                ${category ? createCategoryBadge(category) : ''}
-                ${type ? createCategoryBadge(type) : ''}
-                ${subcategory ? createCategoryBadge(subcategory) : ''}
+                ${category ? createCategoryBadge(category, 'category') : ''}
+                ${type ? createCategoryBadge(type, 'type') : ''}
+                ${subcategory ? createCategoryBadge(subcategory, 'subcategory') : ''}
               </div>
               
               <h3 class="font-extrabold text-slate-900 dark:text-slate-100 text-sm mb-1.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">${slashFormattedTitle}</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed font-normal">${notes ? notes.replace(/^#\s*/, '') : (details || 'Click for full details and museum notes.')}</p>
+              <p class="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 mb-4 leading-relaxed font-normal">${notes ? notes.replace(/^#\s*/, '') : (details || 'Click for full details and museum notes.')}</p>
             </div>
 
-            <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
-              <span class="text-xs font-extrabold text-blue-600 dark:text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            <div class="pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2">
+              <span class="text-xs font-extrabold flex items-center gap-1 group-hover:translate-x-1 transition-transform" style="color: ${theme.hex};">
                 Details <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </span>
               
@@ -1788,6 +1800,8 @@
         return;
       }
 
+      const gramTheme = CATEGORY_PALETTE.gramophones;
+
       currentFilteredRows.forEach(({ row, originalIndex }, arrayIndex) => {
         const artist = getVal(row, 1) || 'Unknown Artist';
         const rawTitle = getGramophoneRawTitle(row);
@@ -1805,7 +1819,9 @@
         const archiveUrl = buildArchiveSearchUrl(rawTitle, catalogNum);
 
         const card = document.createElement('div');
-        card.className = 'bg-gradient-to-br from-white via-amber-50/20 to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/20 rounded-3xl border border-amber-200/60 dark:border-amber-900/40 hover:border-amber-400 dark:hover:border-amber-500/60 p-4 shadow-sm hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 flex flex-col justify-between cursor-pointer group relative backdrop-blur-sm';
+        card.className = 'rounded-3xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer group relative backdrop-blur-sm';
+        card.style.border = `2px solid ${gramTheme.hex}A0`;
+        card.style.background = `linear-gradient(180deg, ${gramTheme.hex}18 0%, rgba(255,255,255,0.92) 100%)`;
 
         card.innerHTML = `
           <div>
@@ -1821,12 +1837,12 @@
               </button>
             </div>
 
-            <p class="text-xs font-black text-amber-600 dark:text-amber-400 mb-1 tracking-wide uppercase">${artist}</p>
+            <p class="text-xs font-black text-amber-700 dark:text-amber-400 mb-1 tracking-wide uppercase">${artist}</p>
             <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm mb-3 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors leading-tight">${formattedTitleHTML}</h3>
           </div>
 
           <div class="pt-2.5 border-t border-slate-200/60 dark:border-slate-800/80 flex items-center justify-between gap-2" onclick="event.stopPropagation()">
-            <span class="text-xs font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            <span class="text-xs font-extrabold text-amber-700 dark:text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
               Details <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </span>
 
@@ -1973,7 +1989,6 @@
           }
         }
 
-        // Robust Year extraction
         let rawDate = getVal(row, 7) || getVal(row, 13) || row.join(' ');
         let yearNum = null;
         const yearMatch = rawDate.match(/\b(1[89][0-9]{2}|20[0-2][0-9])\b/);
@@ -1987,7 +2002,7 @@
 
         if (yearNum && yearNum >= 1800) {
           const rawType = getVal(row, 9) || getVal(row, 14);
-          // FIX: Exclude 'General' from Stacked Types Chart
+          // EXCLUDE 'General' from Stacked Types Chart
           if (rawType && rawType.toLowerCase().trim() !== 'general') {
             allTypesSet.add(rawType);
             const roundedPeriod = `${Math.floor(yearNum / 20) * 20}s`;
@@ -2028,7 +2043,6 @@
       if (chartStackedInstance) chartStackedInstance.destroy();
       if (chartLocationsInstance) chartLocationsInstance.destroy();
 
-      // Defer Chart creation slightly to guarantee computed container dimensions
       setTimeout(() => {
         const periodsSorted = Object.keys(dateTypeMap).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
         const typesArray = Array.from(allTypesSet);
@@ -2088,7 +2102,7 @@
               datasets: [{
                 label: 'Items Preserved',
                 data: topLocations.map(l => l[1]),
-                backgroundColor: '#3b82f6',
+                backgroundColor: '#3182CE',
                 borderRadius: 8
               }]
             },
@@ -2126,6 +2140,7 @@
     function openModal(row, originalIndex) {
       stopAudioGuide();
       
+      const modalContainer = document.getElementById('modalContainer');
       const modalContent = document.getElementById('modalContent');
       const counterElem = document.getElementById('modalCounter');
       const prevBtn = document.getElementById('modalPrevBtn');
@@ -2156,6 +2171,11 @@
 
         const cleanedDetails = cleanDetailsForModal(details);
 
+        // Apply Category Theme Tinting & Outlining to Pop-Up Modal Container
+        const theme = getCategoryTheme(category || type || subcategory);
+        modalContainer.style.borderColor = theme.hex;
+        modalContainer.style.borderWidth = '3px';
+
         if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
           counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
           prevBtn.disabled = currentModalIndex === 0;
@@ -2181,16 +2201,16 @@
 
           <div class="flex flex-wrap gap-2 text-xs mb-4">
             ${age ? `<span class="${ageBadgeClass} px-3 py-0.5 rounded-full shadow-sm"><strong>Age:</strong> ${age}</span>` : ''}
-            ${type ? createCategoryBadge(type, 'Type') : ''}
-            ${category ? createCategoryBadge(category, 'Category') : ''}
-            ${subcategory ? createCategoryBadge(subcategory, 'Subcategory') : ''}
+            ${category ? createCategoryBadge(category, 'category') : ''}
+            ${type ? createCategoryBadge(type, 'type') : ''}
+            ${subcategory ? createCategoryBadge(subcategory, 'subcategory') : ''}
           </div>
 
           <div class="grid grid-cols-1 ${img2 ? 'sm:grid-cols-2' : ''} gap-4 mb-4">
             ${img1 ? `
               <div>
                 <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
-                  <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest shrink-0">Primary Image</p>
+                  <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest shrink-0">Primary Image</p>
                   ${notes ? `
                     <div class="flex items-center gap-1 shrink-0">
                       <button id="btnAudioGuide" data-row="${originalIndex}" onclick="speakAudioGuide(${originalIndex})" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-black transition shadow">
@@ -2202,7 +2222,7 @@
                   ` : ''}
                   ${!hasTwoImages ? `<button id="btnGoogleSearchMain" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 shrink-0 ml-auto">🔍 Google Item</button>` : ''}
                 </div>
-                <a href="${img1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2.5 shadow-md">
+                <a href="${img1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2.5 shadow-md" style="border-color: ${theme.hex}60;">
                   <img src="${img1}" class="w-full h-56 sm:h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
                   <span class="absolute bottom-3 right-3 bg-blue-600/90 text-white backdrop-blur-md text-[10px] font-black px-3 py-1 rounded-xl shadow border border-blue-400/40 pointer-events-none">Open Full Image ↗</span>
                 </a>
@@ -2211,17 +2231,17 @@
             ${img2 ? `
               <div>
                 <div class="flex items-center justify-between gap-1.5 mb-2">
-                  <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest shrink-0">Second Image</p>
+                  <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest shrink-0">Second Image</p>
                   <button id="btnGoogleSearchSec" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 shrink-0 ml-auto">🔍 Google Item</button>
                 </div>
-                <a href="${img2}" target="_blank" title="Click to view second image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2.5 shadow-md">
+                <a href="${img2}" target="_blank" title="Click to view second image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2.5 shadow-md" style="border-color: ${theme.hex}60;">
                   <img src="${img2}" class="w-full h-56 sm:h-60 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
                   <span class="absolute bottom-3 right-3 bg-blue-600/90 text-white backdrop-blur-md text-[10px] font-black px-3 py-1 rounded-xl shadow border border-blue-400/40 pointer-events-none">Open Full Image ↗</span>
                 </a>
               </div>` : ''}
           </div>
 
-          ${cleanedDetails ? `<div class="mb-4"><h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4><div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-indigo-500/25 p-4 sm:p-5 rounded-2xl shadow-inner">${cleanedDetails}</div></div>` : ''}
+          ${cleanedDetails ? `<div class="mb-4"><h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4><div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl shadow-inner">${cleanedDetails}</div></div>` : ''}
           ${notes ? `<div class="mb-4"><h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1.5">Museum Notes</h4><div class="text-sm text-amber-900 dark:text-amber-200 leading-relaxed whitespace-pre-line bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-500/40 p-4 sm:p-5 rounded-2xl shadow-inner">${notes}</div></div>` : ''}
           ${d3d && (d3d.endsWith('.glb') || d3d.endsWith('.gltf')) ? `<div class="mb-4"><h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1.5">Interactive 3D Viewer</h4><model-viewer src="${d3d}" camera-controls auto-rotate class="w-full h-72 bg-slate-900 rounded-2xl overflow-hidden shadow-inner border border-slate-300 dark:border-indigo-500/30"></model-viewer></div>` : ''}
 
@@ -2259,6 +2279,10 @@
         const cleanArtist = unescapeHTML(artist);
         const cleanTitle = unescapeHTML(rawTitle);
         const ytQuery = encodeURIComponent(`${cleanArtist} ${cleanTitle}`.replace(/^[AB][\s\.:-]+/gi, '').trim()).replace(/%20/g, '+');
+
+        const gramTheme = CATEGORY_PALETTE.gramophones;
+        modalContainer.style.borderColor = gramTheme.hex;
+        modalContainer.style.borderWidth = '3px';
 
         if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
           counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
@@ -2300,7 +2324,7 @@
               </div>
             </div>
 
-            <div class="bg-slate-50 dark:bg-slate-900/90 rounded-2xl p-4 border border-slate-200 dark:border-indigo-500/20 text-xs text-slate-700 dark:text-slate-300 space-y-2 flex flex-col justify-center">
+            <div class="bg-slate-50 dark:bg-slate-900/90 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 space-y-2 flex flex-col justify-center">
               <p><strong>Artist:</strong> <span class="font-bold text-slate-900 dark:text-white">${artist}</span></p>
               <p><strong>Record Label:</strong> ${label}</p>
               ${format ? `<p><strong>Format:</strong> ${format}</p>` : ''}
@@ -2312,11 +2336,11 @@
           ${colMDetails ? `
             <div class="mb-5">
               <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
-              <div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-indigo-500/25 p-4 sm:p-5 rounded-2xl shadow-inner">${colMDetails}</div>
+              <div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl shadow-inner">${colMDetails}</div>
             </div>
           ` : ''}
 
-          <div class="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-200 dark:border-indigo-500/20">
+          <div class="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
             ${discogsUrl ? `
               <a href="${discogsUrl}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2">
                 <span>${hasDiscogsRecording ? '📀 Discogs Recording ↗' : '📀 Discogs ↗'}</span>
