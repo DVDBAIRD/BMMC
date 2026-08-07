@@ -105,21 +105,47 @@
       color: var(--text-main);
     }
 
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
     .btn-view {
-      align-self: flex-start;
+      flex-grow: 1;
       background: rgba(2, 132, 199, 0.08);
       color: var(--accent);
       border: none;
-      padding: 6px 14px;
+      padding: 8px 12px;
       border-radius: 6px;
       font-size: 0.85rem;
       font-weight: 600;
+      cursor: pointer;
+      text-align: center;
       transition: background 0.2s ease, color 0.2s ease;
     }
 
     .card:hover .btn-view {
       background: var(--accent);
       color: #ffffff;
+    }
+
+    .btn-details {
+      background: #f1f5f9;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .btn-details:hover {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
     }
 
     /* Modal Overlay */
@@ -163,10 +189,36 @@
       z-index: 10;
     }
 
+    .modal-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      overflow: hidden;
+    }
+
     .modal-header h2 {
       font-size: 1.2rem;
       font-weight: 600;
       color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .modal-details-link {
+      font-size: 0.85rem;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      background: rgba(2, 132, 199, 0.08);
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .modal-details-link:hover {
+      background: var(--accent);
+      color: #ffffff;
     }
 
     .close-btn {
@@ -176,6 +228,7 @@
       font-size: 28px;
       cursor: pointer;
       line-height: 1;
+      padding-left: 12px;
     }
 
     .close-btn:hover { color: var(--text-main); }
@@ -252,7 +305,10 @@
   <div class="modal" id="viewer-modal">
     <div class="modal-box">
       <div class="modal-header">
-        <h2 id="modal-title">Loading...</h2>
+        <div class="modal-header-left">
+          <h2 id="modal-title">Loading...</h2>
+          <a id="modal-details-link" class="modal-details-link" target="_blank" rel="noopener" style="display: none;">Details ↗</a>
+        </div>
         <button class="close-btn" onclick="closeModal()">&times;</button>
       </div>
       
@@ -275,14 +331,15 @@
   </div>
 
   <script>
-    // Google Sheets CSV Endpoint (Tab gid=425957921)
+    // Google Sheets CSV Endpoint (Tab gid=2093054295)
     const SHEET_ID = '1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s';
-    const GID = '425957921';
+    const GID = '2093054295';
     const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
 
     const gallery = document.getElementById('gallery');
     const modal = document.getElementById('viewer-modal');
     const modalTitle = document.getElementById('modal-title');
+    const modalDetailsLink = document.getElementById('modal-details-link');
     const modalViewer = document.getElementById('modal-viewer');
     const modalLoader = document.getElementById('modal-loader');
 
@@ -334,20 +391,35 @@
           return;
         }
 
-        // Column E = Index 4 (Item)
-        // Column V = Index 21 (3D Model)
+        // Column B = Index 1 (Origin / 3D Model)
+        // Column E = Index 4 (Title)
+        // Column F = Index 5 (Details)
+        let modelColIndex = 1; 
         let titleColIndex = 4;  
-        let modelColIndex = 21; 
+        let detailsColIndex = 5; 
 
         // Dynamic header detection
         const headerRow = rows[0];
-        const itemIdx = headerRow.findIndex(cell => cell.toLowerCase().trim() === 'item');
-        if (itemIdx !== -1) titleColIndex = itemIdx;
 
-        const modelIdx = headerRow.findIndex(cell => cell.toLowerCase().trim().includes('3d model') || cell.toLowerCase().trim() === 'model');
+        const modelIdx = headerRow.findIndex(cell => {
+          const c = cell.toLowerCase().trim();
+          return c === 'origin' || c.includes('3d model') || c === 'model';
+        });
         if (modelIdx !== -1) modelColIndex = modelIdx;
 
-        const startRow = (itemIdx !== -1 || modelIdx !== -1) ? 1 : 0;
+        const titleIdx = headerRow.findIndex(cell => {
+          const c = cell.toLowerCase().trim();
+          return c === 'title' || c === 'item';
+        });
+        if (titleIdx !== -1) titleColIndex = titleIdx;
+
+        const detailsIdx = headerRow.findIndex(cell => {
+          const c = cell.toLowerCase().trim();
+          return c === 'details' || c.includes('detail');
+        });
+        if (detailsIdx !== -1) detailsColIndex = detailsIdx;
+
+        const startRow = (modelIdx !== -1 || titleIdx !== -1 || detailsIdx !== -1) ? 1 : 0;
         const items = [];
 
         for (let i = startRow; i < rows.length; i++) {
@@ -365,22 +437,29 @@
             }
           }
 
-          // Get Title from Column E (Item) or fallback to URL filename
+          // Get Title from Column E (Title/Item) or fallback to URL filename
           let customTitle = row[titleColIndex]?.trim();
           if (!customTitle) {
             customTitle = extractTitleFromUrl(rawUrl);
           }
 
+          // Get Details URL from Column F (Details)
+          let detailsUrl = row[detailsColIndex]?.trim();
+          if (detailsUrl && !detailsUrl.startsWith('http')) {
+            detailsUrl = 'https://' + detailsUrl;
+          }
+
           items.push({
             title: customTitle,
-            url: rawUrl
+            url: rawUrl,
+            detailsUrl: detailsUrl || null
           });
         }
 
         gallery.innerHTML = ''; // Clear status message
 
         if (items.length === 0) {
-          gallery.innerHTML = '<div class="status-msg">No valid GLB model links found in Column V.</div>';
+          gallery.innerHTML = '<div class="status-msg">No valid GLB model links found in Column B.</div>';
           return;
         }
 
@@ -389,6 +468,10 @@
           const card = document.createElement('div');
           card.className = 'card';
           card.onclick = () => openModal(item);
+
+          const detailsBtnHtml = item.detailsUrl 
+            ? `<a class="btn-details" href="${item.detailsUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Details ↗</a>`
+            : '';
 
           card.innerHTML = `
             <div class="card-thumb">
@@ -403,7 +486,10 @@
             </div>
             <div class="card-info">
               <div class="card-title" title="${item.title}">${item.title}</div>
-              <button class="btn-view">View Interactive 3D</button>
+              <div class="card-actions">
+                <button class="btn-view">View 3D</button>
+                ${detailsBtnHtml}
+              </div>
             </div>
           `;
 
@@ -424,6 +510,14 @@
     // Modal Control
     function openModal(item) {
       modalTitle.textContent = item.title;
+
+      if (item.detailsUrl) {
+        modalDetailsLink.href = item.detailsUrl;
+        modalDetailsLink.style.display = 'inline-block';
+      } else {
+        modalDetailsLink.style.display = 'none';
+      }
+
       modalViewer.classList.remove('loaded');
       modalLoader.style.display = 'flex';
       modalLoader.style.opacity = '1';
