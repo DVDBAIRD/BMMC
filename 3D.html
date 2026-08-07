@@ -10,11 +10,13 @@
 
   <style>
     :root {
-      --bg-color: #0f172a;
-      --card-bg: #1e293b;
-      --text-main: #f8fafc;
-      --text-sub: #94a3b8;
-      --accent: #38bdf8;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+      --accent: #0284c7;
+      --accent-hover: #0369a1;
+      --border-color: #e2e8f0;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,23 +57,25 @@
       background: var(--card-bg);
       border-radius: 12px;
       overflow: hidden;
-      border: 1px solid #334155;
+      border: 1px solid var(--border-color);
       cursor: pointer;
       transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
       display: flex;
       flex-direction: column;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
 
     .card:hover {
       transform: translateY(-4px);
       border-color: var(--accent);
-      box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.2);
+      box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.15);
     }
 
+    /* Auto-rendered 3D Thumbnail Container */
     .card-thumb {
       width: 100%;
       height: 200px;
-      background-color: #090d16;
+      background-color: #f1f5f9;
       position: relative;
       pointer-events: none;
     }
@@ -87,7 +91,7 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      border-top: 1px solid #334155;
+      border-top: 1px solid var(--border-color);
       background: var(--card-bg);
     }
 
@@ -98,11 +102,12 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      color: var(--text-main);
     }
 
     .btn-view {
       align-self: flex-start;
-      background: rgba(56, 189, 248, 0.1);
+      background: rgba(2, 132, 199, 0.08);
       color: var(--accent);
       border: none;
       padding: 6px 14px;
@@ -114,7 +119,7 @@
 
     .card:hover .btn-view {
       background: var(--accent);
-      color: #000;
+      color: #ffffff;
     }
 
     /* Modal Overlay */
@@ -122,8 +127,8 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(6px);
       z-index: 9999;
       justify-content: center;
       align-items: center;
@@ -135,7 +140,7 @@
     }
 
     .modal-box {
-      background: #1e293b;
+      background: #ffffff;
       width: 100%;
       max-width: 1000px;
       height: 80vh;
@@ -144,22 +149,24 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      border: 1px solid #475569;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
 
     .modal-header {
       padding: 16px 24px;
-      background: #0f172a;
+      background: #f8fafc;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #334155;
+      border-bottom: 1px solid var(--border-color);
       z-index: 10;
     }
 
     .modal-header h2 {
       font-size: 1.2rem;
       font-weight: 600;
+      color: var(--text-main);
     }
 
     .close-btn {
@@ -171,19 +178,19 @@
       line-height: 1;
     }
 
-    .close-btn:hover { color: #fff; }
+    .close-btn:hover { color: var(--text-main); }
 
     .viewer-container {
       position: relative;
       width: 100%;
       height: 100%;
-      background-color: #090d16;
+      background-color: #f8fafc;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    /* Spinner */
+    /* Animated Loader Overlay */
     .spinner-overlay {
       position: absolute;
       inset: 0;
@@ -191,7 +198,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #090d16;
+      background: #f8fafc;
       gap: 16px;
       z-index: 5;
       transition: opacity 0.3s ease;
@@ -200,7 +207,7 @@
     .spinner {
       width: 44px;
       height: 44px;
-      border: 4px solid rgba(56, 189, 248, 0.2);
+      border: 4px solid rgba(2, 132, 199, 0.15);
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 1s linear infinite;
@@ -234,7 +241,7 @@
 
   <header>
     <h1>3D Interactive Collection</h1>
-    <p>Live collection fetched directly from Google Sheets</p>
+    <p>Click any model to open in interactive 3D</p>
   </header>
 
   <div class="gallery-grid" id="gallery">
@@ -259,8 +266,8 @@
           id="modal-viewer" 
           camera-controls 
           auto-rotate 
-          shadow-intensity="1"
-          exposure="1"
+          shadow-intensity="1.2"
+          exposure="1.1"
           touch-action="pan-y">
         </model-viewer>
       </div>
@@ -268,9 +275,9 @@
   </div>
 
   <script>
-    // Google Sheets Direct CSV Export Link
+    // Google Sheets CSV Endpoint (Tab gid=425957921)
     const SHEET_ID = '1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s';
-    const GID = '2093054295';
+    const GID = '425957921';
     const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
 
     const gallery = document.getElementById('gallery');
@@ -279,7 +286,7 @@
     const modalViewer = document.getElementById('modal-viewer');
     const modalLoader = document.getElementById('modal-loader');
 
-    // Simple RFC-compliant CSV Parser
+    // RFC-compliant CSV Parser
     function parseCSV(text) {
       const lines = text.split(/\r?\n/);
       return lines.map(line => {
@@ -302,8 +309,8 @@
       });
     }
 
-    // Extract clean human-readable title from URL
-    function extractTitle(url) {
+    // Title fallback helper
+    function extractTitleFromUrl(url) {
       const fileName = url.split('/').pop().split('?')[0];
       return fileName
         .replace('.glb', '')
@@ -311,12 +318,12 @@
         .replace(/\b\w/g, c => c.toUpperCase());
     }
 
-    // Fetch Google Sheet & Render
+    // Fetch Google Sheet & Populate Grid
     async function loadGalleryFromCSV() {
       try {
         const response = await fetch(CSV_URL);
         if (!response.ok) {
-          throw new Error(`Failed to fetch Google Sheet (Status: ${response.status}). Make sure the sheet sharing is set to "Anyone with the link can view".`);
+          throw new Error(`Failed to fetch Google Sheet (Status: ${response.status}). Ensure sharing is set to "Anyone with the link can view".`);
         }
 
         const csvText = await response.text();
@@ -327,25 +334,30 @@
           return;
         }
 
-        // Determine origin column index (default to index 1 / Column B)
-        let originColIndex = 1;
-        const headerRow = rows[0];
-        const foundIndex = headerRow.findIndex(cell => cell.toLowerCase().trim() === 'origin');
-        if (foundIndex !== -1) {
-          originColIndex = foundIndex;
-        }
+        // Column E = Index 4 (Item)
+        // Column V = Index 21 (3D Model)
+        let titleColIndex = 4;  
+        let modelColIndex = 21; 
 
-        const startRow = foundIndex !== -1 ? 1 : 0; // Skip header row if labeled
+        // Dynamic header detection
+        const headerRow = rows[0];
+        const itemIdx = headerRow.findIndex(cell => cell.toLowerCase().trim() === 'item');
+        if (itemIdx !== -1) titleColIndex = itemIdx;
+
+        const modelIdx = headerRow.findIndex(cell => cell.toLowerCase().trim().includes('3d model') || cell.toLowerCase().trim() === 'model');
+        if (modelIdx !== -1) modelColIndex = modelIdx;
+
+        const startRow = (itemIdx !== -1 || modelIdx !== -1) ? 1 : 0;
         const items = [];
 
         for (let i = startRow; i < rows.length; i++) {
           const row = rows[i];
-          if (!row || row.length <= originColIndex) continue;
+          if (!row || row.length <= modelColIndex) continue;
 
-          let rawUrl = row[originColIndex]?.trim();
+          let rawUrl = row[modelColIndex]?.trim();
           if (!rawUrl || !rawUrl.startsWith('http')) continue;
 
-          // Convert Dropbox URLs to direct binary stream links
+          // Process Dropbox URLs to direct raw links
           if (rawUrl.includes('dropbox.com')) {
             rawUrl = rawUrl.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
             if (!rawUrl.includes('raw=1')) {
@@ -353,20 +365,26 @@
             }
           }
 
+          // Get Title from Column E (Item) or fallback to URL filename
+          let customTitle = row[titleColIndex]?.trim();
+          if (!customTitle) {
+            customTitle = extractTitleFromUrl(rawUrl);
+          }
+
           items.push({
-            title: extractTitle(rawUrl),
+            title: customTitle,
             url: rawUrl
           });
         }
 
-        gallery.innerHTML = ''; // Clear loading indicator
+        gallery.innerHTML = ''; // Clear status message
 
         if (items.length === 0) {
-          gallery.innerHTML = '<div class="status-msg">No valid model links found in Column B (origin).</div>';
+          gallery.innerHTML = '<div class="status-msg">No valid GLB model links found in Column V.</div>';
           return;
         }
 
-        // Build Gallery Cards
+        // Render Gallery Cards
         items.forEach((item) => {
           const card = document.createElement('div');
           card.className = 'card';
@@ -380,7 +398,7 @@
                 auto-rotate 
                 rotation-per-second="20deg" 
                 interaction-prompt="none" 
-                shadow-intensity="0.3">
+                shadow-intensity="0.4">
               </model-viewer>
             </div>
             <div class="card-info">
@@ -395,7 +413,7 @@
       } catch (err) {
         console.error("CSV Fetch Error:", err);
         gallery.innerHTML = `
-          <div class="status-msg" style="color: #f87171;">
+          <div class="status-msg" style="color: #ef4444;">
             <p>⚠️ Failed to load Google Sheet.</p>
             <p style="font-size: 0.85rem; margin-top: 8px;">${err.message}</p>
           </div>
@@ -403,7 +421,7 @@
       }
     }
 
-    // Open Modal
+    // Modal Control
     function openModal(item) {
       modalTitle.textContent = item.title;
       modalViewer.classList.remove('loaded');
@@ -414,7 +432,6 @@
       modal.classList.add('active');
     }
 
-    // Reveal when loaded
     modalViewer.addEventListener('load', () => {
       modalLoader.style.opacity = '0';
       setTimeout(() => {
@@ -423,14 +440,12 @@
       }, 300);
     });
 
-    // Close Modal
     function closeModal() {
       modal.classList.remove('active');
       modalViewer.classList.remove('loaded');
       modalViewer.removeAttribute('src');
     }
 
-    // Key & backdrop listeners
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeModal();
     });
@@ -439,7 +454,7 @@
       if (e.target === modal) closeModal();
     });
 
-    // Load data on start
+    // Run on startup
     loadGalleryFromCSV();
   </script>
 </body>
