@@ -1061,7 +1061,7 @@
       return url;
     }
 
-    // Helper: Truncate / Clean embedded 3D viewer wrapper URLs backwards to extract direct .glb / Dropbox URL
+    // Helper: Truncate / Clean embedded 3D viewer wrapper URLs backwards & validate 3D extensions
     function extractDirect3DUrl(rawUrl) {
       if (!rawUrl) return '';
       let str = unescapeHTML(rawUrl).trim();
@@ -1084,8 +1084,17 @@
       str = str.trim();
       if (!str.startsWith('http://') && !str.startsWith('https://')) return '';
 
-      // 2. Format Dropbox URLs for direct WebGL streaming
-      if (str.includes('dropbox.com') || str.includes('dropboxusercontent.com')) {
+      // 2. Validate that it's actually a 3D model file URL (.glb / .gltf or Dropbox 3D link)
+      const lower = str.toLowerCase();
+      const isGLB = lower.includes('.glb') || lower.includes('.gltf');
+      const isDropbox3D = lower.includes('dropbox.com') || lower.includes('dropboxusercontent.com');
+      
+      if (!isGLB && !isDropbox3D) {
+        return ''; // Rejects regular web pages, Wikipedia, Google Drive file view links, etc.
+      }
+
+      // 3. Format Dropbox URLs for direct WebGL streaming
+      if (isDropbox3D) {
         str = str.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
         if (!str.includes('raw=1')) {
           str += (str.includes('?') ? '&raw=1' : '?raw=1');
@@ -1106,20 +1115,15 @@
       const colRVal = extractDirect3DUrl(getVal(row, 17));
       if (colRVal) return colRVal;
 
-      // 2. Check catalog3DMap using Item Ref (Col A / Col M / Col B)
-      const itemNoColA = unescapeHTML(getVal(row, 0)).replace(/^#\s*/, '').trim().toLowerCase();
-      if (itemNoColA && catalog3DMap.has(itemNoColA)) {
-        return catalog3DMap.get(itemNoColA);
-      }
-
+      // 2. Check catalog3DMap using Item Ref (Col M '#', Col A 'No')
       const itemNoColM = unescapeHTML(getVal(row, 12)).replace(/^#\s*/, '').trim().toLowerCase();
       if (itemNoColM && catalog3DMap.has(itemNoColM)) {
         return catalog3DMap.get(itemNoColM);
       }
 
-      const itemNoColB = unescapeHTML(getVal(row, 1)).replace(/^#\s*/, '').trim().toLowerCase();
-      if (itemNoColB && catalog3DMap.has(itemNoColB)) {
-        return catalog3DMap.get(itemNoColB);
+      const itemNoColA = unescapeHTML(getVal(row, 0)).replace(/^#\s*/, '').trim().toLowerCase();
+      if (itemNoColA && catalog3DMap.has(itemNoColA)) {
+        return catalog3DMap.get(itemNoColA);
       }
 
       return '';
@@ -1601,31 +1605,80 @@
     }
 
     function updateDynamicDropdowns() {
+      const searchVal = (document.getElementById('searchInput')?.value || '').trim();
+      const favs = getFavorites();
+
       if (currentTab === 'exhibits') {
-        const catVal = document.getElementById('filterCategory').value;
-        const typeVal = document.getElementById('filterType').value;
+        const ageVal = document.getElementById('filterAge')?.value || '';
+        const typeVal = document.getElementById('filterType')?.value || '';
+        const catVal = document.getElementById('filterCategory')?.value || '';
+        const subCatVal = document.getElementById('filterSubcategory')?.value || '';
 
-        let availableRows = rawExhibitsRows;
-        if (catVal) availableRows = availableRows.filter(r => getVal(r, 15).toLowerCase().includes(catVal.toLowerCase()));
-        if (typeVal) availableRows = availableRows.filter(r => getVal(r, 14).toLowerCase().includes(typeVal.toLowerCase()));
+        let matchedOriginalIndices = null;
+        if (searchVal && fuseExhibits) {
+          const searchResults = fuseExhibits.search(searchVal);
+          matchedOriginalIndices = new Set(searchResults.map(res => res.item.originalIndex));
+        }
 
-        updateSelectOptions('filterAge', rawExhibitsRows.map(r => getVal(r, 13)));
-        updateSelectOptions('filterType', rawExhibitsRows.map(r => getVal(r, 14)));
-        updateSelectOptions('filterCategory', rawExhibitsRows.map(r => getVal(r, 15)));
-        updateSelectOptions('filterSubcategory', availableRows.map(r => getVal(r, 16)));
+        // Helper to filter exhibits excluding a specific field for real-time dynamic option counts
+        function getExhibitRowsExcluding(excludeField) {
+          return rawExhibitsRows.filter((row, originalIndex) => {
+            const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
+            const ageMatch = excludeField === 'age' || !ageVal || getVal(row, 13) === ageVal;
+            const typeMatch = excludeField === 'type' || !typeVal || getVal(row, 14).toLowerCase().includes(typeVal.toLowerCase());
+            const catMatch = excludeField === 'category' || !catVal || getVal(row, 15).toLowerCase().includes(catVal.toLowerCase());
+            const subCatMatch = excludeField === 'subcategory' || !subCatVal || getVal(row, 16) === subCatVal;
+            const match3D = !only3DActive || Boolean(get3DUrlForItem(row));
+            const matchHot = !hotOnlyActive || isItemHot(row);
+            const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
+
+            return searchMatch && ageMatch && typeMatch && catMatch && subCatMatch && match3D && matchHot && matchFav;
+          });
+        }
+
+        const rowsForAge = getExhibitRowsExcluding('age');
+        const rowsForType = getExhibitRowsExcluding('type');
+        const rowsForCategory = getExhibitRowsExcluding('category');
+        const rowsForSubcategory = getExhibitRowsExcluding('subcategory');
+
+        updateSelectOptions('filterAge', rowsForAge.map(r => getVal(r, 13)));
+        updateSelectOptions('filterType', rowsForType.map(r => getVal(r, 14)));
+        updateSelectOptions('filterCategory', rowsForCategory.map(r => getVal(r, 15)));
+        updateSelectOptions('filterSubcategory', rowsForSubcategory.map(r => getVal(r, 16)));
+
       } else if (currentTab === 'gramophone') {
-        const artistVal = document.getElementById('filterArtist').value;
-        let availableRows = rawGramophoneRows;
-        if (artistVal) availableRows = availableRows.filter(r => getVal(r, 1) === artistVal);
+        const artistVal = document.getElementById('filterArtist')?.value || '';
+        const labelVal = document.getElementById('filterLabel')?.value || '';
+        const formatVal = document.getElementById('filterFormat')?.value || '';
+        const yearVal = document.getElementById('filterYear')?.value || '';
 
-        updateSelectOptions('filterArtist', rawGramophoneRows.map(r => getVal(r, 1)));
-        updateSelectOptions('filterLabel', availableRows.map(r => getVal(r, 3)));
-        updateSelectOptions('filterFormat', availableRows.map(r => getVal(r, 4)));
-        updateSelectOptions('filterYear', availableRows.map(r => getVal(r, 6)));
+        let matchedOriginalIndices = null;
+        if (searchVal && fuseGramophone) {
+          const searchResults = fuseGramophone.search(searchVal);
+          matchedOriginalIndices = new Set(searchResults.map(res => res.item.originalIndex));
+        }
+
+        function getGramophoneRowsExcluding(excludeField) {
+          return rawGramophoneRows.filter((row, originalIndex) => {
+            const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
+            const artistMatch = excludeField === 'artist' || !artistVal || getVal(row, 1) === artistVal;
+            const labelMatch = excludeField === 'label' || !labelVal || getVal(row, 3) === labelMatch;
+            const formatMatch = excludeField === 'format' || !formatVal || getVal(row, 4) === formatMatch;
+            const yearMatch = excludeField === 'year' || !yearVal || getVal(row, 6) === yearVal;
+            const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
+
+            return searchMatch && artistMatch && labelMatch && formatMatch && yearMatch && matchFav;
+          });
+        }
+
+        updateSelectOptions('filterArtist', getGramophoneRowsExcluding('artist').map(r => getVal(r, 1)));
+        updateSelectOptions('filterLabel', getGramophoneRowsExcluding('label').map(r => getVal(r, 3)));
+        updateSelectOptions('filterFormat', getGramophoneRowsExcluding('format').map(r => getVal(r, 4)));
+        updateSelectOptions('filterYear', getGramophoneRowsExcluding('year').map(r => getVal(r, 6)));
       }
     }
 
-    // Helper: Populates dropdown options with item count numbers
+    // Helper: Populates dropdown options with item count numbers separated by " - "
     function updateSelectOptions(elementId, values) {
       const select = document.getElementById(elementId);
       if (!select) return;
@@ -1651,7 +1704,7 @@
         const opt = document.createElement('option');
         opt.value = val;
         const count = counts[val] || 0;
-        opt.textContent = `${unescapeHTML(val)} (${count})`;
+        opt.textContent = `${unescapeHTML(val)} - (${count})`;
         if (val === currentSelection) opt.selected = true;
         select.appendChild(opt);
       });
