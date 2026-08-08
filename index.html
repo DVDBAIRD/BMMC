@@ -503,12 +503,18 @@
           <span class="text-xl">👓</span>
           <h3 id="lightboxTitle" class="text-sm sm:text-base font-extrabold truncate text-slate-900 dark:text-white">Interactive 3D Model</h3>
         </div>
-        <button id="close3DLightbox" title="Close 3D View" aria-label="Close 3D View" class="p-1.5 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 font-extrabold transition">
-          ✕
-        </button>
+        <div class="flex items-center gap-2">
+          <!-- 3D Lightbox Skybox Dark/Light Background Toggle -->
+          <button id="btnToggleLightboxSkybox" onclick="toggleModal3DSkybox(event)" class="text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1 rounded-xl border border-slate-300 dark:border-slate-700 transition flex items-center gap-1">
+            ☀️ Light Sky
+          </button>
+          <button id="close3DLightbox" title="Close 3D View" aria-label="Close 3D View" class="p-1.5 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 font-extrabold transition">
+            ✕
+          </button>
+        </div>
       </div>
 
-      <div class="relative w-full h-full flex items-center justify-center bg-slate-950 overflow-hidden">
+      <div id="lightbox3DContainer" class="relative w-full h-full flex items-center justify-center bg-slate-950 overflow-hidden transition-colors duration-300">
         <!-- Spinner Overlay -->
         <div id="lightboxSpinner" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/90 z-20 transition-opacity duration-300">
           <div class="spinner-3d"></div>
@@ -613,6 +619,7 @@
     let hotOnlyActive = false;
     let showingFavoritesOnly = false;
     let isGridActive = false;
+    let is3DSkyboxLight = false; // Toggles light/dark background for 3D viewers
     let currentSpeechUtterance = null;
     let availableVoices = [];
 
@@ -1147,6 +1154,44 @@
       const shortDetails = cleanDetails.slice(0, 200);
       const query = `${cleanTitle} ${cleanCat || ''} Historical Artifact ${shortDetails}`.trim();
       window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+    }
+
+    // Toggle 3D Viewer Background Light/Dark Skybox
+    function toggleModal3DSkybox(event) {
+      if (event) event.stopPropagation();
+      is3DSkyboxLight = !is3DSkyboxLight;
+      update3DSkyboxUI();
+    }
+
+    function update3DSkyboxUI() {
+      const modalBox = document.getElementById('modal3DContainer');
+      const lightboxBox = document.getElementById('lightbox3DContainer');
+      const modalBtn = document.getElementById('btnToggleModalSkybox');
+      const lightboxBtn = document.getElementById('btnToggleLightboxSkybox');
+
+      if (modalBox) {
+        if (is3DSkyboxLight) {
+          modalBox.classList.remove('bg-slate-900');
+          modalBox.classList.add('bg-slate-100');
+        } else {
+          modalBox.classList.remove('bg-slate-100');
+          modalBox.classList.add('bg-slate-900');
+        }
+      }
+
+      if (lightboxBox) {
+        if (is3DSkyboxLight) {
+          lightboxBox.classList.remove('bg-slate-950');
+          lightboxBox.classList.add('bg-slate-100');
+        } else {
+          lightboxBox.classList.remove('bg-slate-100');
+          lightboxBox.classList.add('bg-slate-950');
+        }
+      }
+
+      const labelText = is3DSkyboxLight ? '🌙 Dark Sky' : '☀️ Light Sky';
+      if (modalBtn) modalBtn.textContent = labelText;
+      if (lightboxBtn) lightboxBtn.textContent = labelText;
     }
 
     function browseAllExhibits() {
@@ -1997,8 +2042,14 @@
           <div id="card-media-box-${originalIndex}" data-total-slots="${totalSlots}" data-current-slot="1" class="h-56 relative overflow-hidden flex items-center justify-center p-2 group/cardimg" style="background-color: ${theme.hex}18;">
             ${mediaItemsHTML}
 
-            <!-- Action Buttons Stack -->
-            <div class="absolute top-3 right-3 flex flex-col gap-2 z-10" onclick="event.stopPropagation()">
+            <!-- Action Buttons Stack (Hot Icon positioned directly to the left of Favorite icon) -->
+            <div class="absolute top-3 right-3 flex items-center gap-1.5 z-10" onclick="event.stopPropagation()">
+              ${isHot ? `
+                <span title="Hot Item" class="w-8 h-8 rounded-full bg-amber-500/90 text-white backdrop-blur-md transition shadow-md flex items-center justify-center text-xs font-bold pointer-events-none">
+                  🔥
+                </span>
+              ` : ''}
+
               <button onclick="toggleFavorite(${originalIndex}, event)" aria-label="Favorite item" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md transition shadow-md hover:scale-110 flex items-center justify-center text-xs">
                 ${isFav ? '❤️' : '🤍'}
               </button>
@@ -2029,7 +2080,6 @@
           <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
             <div>
               <div class="flex gap-1.5 flex-wrap text-[11px] mb-2.5 font-bold items-center">
-                ${isHot ? `<span class="bg-gradient-to-r from-amber-500 to-rose-600 text-white px-2 py-0.5 rounded-full font-black text-[10px] shadow-sm inline-flex items-center gap-0.5">🔥 Hot</span>` : ''}
                 ${category ? createCategoryBadge(category, 'category') : ''}
                 ${type ? createCategoryBadge(type, 'type') : ''}
                 ${subcategory ? createCategoryBadge(subcategory, 'subcategory') : ''}
@@ -2408,6 +2458,7 @@
       if (!modal || !viewer || !url) return;
 
       titleElem.textContent = title || 'Interactive 3D Model';
+      update3DSkyboxUI();
 
       function hideSpinner() {
         if (spinner) {
@@ -2558,13 +2609,16 @@
             <div class="flex flex-col space-y-4 order-2 lg:order-1">
               <div class="flex items-start justify-between gap-3">
                 <h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
-                <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">
-                  ${isFav ? '❤️ Saved' : '🤍 Save'}
-                </button>
+                
+                <div class="flex items-center gap-2 shrink-0">
+                  ${isHot ? `<span title="Hot Item" class="text-base sm:text-lg px-2 py-0.5 bg-amber-500/20 rounded-full border border-amber-400/40 leading-none flex items-center justify-center">🔥</span>` : ''}
+                  <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">
+                    ${isFav ? '❤️ Saved' : '🤍 Save'}
+                  </button>
+                </div>
               </div>
 
               <div class="flex flex-wrap gap-2 text-xs items-center">
-                ${isHot ? `<span class="bg-gradient-to-r from-amber-500 to-rose-600 text-white px-3 py-0.5 rounded-full font-black text-xs shadow-sm inline-flex items-center gap-0.5">🔥 Hot</span>` : ''}
                 ${age ? `<span class="${ageBadgeClass} px-3 py-0.5 rounded-full shadow-sm"><strong>Age:</strong> ${age}</span>` : ''}
                 ${category ? createCategoryBadge(category, 'category') : ''}
                 ${type ? createCategoryBadge(type, 'type') : ''}
@@ -2611,9 +2665,14 @@
                 <div class="relative group/model w-full">
                   <div class="flex items-center justify-between mb-2">
                     <p class="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-widest">Interactive 3D Model</p>
-                    <button onclick="open3DLightbox('${d3d}', '${displayTitle.replace(/'/g, "\\'")}')" class="text-[10px] font-bold text-purple-600 dark:text-purple-300 hover:underline">Expand Fullscreen ⤢</button>
+                    <div class="flex items-center gap-2">
+                      <button id="btnToggleModalSkybox" onclick="toggleModal3DSkybox(event)" class="text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-300 bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-md transition border border-slate-300 dark:border-slate-700">
+                        ${is3DSkyboxLight ? '🌙 Dark Sky' : '☀️ Light Sky'}
+                      </button>
+                      <button onclick="open3DLightbox('${d3d}', '${displayTitle.replace(/'/g, "\\'")}')" class="text-[10px] font-bold text-purple-600 dark:text-purple-300 hover:underline">Expand Fullscreen ⤢</button>
+                    </div>
                   </div>
-                  <div class="w-full h-64 sm:h-72 bg-slate-900 rounded-2xl overflow-hidden shadow-inner border border-indigo-500/30 relative cursor-pointer" onclick="open3DLightbox('${d3d}', '${displayTitle.replace(/'/g, "\\'")}')">
+                  <div id="modal3DContainer" class="w-full h-64 sm:h-72 ${is3DSkyboxLight ? 'bg-slate-100' : 'bg-slate-900'} rounded-2xl overflow-hidden shadow-inner border border-indigo-500/30 relative cursor-pointer transition-colors duration-300" onclick="open3DLightbox('${d3d}', '${displayTitle.replace(/'/g, "\\'")}')">
                     <model-viewer 
                       src="${d3d}" 
                       camera-controls 
@@ -2633,7 +2692,7 @@
                   <div class="w-full">
                     <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${has3D ? 'Second Media (Image 1)' : 'Primary Image'}</p>
                     <a href="${img1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
-                      <img src="${img1}" class="w-full h-52 sm:h-56 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                      <img src="${img1}" class="w-full ${!img2 ? 'max-h-[520px] min-h-[220px]' : 'h-52 sm:h-56'} object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
                       <span class="absolute bottom-2.5 right-2.5 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow pointer-events-none">Full Image ↗</span>
                     </a>
                   </div>
