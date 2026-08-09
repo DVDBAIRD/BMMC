@@ -187,7 +187,7 @@
             </div>
           </div>
 
-          <!-- Active Filter Pills Bar (Positioned Between Sort Selector and Fuzzy Search) -->
+          <!-- Active Filter Pills Bar -->
           <div id="activeFiltersBar" class="hidden flex-wrap items-center gap-1.5 flex-1 min-w-0">
             <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider shrink-0">Active:</span>
             <div id="activeFiltersContainer" class="flex flex-wrap gap-1 flex-1 min-w-0"></div>
@@ -543,6 +543,17 @@
 
     const MAIN_HUB_CATEGORIES = ["War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"];
     
+    // Custom High-Speed Thumbnail Links (s200 optimized)
+    const HUB_CUSTOM_IMAGES = {
+      "War": "https://drive.google.com/thumbnail?id=1MPsC_RvHj1FoYs9qY1uszeKAD8nJjnCl&sz=s200",
+      "Photography": "https://drive.google.com/thumbnail?id=1wG9HuJovMcF0FV_rucdU2D9Bo0-XBBdm&sz=s200",
+      "Survey": "https://drive.google.com/thumbnail?id=1ynhpt7nlIWCEaE-VGQ0xqvT8LPR4YEU2&sz=s200",
+      "General": "https://drive.google.com/thumbnail?id=1yYyeT3Gdf0CFJCdAUBHhr0oYNxmKlxv5&sz=s200",
+      "Documentation": "https://drive.google.com/thumbnail?id=1VHPNsMSdCsWTL3bjOJ1haOSwV0_1hOgx&sz=s200",
+      "Household": "https://drive.google.com/thumbnail?id=1YpCxkPq6yCiVK-lNBDHC4qbI-ypmuGJ-&sz=s200",
+      "Collections": "https://drive.google.com/thumbnail?id=1cJOXAc-8l8J9R1NXt9P-wKbtxHcAjlvC&sz=s200"
+    };
+
     // Refined Color Palette
     const CATEGORY_PALETTE = {
       war: { hex: '#C85A32', text: '#FFFFFF', name: 'War' },
@@ -606,8 +617,8 @@
     let currentTab = 'exhibits';
     let rawExhibitsRows = [];
     let rawGramophoneRows = [];
-    let catalog3DMap = new Map(); // Maps Item "Ref" / "#" -> Cleaned 3D Model GLB URL
-    let hotItemSet = new Set();    // Stores item IDs marked as Hot
+    let catalog3DMap = new Map();
+    let hotItemSet = new Set();
     let currentFilteredRows = [];
     let currentModalIndex = -1;
     let currentlySpeakingIndex = null;
@@ -615,30 +626,30 @@
     let hotOnlyActive = false;
     let showingFavoritesOnly = false;
     let isGridActive = false;
-    let is3DSkyboxLight = false; // Toggles light/dark background for 3D viewers
+    let is3DSkyboxLight = false;
     let currentSpeechUtterance = null;
     let availableVoices = [];
 
-    // Dynamic Column Index Maps for Exhibits Sheet (gid=1146027655)
+    // Dynamic Column Index Maps for Exhibits Sheet
     let colIdx = {
-      id: 0,           // Col A
-      ref: 1,          // Col B
-      title: 2,        // Col C
-      notes: 4,        // Col E
-      itemNoM: 12,     // Col M (#)
-      age: 13,         // Col N
-      type: 14,        // Col O
-      category: 15,    // Col P
-      subcategory: 16, // Col Q
-      d3d: 17,         // Col R (3D Model GLB Link)
-      doc: 18,         // Col S (DDOC)
-      web: 19,         // Col T (DWEB)
-      img1: 20,        // Col U
-      img2: 21,        // Col V (Image 2 & Row 2 Featured Image)
-      qty: 22,         // Col W (Quantity)
-      made: 23,        // Col X (Origin / Location)
-      year: 24,        // Col Y (Production Year)
-      hot: 25          // Col Z (Hot Flag)
+      id: 0,
+      ref: 1,
+      title: 2,
+      notes: 4,
+      itemNoM: 12,
+      age: 13,
+      type: 14,
+      category: 15,
+      subcategory: 16,
+      d3d: 17,
+      doc: 18,
+      web: 19,
+      img1: 20,
+      img2: 21,
+      qty: 22,
+      made: 23,
+      year: 24,
+      hot: 25
     };
 
     let chartStackedInstance = null;
@@ -922,7 +933,6 @@
 
     function initTheme() {
       const savedTheme = localStorage.getItem('bMMC_theme');
-      // Default to Light (Day) Mode on first-ever start if no saved preference exists
       const isDark = savedTheme === 'dark';
       if (isDark) {
         document.documentElement.classList.add('dark');
@@ -1063,6 +1073,11 @@
       if (!url) return '';
       url = String(url).trim();
 
+      // Preserve Google Drive thumbnail URLs with custom size parameters (e.g. &sz=s200)
+      if (url.includes('drive.google.com/thumbnail')) {
+        return url;
+      }
+
       // Process Dropbox URLs to direct raw links
       if (url.includes('dropbox.com')) {
         url = url.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
@@ -1081,13 +1096,11 @@
       return url;
     }
 
-    // Helper: Truncate / Clean embedded 3D viewer wrapper URLs backwards & validate 3D extensions
     function extractDirect3DUrl(rawUrl) {
       if (!rawUrl) return '';
       let str = unescapeHTML(rawUrl).trim();
       if (!str) return '';
 
-      // 1. Truncate/extract embedded URL if wrapped (e.g., 3dviewer.net/index.html#model=https://...)
       if (str.includes('#model=')) {
         str = str.split('#model=').pop();
       } else if (str.includes('model=')) {
@@ -1104,16 +1117,14 @@
       str = str.trim();
       if (!str.startsWith('http://') && !str.startsWith('https://')) return '';
 
-      // 2. Validate that it's actually a 3D model file URL (.glb / .gltf or Dropbox 3D link)
       const lower = str.toLowerCase();
       const isGLB = lower.includes('.glb') || lower.includes('.gltf');
       const isDropbox3D = lower.includes('dropbox.com') || lower.includes('dropboxusercontent.com');
       
       if (!isGLB && !isDropbox3D) {
-        return ''; // Rejects regular web pages, Wikipedia, Google Drive file view links, etc.
+        return '';
       }
 
-      // 3. Format Dropbox URLs for direct WebGL streaming
       if (isDropbox3D) {
         str = str.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
         if (!str.includes('raw=1')) {
@@ -1124,18 +1135,15 @@
       return str;
     }
 
-    // Helper: Lookup 3D GLB link for a catalog exhibit item
     function get3DUrlForItem(row) {
       if (!row) return '';
 
-      // 1. Direct check in Exhibit row Column R (Index 17) or Column V (Index 21)
       const colRVal = extractDirect3DUrl(getVal(row, colIdx.d3d));
       if (colRVal) return colRVal;
 
       const colVVal = extractDirect3DUrl(getVal(row, colIdx.img2));
       if (colVVal) return colVVal;
 
-      // 2. Check catalog3DMap using Item Ref (Col M '#', Col A 'No')
       const itemNoColM = unescapeHTML(getVal(row, colIdx.itemNoM)).replace(/^#\s*/, '').trim().toLowerCase();
       if (itemNoColM && catalog3DMap.has(itemNoColM)) {
         return catalog3DMap.get(itemNoColM);
@@ -1149,15 +1157,12 @@
       return '';
     }
 
-    // Helper: Determine if an exhibit item is marked as "Hot"
     function isItemHot(row) {
       if (!row) return false;
 
-      // 1. Check Column Z (Index 25) in current row
       const colZ = unescapeHTML(getVal(row, colIdx.hot)).trim().toLowerCase();
       if (colZ === 'true' || colZ === '1' || colZ === 'yes') return true;
 
-      // 2. Check Col A / Col M in hotItemSet
       const colA = unescapeHTML(getVal(row, colIdx.id)).replace(/^#\s*/, '').trim().toLowerCase();
       if (colA && hotItemSet.has(colA)) return true;
 
@@ -1167,12 +1172,10 @@
       return false;
     }
 
-    // Helper: Robustly retrieve image 1 & image 2 for an exhibit item
     function getImagesForItem(row) {
       let img1 = formatImageUrl(getVal(row, colIdx.img1));
       let img2 = formatImageUrl(getVal(row, colIdx.img2));
 
-      // Fallback: If img1 is empty, search row columns for any image URL
       if (!img1 && row) {
         for (let i = 2; i < row.length; i++) {
           const val = getVal(row, i);
@@ -1209,7 +1212,6 @@
       window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
     }
 
-    // Toggle 3D Viewer Background Light/Dark Skybox
     function toggleModal3DSkybox(event) {
       if (event) event.stopPropagation();
       is3DSkyboxLight = !is3DSkyboxLight;
@@ -1400,7 +1402,6 @@
       initTheme();
 
       try {
-        // Fast Parallel CSV Loading using Promise.allSettled
         const [exhibitsRes, gramophoneRes] = await Promise.allSettled([
           fetchCSVWithCache(EXHIBITS_CSV_URL, 'bMMC_cached_exhibits'),
           fetchCSVWithCache(GRAMOPHONE_CSV_URL, 'bMMC_cached_gramophone')
@@ -1409,7 +1410,6 @@
         if (exhibitsRes.status === 'fulfilled' && exhibitsRes.value) {
           const exhibitsData = exhibitsRes.value;
           
-          // Dynamic Header Auto-Detection for Exhibits Sheet
           if (exhibitsData && exhibitsData.length > 0) {
             const header = exhibitsData[0];
             header.forEach((cell, idx) => {
@@ -1507,9 +1507,11 @@
         const count = matchingRows.length;
         if (count === 0) return;
 
+        // Use custom defined image URL if present; fall back to catalog image or fallback SVG
+        const customImg = HUB_CUSTOM_IMAGES[catName];
         const firstImgRow = matchingRows.find(r => getVal(r, colIdx.img1) !== '');
         const firstImgRaw = firstImgRow ? getVal(firstImgRow, colIdx.img1) : '';
-        const previewImg = formatImageUrl(firstImgRaw) || NO_IMAGE_SVG;
+        const previewImg = customImg ? formatImageUrl(customImg) : (formatImageUrl(firstImgRaw) || NO_IMAGE_SVG);
 
         const theme = getCategoryTheme(baseName);
 
@@ -1621,7 +1623,6 @@
           matchedOriginalIndices = new Set(searchResults.map(res => res.item.originalIndex));
         }
 
-        // Helper to filter exhibits excluding a specific field for real-time dynamic option counts
         function getExhibitRowsExcluding(excludeField) {
           return rawExhibitsRows.filter((row, originalIndex) => {
             const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
@@ -1679,13 +1680,11 @@
       }
     }
 
-    // Helper: Populates dropdown options with item count numbers separated by " - "
     function updateSelectOptions(elementId, values) {
       const select = document.getElementById(elementId);
       if (!select) return;
       const currentSelection = select.value;
 
-      // Compute value frequencies
       const counts = {};
       values.filter(Boolean).forEach(val => {
         counts[val] = (counts[val] || 0) + 1;
@@ -1979,7 +1978,6 @@
       }
     }
 
-    // Card Media Switching logic (Handles 3D -> Img1 -> Img2)
     function switchCardImage(originalIndex, dir, event) {
       if (event) event.stopPropagation();
       const cardThumb = document.getElementById(`card-media-box-${originalIndex}`);
@@ -2051,9 +2049,6 @@
         const hasImg1 = Boolean(img1);
         const hasImg2 = Boolean(img2);
 
-        // Calculate media slots:
-        // If has3D: Slot 1 = Live 3D, Slot 2 = Img1, Slot 3 = Img2
-        // If no 3D: Slot 1 = Img1, Slot 2 = Img2
         let slots = [];
         if (has3D) {
           slots.push({ type: '3d', url: d3d });
@@ -2112,7 +2107,6 @@
           <div id="card-media-box-${originalIndex}" data-total-slots="${totalSlots}" data-current-slot="1" class="h-56 relative overflow-hidden flex items-center justify-center p-2 group/cardimg" style="background-color: ${theme.hex}18;">
             ${mediaItemsHTML}
 
-            <!-- Action Buttons Stack (Hot Icon positioned directly to the left of Favorite icon) -->
             <div class="absolute top-3 right-3 flex items-center gap-1.5 z-10" onclick="event.stopPropagation()">
               ${isHot ? `
                 <span title="Hot Item" class="w-8 h-8 rounded-full bg-amber-500/90 text-white backdrop-blur-md transition shadow-md flex items-center justify-center text-xs font-bold pointer-events-none">
@@ -2295,11 +2289,9 @@
       const dateTypeMap = {};
       const allTypesSet = new Set();
 
-      // Read Row 2 of Exhibits tab (exhibitsData[1] / rawExhibitsRows[0])
       const targetRow2 = rawExhibitsRows[0];
 
       if (targetRow2) {
-        // Welcome Intro Text: Row 2, Col E (Index 4) or Col C (Index 2)
         const introText = unescapeHTML(getVal(targetRow2, colIdx.notes) || getVal(targetRow2, colIdx.title));
         const introCard = document.getElementById('statIntroCard');
         const introTextElem = document.getElementById('statIntroText');
@@ -2311,7 +2303,6 @@
           introCard.classList.add('hidden');
         }
 
-        // Featured Details/Notes: Row 2, Col C (Index 2) or Col E (Index 4)
         const row2NotesText = unescapeHTML(getVal(targetRow2, colIdx.title) || getVal(targetRow2, colIdx.notes));
         const row2Card = document.getElementById('statRow2NotesCard');
         const row2TextElem = document.getElementById('statRow2NotesText');
@@ -2326,7 +2317,6 @@
           row2Card.classList.add('hidden');
         }
 
-        // Featured Image URL: Row 2, Col V (Index 21)
         let img21Raw = getVal(targetRow2, colIdx.img2) || getVal(targetRow2, colIdx.img1);
         let featuredImgUrl = formatImageUrl(img21Raw) || 'https://drive.google.com/thumbnail?id=1LczuV7vwseFwLwSp8FLrLejJOJ8OAxMT&sz=s1000';
 
@@ -2336,7 +2326,6 @@
           row2ImgCol.classList.remove('hidden');
         }
 
-        // Featured Doc & Web Links: Row 2, Col S (Index 18 / DDOC) & Col T (Index 19 / DWEB)
         const docUrl = getVal(targetRow2, colIdx.doc);
         const webUrl = getVal(targetRow2, colIdx.web);
 
@@ -2362,7 +2351,6 @@
       }
 
       rawExhibitsRows.forEach(row => {
-        // Sum Quantity / Count in Col W (Index 22), default to 1 if blank/0
         const qtyVal = getVal(row, colIdx.qty);
         const qtyNum = parseInt(qtyVal.replace(/[^0-9]/g, ''), 10);
         if (!isNaN(qtyNum) && qtyNum > 0) {
@@ -2371,7 +2359,6 @@
           itemsSumQty += 1;
         }
 
-        // Pre/Post 1950 Ratio from Col N (Index 13 - Age)
         const ageVal = getVal(row, colIdx.age).toLowerCase();
         if (ageVal.includes('pre')) {
           colPreCount++;
@@ -2385,7 +2372,6 @@
           }
         }
 
-        // Year/Date from Col Y (Index 24) or Col N (Index 13)
         let rawDate = getVal(row, colIdx.year) || getVal(row, colIdx.age) || row.join(' ');
         let yearNum = null;
         const yearMatch = rawDate.match(/\b(1[89][0-9]{2}|20[0-2][0-9])\b/);
@@ -2398,7 +2384,7 @@
         }
 
         if (yearNum && yearNum >= 1800) {
-          const rawType = getVal(row, colIdx.type); // Col O - Type
+          const rawType = getVal(row, colIdx.type);
           if (rawType && rawType.toLowerCase().trim() !== 'general') {
             allTypesSet.add(rawType);
             const roundedPeriod = `${Math.floor(yearNum / 20) * 20}s`;
@@ -2407,7 +2393,6 @@
           }
         }
 
-        // Origin Location from Col X (Index 23 - Made)
         let rawLoc = getVal(row, colIdx.made);
         if (rawLoc) {
           const country = normalizeCountry(rawLoc);
@@ -2517,7 +2502,6 @@
       }, 50);
     }
 
-    // Standalone Fullscreen 3D Lightbox Viewer Logic (Instant Load & Cache Aware)
     function open3DLightbox(url, title) {
       const modal = document.getElementById('lightbox3DModal');
       const titleElem = document.getElementById('lightboxTitle');
@@ -2543,14 +2527,12 @@
         }
       }
 
-      // If the same model URL is already set and loaded in the viewer, show immediately without spinner delay!
       if (viewer.src === url && viewer.loaded) {
         hideSpinner();
         modal.classList.remove('hidden');
         return;
       }
 
-      // If switching to a new URL, attach listeners and set src
       if (viewer.src !== url) {
         showSpinner();
 
@@ -2570,7 +2552,6 @@
         viewer.addEventListener('load', handleLoad);
         viewer.addEventListener('error', handleError);
 
-        // Fast fallback timer: Hide spinner after 1.5s max or if loaded
         setTimeout(() => {
           if (viewer.loaded || (spinner && spinner.style.display !== 'none')) {
             hideSpinner();
@@ -2668,13 +2649,9 @@
           navigator.clipboard.writeText(url).then(() => showToast('Link copied to clipboard!', '🔗'));
         };
 
-        // Render Responsive Modal Layout
-        // Mobile: Media First (order-1), Details Second (order-2)
-        // Desktop (lg:): Details Left (lg:order-1), Media Right (lg:order-2)
         modalContent.innerHTML = `
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             
-            <!-- DETAILS COLUMN (Desktop: Left/First | Mobile: Below Media) -->
             <div class="flex flex-col space-y-4 order-2 lg:order-1">
               <div class="flex items-start justify-between gap-3">
                 <h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
@@ -2728,7 +2705,6 @@
               </div>
             </div>
 
-            <!-- MEDIA COLUMN (Desktop: Right/Second | Mobile: Top/First - Strict 1x1 Single-Column Layout) -->
             <div class="flex flex-col space-y-4 w-full order-1 lg:order-2">
               ${has3D ? `
                 <div class="relative group/model w-full">
@@ -2755,7 +2731,6 @@
                 </div>
               ` : ''}
 
-              <!-- Additional Media Images (Single vertical image expands downwards to fit) -->
               <div class="grid grid-cols-1 gap-4 w-full">
                 ${img1 ? `
                   <div class="w-full">
@@ -2947,7 +2922,6 @@
         toggleControlsBtn.addEventListener('click', () => toggleCollapsibleControls());
       }
 
-      // 3D Only Header Button Logic
       document.getElementById('btn3DOnly').addEventListener('click', () => {
         only3DActive = !only3DActive;
         const btn = document.getElementById('btn3DOnly');
@@ -2960,7 +2934,6 @@
         filterCatalog(true);
       });
 
-      // Hot Filter Header Button Logic
       document.getElementById('btnHotOnly').addEventListener('click', () => {
         hotOnlyActive = !hotOnlyActive;
         const btn = document.getElementById('btnHotOnly');
