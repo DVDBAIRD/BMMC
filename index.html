@@ -2374,7 +2374,7 @@
 
         let rawDate = getVal(row, colIdx.year) || getVal(row, colIdx.age) || row.join(' ');
         let yearNum = null;
-        const yearMatch = rawDate.match(/\b(1[89][0-9]{2}|20[0-2][0-9])\b/);
+        const yearMatch = rawDate.match(/\b([1-9][0-9]{3})\b/);
         if (yearMatch) {
           yearNum = parseInt(yearMatch[1], 10);
         }
