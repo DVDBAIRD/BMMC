@@ -127,7 +127,7 @@
             <span>👓 3D Only</span>
           </button>
 
-          <!-- Hot Filter Button (Placed directly after 3D Only) -->
+          <!-- Hot Filter Button -->
           <button id="btnHotOnly" title="Filter to Hot Items Only" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-600 hover:to-rose-700 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition shadow-md shadow-amber-500/20 active:scale-95">
             <span>🔥 Hot</span>
           </button>
@@ -371,7 +371,7 @@
               <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Total Items</span>
               <span class="p-2 bg-blue-50 dark:bg-blue-950/80 text-blue-600 rounded-xl text-base border border-blue-100 dark:border-blue-900/60">🏛️</span>
             </div>
-            <div class="text-2xl font-black text-slate-900 dark:text-white" id="statTotalItems">1,157</div>
+            <div class="text-2xl font-black text-slate-900 dark:text-white" id="statTotalItems">1,193</div>
           </div>
           <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1.5">Total number of preserved items</p>
         </div>
@@ -606,6 +606,8 @@
     let currentTab = 'exhibits';
     let rawExhibitsRows = [];
     let rawGramophoneRows = [];
+    let catalog3DMap = new Map(); // Maps Item "Ref" / "#" -> Cleaned 3D Model GLB URL
+    let hotItemSet = new Set();    // Stores item IDs marked as Hot
     let currentFilteredRows = [];
     let currentModalIndex = -1;
     let currentlySpeakingIndex = null;
@@ -616,6 +618,28 @@
     let is3DSkyboxLight = false; // Toggles light/dark background for 3D viewers
     let currentSpeechUtterance = null;
     let availableVoices = [];
+
+    // Dynamic Column Index Maps for Exhibits Sheet (gid=1146027655)
+    let colIdx = {
+      id: 0,           // Col A
+      ref: 1,          // Col B
+      title: 2,        // Col C
+      notes: 4,        // Col E
+      itemNoM: 12,     // Col M (#)
+      age: 13,         // Col N
+      type: 14,        // Col O
+      category: 15,    // Col P
+      subcategory: 16, // Col Q
+      d3d: 17,         // Col R (3D Model GLB Link)
+      doc: 18,         // Col S (DDOC)
+      web: 19,         // Col T (DWEB)
+      img1: 20,        // Col U
+      img2: 21,        // Col V (Image 2 & Row 2 Featured Image)
+      qty: 22,         // Col W (Quantity)
+      made: 23,        // Col X (Origin / Location)
+      year: 24,        // Col Y (Production Year)
+      hot: 25          // Col Z (Hot Flag)
+    };
 
     let chartStackedInstance = null;
     let chartLocationsInstance = null;
@@ -1105,19 +1129,19 @@
       if (!row) return '';
 
       // 1. Direct check in Exhibit row Column R (Index 17) or Column V (Index 21)
-      const colRVal = extractDirect3DUrl(getVal(row, 17));
+      const colRVal = extractDirect3DUrl(getVal(row, colIdx.d3d));
       if (colRVal) return colRVal;
 
-      const colVVal = extractDirect3DUrl(getVal(row, 21));
+      const colVVal = extractDirect3DUrl(getVal(row, colIdx.img2));
       if (colVVal) return colVVal;
 
       // 2. Check catalog3DMap using Item Ref (Col M '#', Col A 'No')
-      const itemNoColM = unescapeHTML(getVal(row, 12)).replace(/^#\s*/, '').trim().toLowerCase();
+      const itemNoColM = unescapeHTML(getVal(row, colIdx.itemNoM)).replace(/^#\s*/, '').trim().toLowerCase();
       if (itemNoColM && catalog3DMap.has(itemNoColM)) {
         return catalog3DMap.get(itemNoColM);
       }
 
-      const itemNoColA = unescapeHTML(getVal(row, 0)).replace(/^#\s*/, '').trim().toLowerCase();
+      const itemNoColA = unescapeHTML(getVal(row, colIdx.id)).replace(/^#\s*/, '').trim().toLowerCase();
       if (itemNoColA && catalog3DMap.has(itemNoColA)) {
         return catalog3DMap.get(itemNoColA);
       }
@@ -1130,18 +1154,14 @@
       if (!row) return false;
 
       // 1. Check Column Z (Index 25) in current row
-      const colZ = unescapeHTML(getVal(row, 25)).trim().toLowerCase();
+      const colZ = unescapeHTML(getVal(row, colIdx.hot)).trim().toLowerCase();
       if (colZ === 'true' || colZ === '1' || colZ === 'yes') return true;
 
-      // 2. Check Column AH (Index 33) in current row
-      const colAH = unescapeHTML(getVal(row, 33)).trim().toLowerCase();
-      if (colAH === 'true' || colAH === '1' || colAH === 'yes') return true;
-
-      // 3. Check Col A / Col M in hotItemSet
-      const colA = unescapeHTML(getVal(row, 0)).replace(/^#\s*/, '').trim().toLowerCase();
+      // 2. Check Col A / Col M in hotItemSet
+      const colA = unescapeHTML(getVal(row, colIdx.id)).replace(/^#\s*/, '').trim().toLowerCase();
       if (colA && hotItemSet.has(colA)) return true;
 
-      const colM = unescapeHTML(getVal(row, 12)).replace(/^#\s*/, '').trim().toLowerCase();
+      const colM = unescapeHTML(getVal(row, colIdx.itemNoM)).replace(/^#\s*/, '').trim().toLowerCase();
       if (colM && hotItemSet.has(colM)) return true;
 
       return false;
@@ -1149,8 +1169,8 @@
 
     // Helper: Robustly retrieve image 1 & image 2 for an exhibit item
     function getImagesForItem(row) {
-      let img1 = formatImageUrl(getVal(row, 20));
-      let img2 = formatImageUrl(getVal(row, 21));
+      let img1 = formatImageUrl(getVal(row, colIdx.img1));
+      let img2 = formatImageUrl(getVal(row, colIdx.img2));
 
       // Fallback: If img1 is empty, search row columns for any image URL
       if (!img1 && row) {
@@ -1336,16 +1356,16 @@
 
       if (rawExhibitsRows.length > 0) {
         const exhibitsList = rawExhibitsRows.map((row, index) => {
-          const { title, details } = parseTitleAndDetails(getVal(row, 2) || getVal(row, 0));
+          const { title, details } = parseTitleAndDetails(getVal(row, colIdx.title) || getVal(row, colIdx.id));
           return {
             originalIndex: index,
             title,
             details,
-            notes: getVal(row, 4),
-            age: getVal(row, 13),
-            type: getVal(row, 14),
-            category: getVal(row, 15),
-            subcategory: getVal(row, 16)
+            notes: getVal(row, colIdx.notes),
+            age: getVal(row, colIdx.age),
+            type: getVal(row, colIdx.type),
+            category: getVal(row, colIdx.category),
+            subcategory: getVal(row, colIdx.subcategory)
           };
         });
 
@@ -1387,7 +1407,35 @@
         ]);
 
         if (exhibitsRes.status === 'fulfilled' && exhibitsRes.value) {
-          rawExhibitsRows = exhibitsRes.value.slice(1);
+          const exhibitsData = exhibitsRes.value;
+          
+          // Dynamic Header Auto-Detection for Exhibits Sheet
+          if (exhibitsData && exhibitsData.length > 0) {
+            const header = exhibitsData[0];
+            header.forEach((cell, idx) => {
+              const c = String(cell).toLowerCase().trim();
+              if (c === 'no' || c === 'id') colIdx.id = idx;
+              if (c === 'ref') colIdx.ref = idx;
+              if (c === 'title' || c === 'content' || c === 'item') colIdx.title = idx;
+              if (c === 'notes' || c.includes('note')) colIdx.notes = idx;
+              if (c === '#' || c === 'item no') colIdx.itemNoM = idx;
+              if (c === 'age') colIdx.age = idx;
+              if (c === 'type') colIdx.type = idx;
+              if (c === 'category') colIdx.category = idx;
+              if (c === 'subcategory' || c.includes('sub category')) colIdx.subcategory = idx;
+              if (c === '3d model' || c.includes('3d')) colIdx.d3d = idx;
+              if (c === 'ddoc' || (c.includes('doc') && !c.includes('banner'))) colIdx.doc = idx;
+              if (c === 'dweb' || (c.includes('web') && !c.includes('banner'))) colIdx.web = idx;
+              if (c === 'image 1' || c === 'img1' || (c.includes('image') && !c.includes('2'))) colIdx.img1 = idx;
+              if (c === 'image 2' || c === 'img2') colIdx.img2 = idx;
+              if (c === 'qty' || c === 'quantity' || c.includes('count')) colIdx.qty = idx;
+              if (c === 'made' || c === 'origin' || c.includes('location')) colIdx.made = idx;
+              if (c === 'year' || c === 'date') colIdx.year = idx;
+              if (c === 'hot') colIdx.hot = idx;
+            });
+          }
+
+          rawExhibitsRows = exhibitsData.slice(1);
           populateInitialDropdowns();
         }
 
@@ -1451,16 +1499,16 @@
       MAIN_HUB_CATEGORIES.forEach(catName => {
         const baseName = catName.toLowerCase().replace(/s$/, '');
         const matchingRows = rows.filter(r => {
-          const catVal = getVal(r, 15).toLowerCase();
-          const typeVal = getVal(r, 14).toLowerCase();
+          const catVal = getVal(r, colIdx.category).toLowerCase();
+          const typeVal = getVal(r, colIdx.type).toLowerCase();
           return catVal.includes(baseName) || typeVal.includes(baseName);
         });
 
         const count = matchingRows.length;
         if (count === 0) return;
 
-        const firstImgRow = matchingRows.find(r => getVal(r, 20) !== '');
-        const firstImgRaw = firstImgRow ? getVal(firstImgRow, 20) : '';
+        const firstImgRow = matchingRows.find(r => getVal(r, colIdx.img1) !== '');
+        const firstImgRaw = firstImgRow ? getVal(firstImgRow, colIdx.img1) : '';
         const previewImg = formatImageUrl(firstImgRaw) || NO_IMAGE_SVG;
 
         const theme = getCategoryTheme(baseName);
@@ -1577,10 +1625,10 @@
         function getExhibitRowsExcluding(excludeField) {
           return rawExhibitsRows.filter((row, originalIndex) => {
             const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
-            const ageMatch = excludeField === 'age' || !ageVal || getVal(row, 13) === ageVal;
-            const typeMatch = excludeField === 'type' || !typeVal || getVal(row, 14).toLowerCase().includes(typeVal.toLowerCase());
-            const catMatch = excludeField === 'category' || !catVal || getVal(row, 15).toLowerCase().includes(catVal.toLowerCase());
-            const subCatMatch = excludeField === 'subcategory' || !subCatVal || getVal(row, 16) === subCatVal;
+            const ageMatch = excludeField === 'age' || !ageVal || getVal(row, colIdx.age) === ageVal;
+            const typeMatch = excludeField === 'type' || !typeVal || getVal(row, colIdx.type).toLowerCase().includes(typeVal.toLowerCase());
+            const catMatch = excludeField === 'category' || !catVal || getVal(row, colIdx.category).toLowerCase().includes(catVal.toLowerCase());
+            const subCatMatch = excludeField === 'subcategory' || !subCatVal || getVal(row, colIdx.subcategory) === subCatVal;
             const match3D = !only3DActive || Boolean(get3DUrlForItem(row));
             const matchHot = !hotOnlyActive || isItemHot(row);
             const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
@@ -1594,10 +1642,10 @@
         const rowsForCategory = getExhibitRowsExcluding('category');
         const rowsForSubcategory = getExhibitRowsExcluding('subcategory');
 
-        updateSelectOptions('filterAge', rowsForAge.map(r => getVal(r, 13)));
-        updateSelectOptions('filterType', rowsForType.map(r => getVal(r, 14)));
-        updateSelectOptions('filterCategory', rowsForCategory.map(r => getVal(r, 15)));
-        updateSelectOptions('filterSubcategory', rowsForSubcategory.map(r => getVal(r, 16)));
+        updateSelectOptions('filterAge', rowsForAge.map(r => getVal(r, colIdx.age)));
+        updateSelectOptions('filterType', rowsForType.map(r => getVal(r, colIdx.type)));
+        updateSelectOptions('filterCategory', rowsForCategory.map(r => getVal(r, colIdx.category)));
+        updateSelectOptions('filterSubcategory', rowsForSubcategory.map(r => getVal(r, colIdx.subcategory)));
 
       } else if (currentTab === 'gramophone') {
         const artistVal = document.getElementById('filterArtist')?.value || '';
@@ -1760,10 +1808,10 @@
 
         currentFilteredRows = rawExhibitsRows.map((row, index) => ({ row, originalIndex: index })).filter(({ row, originalIndex }) => {
           const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
-          const ageMatch = !ageVal || getVal(row, 13) === ageVal;
-          const typeMatch = !typeVal || getVal(row, 14).toLowerCase().includes(typeVal.toLowerCase());
-          const catMatch = !catVal || getVal(row, 15).toLowerCase().includes(catVal.toLowerCase());
-          const subCatMatch = !subCatVal || getVal(row, 16) === subCatVal;
+          const ageMatch = !ageVal || getVal(row, colIdx.age) === ageVal;
+          const typeMatch = !typeVal || getVal(row, colIdx.type).toLowerCase().includes(typeVal.toLowerCase());
+          const catMatch = !catVal || getVal(row, colIdx.category).toLowerCase().includes(catVal.toLowerCase());
+          const subCatMatch = !subCatVal || getVal(row, colIdx.subcategory) === subCatVal;
           
           const d3dUrl = get3DUrlForItem(row);
           const match3D = !only3DActive || Boolean(d3dUrl);
@@ -1777,13 +1825,13 @@
         });
 
         if (sortBy === 'title-asc') {
-          currentFilteredRows.sort((a, b) => parseTitleAndDetails(getVal(a.row, 2) || getVal(a.row, 0)).title.localeCompare(parseTitleAndDetails(getVal(b.row, 2) || getVal(b.row, 0)).title));
+          currentFilteredRows.sort((a, b) => parseTitleAndDetails(getVal(a.row, colIdx.title) || getVal(a.row, colIdx.id)).title.localeCompare(parseTitleAndDetails(getVal(b.row, colIdx.title) || getVal(b.row, colIdx.id)).title));
         } else if (sortBy === 'title-desc') {
-          currentFilteredRows.sort((a, b) => parseTitleAndDetails(getVal(b.row, 2) || getVal(b.row, 0)).title.localeCompare(parseTitleAndDetails(getVal(a.row, 2) || getVal(a.row, 0)).title));
+          currentFilteredRows.sort((a, b) => parseTitleAndDetails(getVal(b.row, colIdx.title) || getVal(b.row, colIdx.id)).title.localeCompare(parseTitleAndDetails(getVal(a.row, colIdx.title) || getVal(a.row, colIdx.id)).title));
         } else if (sortBy === 'age-oldest') {
-          currentFilteredRows.sort((a, b) => getVal(a.row, 13).localeCompare(getVal(b.row, 13)));
+          currentFilteredRows.sort((a, b) => getVal(a.row, colIdx.age).localeCompare(getVal(b.row, colIdx.age)));
         } else if (sortBy === 'age-newest') {
-          currentFilteredRows.sort((a, b) => getVal(b.row, 13).localeCompare(getVal(a.row, 13)));
+          currentFilteredRows.sort((a, b) => getVal(b.row, colIdx.age).localeCompare(getVal(a.row, colIdx.age)));
         }
 
         renderExhibitsGrid();
@@ -1857,7 +1905,7 @@
       const row = rawExhibitsRows[originalIndex];
       if (!row) return;
 
-      const notes = getVal(row, 4);
+      const notes = getVal(row, colIdx.notes);
       if (!notes || notes.trim() === '') {
         showToast('No Museum Notes available for audio narration', 'ℹ️');
         return;
@@ -1982,18 +2030,18 @@
       }
 
       currentFilteredRows.forEach(({ row, originalIndex }, arrayIndex) => {
-        const rawContent = getVal(row, 2) || getVal(row, 0);
+        const rawContent = getVal(row, colIdx.title) || getVal(row, colIdx.id);
         const { title, details } = parseTitleAndDetails(rawContent);
         const displayTitle = title || `Exhibit Item #${originalIndex + 1}`;
         const slashFormattedTitle = formatTitleWithSlashes(displayTitle);
 
-        const notes = getVal(row, 4);
-        const age = getVal(row, 13);
-        const type = getVal(row, 14);
-        const category = getVal(row, 15);
-        const subcategory = getVal(row, 16);
-        const ddoc = getVal(row, 18);
-        const dweb = getVal(row, 19);
+        const notes = getVal(row, colIdx.notes);
+        const age = getVal(row, colIdx.age);
+        const type = getVal(row, colIdx.type);
+        const category = getVal(row, colIdx.category);
+        const subcategory = getVal(row, colIdx.subcategory);
+        const ddoc = getVal(row, colIdx.doc);
+        const dweb = getVal(row, colIdx.web);
         
         const d3d = get3DUrlForItem(row);
         const { img1, img2 } = getImagesForItem(row);
@@ -2252,7 +2300,7 @@
 
       if (targetRow2) {
         // Welcome Intro Text: Row 2, Col E (Index 4) or Col C (Index 2)
-        const introText = unescapeHTML(getVal(targetRow2, 4) || getVal(targetRow2, 2));
+        const introText = unescapeHTML(getVal(targetRow2, colIdx.notes) || getVal(targetRow2, colIdx.title));
         const introCard = document.getElementById('statIntroCard');
         const introTextElem = document.getElementById('statIntroText');
 
@@ -2264,7 +2312,7 @@
         }
 
         // Featured Details/Notes: Row 2, Col C (Index 2) or Col E (Index 4)
-        const row2NotesText = unescapeHTML(getVal(targetRow2, 2) || getVal(targetRow2, 4));
+        const row2NotesText = unescapeHTML(getVal(targetRow2, colIdx.title) || getVal(targetRow2, colIdx.notes));
         const row2Card = document.getElementById('statRow2NotesCard');
         const row2TextElem = document.getElementById('statRow2NotesText');
         const row2ImgElem = document.getElementById('statRow2Img');
@@ -2278,8 +2326,8 @@
           row2Card.classList.add('hidden');
         }
 
-        // Featured Image URL: Row 2, Col V (Index 21) or Col U (Index 20)
-        let img21Raw = getVal(targetRow2, 21) || getVal(targetRow2, 20);
+        // Featured Image URL: Row 2, Col V (Index 21)
+        let img21Raw = getVal(targetRow2, colIdx.img2) || getVal(targetRow2, colIdx.img1);
         let featuredImgUrl = formatImageUrl(img21Raw) || 'https://drive.google.com/thumbnail?id=1LczuV7vwseFwLwSp8FLrLejJOJ8OAxMT&sz=s1000';
 
         if (row2ImgElem && row2ImgCol && row2ImgLinkElem) {
@@ -2288,9 +2336,9 @@
           row2ImgCol.classList.remove('hidden');
         }
 
-        // Featured Doc & Web Links: Row 2, Col G (Index 6) & Col H (Index 7)
-        const docUrl = getVal(targetRow2, 6) || getVal(targetRow2, 18);
-        const webUrl = getVal(targetRow2, 7) || getVal(targetRow2, 19);
+        // Featured Doc & Web Links: Row 2, Col S (Index 18 / DDOC) & Col T (Index 19 / DWEB)
+        const docUrl = getVal(targetRow2, colIdx.doc);
+        const webUrl = getVal(targetRow2, colIdx.web);
 
         const docElem = document.getElementById('statDocLink');
         const webElem = document.getElementById('statWebLink');
@@ -2315,7 +2363,7 @@
 
       rawExhibitsRows.forEach(row => {
         // Sum Quantity / Count in Col W (Index 22), default to 1 if blank/0
-        const qtyVal = getVal(row, 22);
+        const qtyVal = getVal(row, colIdx.qty);
         const qtyNum = parseInt(qtyVal.replace(/[^0-9]/g, ''), 10);
         if (!isNaN(qtyNum) && qtyNum > 0) {
           itemsSumQty += qtyNum;
@@ -2324,7 +2372,7 @@
         }
 
         // Pre/Post 1950 Ratio from Col N (Index 13 - Age)
-        const ageVal = getVal(row, 13).toLowerCase();
+        const ageVal = getVal(row, colIdx.age).toLowerCase();
         if (ageVal.includes('pre')) {
           colPreCount++;
         } else if (ageVal.includes('post')) {
@@ -2338,7 +2386,7 @@
         }
 
         // Year/Date from Col Y (Index 24) or Col N (Index 13)
-        let rawDate = getVal(row, 24) || getVal(row, 13) || row.join(' ');
+        let rawDate = getVal(row, colIdx.year) || getVal(row, colIdx.age) || row.join(' ');
         let yearNum = null;
         const yearMatch = rawDate.match(/\b(1[89][0-9]{2}|20[0-2][0-9])\b/);
         if (yearMatch) {
@@ -2350,7 +2398,7 @@
         }
 
         if (yearNum && yearNum >= 1800) {
-          const rawType = getVal(row, 14); // Col O - Type
+          const rawType = getVal(row, colIdx.type); // Col O - Type
           if (rawType && rawType.toLowerCase().trim() !== 'general') {
             allTypesSet.add(rawType);
             const roundedPeriod = `${Math.floor(yearNum / 20) * 20}s`;
@@ -2360,7 +2408,7 @@
         }
 
         // Origin Location from Col X (Index 23 - Made)
-        let rawLoc = getVal(row, 23);
+        let rawLoc = getVal(row, colIdx.made);
         if (rawLoc) {
           const country = normalizeCountry(rawLoc);
           if (country) {
@@ -2580,17 +2628,17 @@
       if (currentTab === 'exhibits') {
         window.history.replaceState(null, '', `#exhibit-${originalIndex}`);
 
-        const rawContent = getVal(row, 2) || getVal(row, 0);
+        const rawContent = getVal(row, colIdx.title) || getVal(row, colIdx.id);
         const { title, details } = parseTitleAndDetails(rawContent);
         const displayTitle = title || `Exhibit Item Details`;
 
-        const notes = getVal(row, 4);
-        const age = getVal(row, 13);
-        const type = getVal(row, 14);
-        const category = getVal(row, 15);
-        const subcategory = getVal(row, 16);
-        const ddoc = getVal(row, 18);
-        const dweb = getVal(row, 19);
+        const notes = getVal(row, colIdx.notes);
+        const age = getVal(row, colIdx.age);
+        const type = getVal(row, colIdx.type);
+        const category = getVal(row, colIdx.category);
+        const subcategory = getVal(row, colIdx.subcategory);
+        const ddoc = getVal(row, colIdx.doc);
+        const dweb = getVal(row, colIdx.web);
         
         const d3d = get3DUrlForItem(row);
         const { img1, img2 } = getImagesForItem(row);
