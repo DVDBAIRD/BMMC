@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Photo Map: Heatmap & Collage Clusters</title>
+  <title>Photo Map: 80px Thumbnails & Dynamic Clusters</title>
 
   <!-- Leaflet CSS & Cluster Plugin -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -13,19 +13,19 @@
     body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     #map { width: 100vw; height: 100vh; }
 
-    /* Single Photo Marker Styling */
+    /* 1. Single Photo Marker (80px x 80px) */
     .single-photo-wrapper {
-      width: 42px;
-      height: 42px;
-      border-radius: 8px;
-      border: 2px solid #ffffff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+      width: 80px;
+      height: 80px;
+      border-radius: 12px;
+      border: 3px solid #ffffff;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
       overflow: hidden;
-      background: #1e293b;
-      transition: transform 0.2s ease-in-out;
+      background: #0f172a;
+      transition: transform 0.2s ease-in-out, border-color 0.2s ease-in-out;
     }
     .single-photo-wrapper:hover {
-      transform: scale(1.18);
+      transform: scale(1.15);
       z-index: 1000 !important;
       border-color: #38bdf8;
     }
@@ -36,18 +36,17 @@
       display: block;
     }
 
-    /* Cluster Collage Icon Styling */
+    /* 2. Cluster Collage Wrapper (80px x 80px for <= 3 photos) */
     .cluster-collage-wrapper {
-      width: 52px;
-      height: 52px;
-      border-radius: 10px;
-      border: 2px solid #ffffff;
-      box-shadow: 0 6px 14px rgba(0,0,0,0.45);
+      width: 80px;
+      height: 80px;
+      border-radius: 12px;
+      border: 3px solid #ffffff;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
       overflow: hidden;
       background: #0f172a;
       display: flex;
       flex-wrap: wrap;
-      position: relative;
       transition: transform 0.2s ease-in-out;
     }
     .cluster-collage-wrapper:hover {
@@ -55,12 +54,11 @@
       border-color: #38bdf8;
     }
 
-    /* Tile Layout Rules for 1, 2, 3, or 4+ Images */
     .collage-tile {
       position: relative;
       overflow: hidden;
       box-sizing: border-box;
-      border: 0.5px solid rgba(255, 255, 255, 0.2);
+      border: 0.5px solid rgba(255, 255, 255, 0.3);
     }
     .collage-tile img {
       width: 100%;
@@ -69,31 +67,39 @@
       display: block;
     }
 
-    /* Tile Grid Ratios */
+    /* Tile Layouts for 1, 2, or 3 Photos */
     .count-1 .collage-tile { width: 100%; height: 100%; }
     .count-2 .collage-tile { width: 50%; height: 100%; }
     .count-3 .collage-tile:nth-child(1) { width: 100%; height: 50%; }
     .count-3 .collage-tile:nth-child(2),
     .count-3 .collage-tile:nth-child(3) { width: 50%; height: 50%; }
-    .count-4 .collage-tile { width: 50%; height: 50%; }
 
-    /* Count Overlay Badge for Clusters > 4 Photos */
-    .more-badge {
-      position: absolute;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.78);
+    /* 3. Number Badge for > 3 Photos */
+    .cluster-number-badge {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
       color: #ffffff;
-      font-weight: 700;
-      font-size: 11px;
+      border: 3px solid #ffffff;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
       display: flex;
       align-items: center;
       justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .cluster-number-badge:hover {
+      transform: scale(1.15);
+      background: linear-gradient(135deg, #0369a1, #075985);
+      border-color: #38bdf8;
     }
 
     /* Fallback Circle for missing images */
     .no-img-marker {
-      width: 24px;
-      height: 24px;
+      width: 28px;
+      height: 28px;
       background: #ef4444;
       border-radius: 50%;
       border: 2px solid #fff;
@@ -107,12 +113,12 @@
     .photo-card strong {
       display: block;
       margin-bottom: 6px;
-      font-size: 13px;
+      font-size: 14px;
       color: #0f172a;
     }
     .photo-card img {
-      width: 220px;
-      height: 150px;
+      width: 250px;
+      height: 170px;
       object-fit: cover;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.25);
@@ -177,48 +183,53 @@
       maxZoom: 19
     }).addTo(map);
 
-    // Marker Cluster Group with Custom COLLAGE Icon Generator
+    // Marker Cluster Group
     const markers = L.markerClusterGroup({
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
-      spiderfyDistanceMultiplier: 2.0,
+      spiderfyDistanceMultiplier: 2.5, // Gives extra spacing for 80px thumbnails when expanded
       
-      // CUSTOM CLUSTER COLLAGE BUILDER
+      // DYNAMIC CLUSTER ICON GENERATOR
       iconCreateFunction: function(cluster) {
         const childMarkers = cluster.getAllChildMarkers();
         const totalCount = childMarkers.length;
 
-        // Collect up to 4 image URLs from child markers
-        const images = [];
-        for (let i = 0; i < childMarkers.length; i++) {
-          const url = childMarkers[i].options.imgUrl;
-          if (url && !images.includes(url)) {
-            images.push(url);
+        // RULE: If 3 or less photos, display 80px photo collage directly
+        if (totalCount <= 3) {
+          const images = [];
+          for (let i = 0; i < childMarkers.length; i++) {
+            const url = childMarkers[i].options.imgUrl;
+            if (url && !images.includes(url)) {
+              images.push(url);
+            }
           }
-          if (images.length >= 4) break;
+
+          let tilesHTML = '';
+          images.forEach(imgUrl => {
+            tilesHTML += `
+              <div class="collage-tile">
+                <img src="${imgUrl}" loading="lazy"/>
+              </div>
+            `;
+          });
+
+          return L.divIcon({
+            html: `<div class="cluster-collage-wrapper count-${images.length}">${tilesHTML}</div>`,
+            className: 'custom-cluster-collage-icon',
+            iconSize: [80, 80],
+            iconAnchor: [40, 40]
+          });
+        } 
+        // RULE: If > 3 photos, display clean numeric badge
+        else {
+          return L.divIcon({
+            html: `<div class="cluster-number-badge">${totalCount}</div>`,
+            className: 'custom-cluster-number-icon',
+            iconSize: [48, 48],
+            iconAnchor: [24, 24]
+          });
         }
-
-        // Build HTML for collage grid
-        let tilesHTML = '';
-        const tileCount = images.length;
-
-        images.forEach((imgUrl, index) => {
-          const isLastTile = (index === 3 && totalCount > 4);
-          tilesHTML += `
-            <div class="collage-tile">
-              <img src="${imgUrl}" loading="lazy"/>
-              ${isLastTile ? `<div class="more-badge">+${totalCount - 3}</div>` : ''}
-            </div>
-          `;
-        });
-
-        return L.divIcon({
-          html: `<div class="cluster-collage-wrapper count-${tileCount}">${tilesHTML}</div>`,
-          className: 'custom-cluster-collage-icon',
-          iconSize: [52, 52],
-          iconAnchor: [26, 26]
-        });
       }
     });
 
@@ -243,10 +254,10 @@
             const lng = parseFloat(lngVal);
             const imgUrl = formatImgUrl(imgRaw);
 
-            // 1. Add location point to Heatmap dataset
+            // 1. Add to Heatmap Dataset
             heatPoints.push([lat, lng, 0.9]);
 
-            // 2. Custom Single Photo Icon
+            // 2. Custom 80px Single Photo Icon
             const customIconHTML = imgUrl 
               ? `<div class="single-photo-wrapper"><img src="${imgUrl}" loading="lazy"/></div>`
               : `<div class="no-img-marker"></div>`;
@@ -254,8 +265,8 @@
             const photoIcon = L.divIcon({
               html: customIconHTML,
               className: 'custom-single-photo-icon',
-              iconSize: [42, 42],
-              iconAnchor: [21, 21]
+              iconSize: [80, 80],
+              iconAnchor: [40, 40]
             });
 
             // 3. Popup Card
@@ -266,7 +277,7 @@
               </div>
             `;
 
-            // Attach imgUrl in marker options so cluster generator can access it
+            // Attach imgUrl to marker options for cluster generator access
             const marker = L.marker([lat, lng], { icon: photoIcon, imgUrl: imgUrl }).bindPopup(popupHTML);
             markers.addLayer(marker);
             count++;
@@ -276,7 +287,7 @@
         document.getElementById('status').innerText = `Mapped ${count} photos successfully!`;
         setTimeout(() => document.getElementById('status').style.display = 'none', 3000);
 
-        // Heatmap Layer (World/Regional view)
+        // Heatmap Layer
         heatLayer = L.heatLayer(heatPoints, {
           radius: 30,
           blur: 18,
@@ -284,10 +295,10 @@
           gradient: { 0.4: 'blue', 0.65: 'yellow', 1: 'red' }
         }).addTo(map);
 
-        // Add Marker Cluster Layer
+        // Add Marker Layer
         map.addLayer(markers);
 
-        // Zoom Switch: Heatmap when zoomed out (< 6), Collage Clusters / Photo Icons when zoomed in (>= 6)
+        // Dynamic Zoom Control: Heatmap active when zoomed out (< 6), hides when zoomed in (>= 6)
         map.on('zoomend', function() {
           if (map.getZoom() >= 6) {
             if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
