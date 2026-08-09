@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>2D Photo Heatmap Map</title>
+
+  <!-- Leaflet CSS & Plugins -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+    }
+    #map {
+      width: 100vw;
+      height: 100vh;
+    }
+    .popup-card {
+      text-align: center;
+      max-width: 200px;
+    }
+    .popup-card strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #1e293b;
+    }
+    .popup-card img {
+      width: 100%;
+      max-height: 150px;
+      object-fit: cover;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <!-- JS Libraries -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+  <script>
+    // Direct CSV export link
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/export?format=csv&gid=1146027655';
+
+    // Google Drive URL Formatter
+    function formatImgUrl(url) {
+      if (!url) return '';
+      url = url.trim();
+      const match = url.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
+      if (url.includes('drive.google.com') && match && match[1]) {
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      }
+      return url;
+    }
+
+    // Initialize Map (Dark theme map tiles)
+    const map = L.map('map').setView([20, 0], 3);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap, © CARTO',
+      maxZoom: 19
+    }).addTo(map);
+
+    const markers = L.markerClusterGroup();
+
+    // Fetch spreadsheet data
+    Papa.parse(SHEET_CSV_URL, {
+      download: true,
+      header: true,
+      complete: function(results) {
+        const heatPoints = [];
+
+        results.data.forEach(row => {
+          if (row['Lat'] && row['Lng']) {
+            const lat = parseFloat(row['Lat'].trim());
+            const lng = parseFloat(row['Lng'].trim());
+            const rawImg = row['Img1'] ? row['Img1'].trim() : '';
+            const location = row['Made'] ? row['Made'].trim() : '';
+            const imgUrl = formatImgUrl(rawImg);
+
+            // Add to Heatmap Dataset
+            heatPoints.push([lat, lng, 0.8]);
+
+            // Add Pin Marker with Popup Card
+            const popupHTML = `
+              <div class="popup-card">
+                <strong>${location || 'Location'}</strong>
+                ${imgUrl ? `<img src="${imgUrl}" alt="Photo" />` : ''}
+              </div>
+            `;
+
+            const marker = L.marker([lat, lng]).bindPopup(popupHTML);
+            markers.addLayer(marker);
+          }
+        });
+
+        // Layer 1: Heatmap Layer
+        const heatLayer = L.heatLayer(heatPoints, {
+          radius: 25,
+          blur: 15,
+          maxZoom: 8,
+          gradient: { 0.4: 'blue', 0.65: 'lime', 1: 'red' }
+        }).addTo(map);
+
+        // Layer 2: Photo Pins Cluster Group
+        map.addLayer(markers);
+      }
+    });
+  </script>
+</body>
+</html>
