@@ -132,7 +132,7 @@
   <div id="status" class="status-msg">Loading spreadsheet photos...</div>
   <div id="map"></div>
 
-  <!-- JS Libraries (Fixed CDN URLs) -->
+  <!-- JS Libraries -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
@@ -152,7 +152,7 @@
       return url;
     }
 
-    // Flexible column lookup (by header name)
+    // Flexible column lookup
     function getColValue(row, targetKeys) {
       for (let key in row) {
         const cleanKey = key.trim().toLowerCase();
@@ -165,11 +165,11 @@
       return '';
     }
 
-    // Extract Title from Column C (3rd column), taking text BEFORE the '#'
+    // Extract Title from Column C (3rd column), taking text BEFORE '#'
     function getColCTitle(row) {
       const keys = Object.keys(row);
       if (keys.length >= 3) {
-        const colCKey = keys[2]; // 3rd column (Column C)
+        const colCKey = keys[2];
         const rawVal = row[colCKey] ? row[colCKey].toString() : '';
         return rawVal.split('#')[0].trim();
       }
@@ -184,15 +184,14 @@
       maxZoom: 19
     }).addTo(map);
 
-    // Marker Cluster: Splits clusters into individual photos when zoomed in (disableClusteringAtZoom: 6)
+    // Marker Cluster Configuration
     const markers = L.markerClusterGroup({
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
-      spiderfyDistanceMultiplier: 2.2,
-      disableClusteringAtZoom: 6, // Automatically splits all photos into individual 75x75px icons when zoomed in
+      spiderfyDistanceMultiplier: 2.5, // Spreads out 75px photos generously
       
-      // Cluster Icon Generator: Number Badge for groups
+      // Cluster Icon Generator
       iconCreateFunction: function(cluster) {
         const totalCount = cluster.getChildCount();
         return L.divIcon({
@@ -203,6 +202,17 @@
         });
       }
     });
+
+    // Auto-Spiderfy function: Automatically fans out overlapping photos when zoomed in
+    function autoFanOutClusters() {
+      if (map.getZoom() >= 6) {
+        markers.eachLayer(function(layer) {
+          if (layer.__parent && typeof layer.__parent.spiderfy === 'function' && !layer.__parent._spiderfied) {
+            layer.__parent.spiderfy();
+          }
+        });
+      }
+    }
 
     let heatLayer = null;
 
@@ -226,10 +236,10 @@
             const lng = parseFloat(lngVal);
             const imgUrl = formatImgUrl(imgRaw);
 
-            // 1. Add to Heatmap
+            // 1. Heatmap point
             heatPoints.push([lat, lng, 0.9]);
 
-            // 2. Custom 75px x 75px Single Photo Icon (White Background, Centered)
+            // 2. Custom 75px x 75px Single Photo Icon
             const customIconHTML = imgUrl 
               ? `<div class="single-photo-wrapper"><img src="${imgUrl}" loading="lazy"/></div>`
               : `<div class="no-img-marker"></div>`;
@@ -241,7 +251,7 @@
               iconAnchor: [37.5, 37.5]
             });
 
-            // 3. Popup Card (Title before #, Location, 100% image window)
+            // 3. Popup Card
             const popupHTML = `
               <div class="photo-card-large">
                 ${title ? `<h3>${title}</h3>` : ''}
@@ -270,10 +280,11 @@
         // Add Markers Layer
         map.addLayer(markers);
 
-        // Dynamic Zoom Control: Heatmap active when zoomed out (< 6), hides when zoomed in (>= 6)
-        map.on('zoomend', function() {
+        // Auto-fan out photo clusters when zooming or moving
+        map.on('zoomend moveend', function() {
           if (map.getZoom() >= 6) {
             if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+            autoFanOutClusters();
           } else {
             if (!map.hasLayer(heatLayer)) map.addLayer(heatLayer);
           }

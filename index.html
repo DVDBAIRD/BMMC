@@ -340,19 +340,29 @@
         </div>
       </div>
 
-      <!-- Details Card (Updated Full Width Chart Layout) -->
-      <div id="statRow2NotesCard" class="hidden bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/30 border border-indigo-500/30 relative overflow-hidden backdrop-blur-md flex flex-col gap-6">
-        
+      <!-- Details Card (Only Text) -->
+      <div id="statRow2NotesCard" class="hidden bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/30 border border-indigo-500/30 relative overflow-hidden backdrop-blur-md">
         <div class="w-full">
           <h3 class="text-base sm:text-lg font-black text-blue-300 uppercase tracking-wider mb-2.5 flex items-center gap-2">
             <span>📝</span> Details
           </h3>
           <p id="statRow2NotesText" class="text-sm sm:text-base text-slate-100 leading-relaxed font-medium whitespace-pre-line"></p>
         </div>
+      </div>
 
-        <div id="statRow2ImageCol" class="hidden w-full relative overflow-hidden rounded-2xl bg-slate-900/80 border border-indigo-500/30 shadow-inner">
+      <!-- Dedicated Interactive 2D Map Section -->
+      <div id="statMapCard" class="bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/30 border border-indigo-500/30 relative overflow-hidden backdrop-blur-md flex flex-col gap-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h3 class="text-base sm:text-lg font-black text-blue-300 uppercase tracking-wider flex items-center gap-2">
+            <span>🗺️</span> Bonniefields Museum 2D Map
+          </h3>
+          <button onclick="openEnlargeModal('https://dvdbaird.github.io/BMMC/2Dmap', true)" title="Open Map in Full Scale Pop-Up" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-black px-3.5 py-2 rounded-xl shadow-md border border-blue-400/40 transition flex items-center gap-1 active:scale-95">
+            Enlarge ↗
+          </button>
         </div>
-
+        <div class="w-full h-[400px] sm:h-[520px] relative overflow-hidden rounded-2xl bg-slate-900 border border-indigo-500/30 shadow-inner">
+          <iframe src="https://dvdbaird.github.io/BMMC/2Dmap" class="w-full h-full border-0 rounded-2xl bg-white" title="Bonniefields Museum 2D Map" loading="lazy"></iframe>
+        </div>
       </div>
 
       <!-- KPI Metric Cards Bar -->
@@ -424,7 +434,7 @@
             <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h3 class="text-base font-bold text-slate-900 dark:text-white">Items by Date Stacked by Type</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Distribution of artifacts post-1800</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Distribution of artifacts by decade (post-1800)</p>
               </div>
               <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 self-start sm:self-auto">Filter: Year ≥ 1800</span>
             </div>
@@ -438,7 +448,7 @@
           <div>
             <div class="mb-4">
               <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1">Origin Locations (Where Made)</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Top manufacturing and production places</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Top manufacturing places (Made x Item Quantity)</p>
             </div>
           </div>
           <div class="chart-container relative h-[380px] w-full">
@@ -452,7 +462,7 @@
 
   </main>
 
-  <!-- Fullscale Enlarge Modal Pop-Up for Stats Chart/Image -->
+  <!-- Fullscale Enlarge Modal Pop-Up for Stats Map/Chart/Image -->
   <div id="enlargeModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-2xl z-[70] flex items-center justify-center p-2 sm:p-6 hidden transition-opacity" role="dialog" aria-modal="true">
     <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-3xl max-w-7xl w-full h-[92vh] shadow-2xl border-2 border-indigo-500/50 relative flex flex-col overflow-hidden">
       <div class="px-5 py-3.5 bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/80 flex items-center justify-between z-10">
@@ -2374,46 +2384,12 @@
         const row2NotesText = unescapeHTML(getVal(targetRow2, colIdx.title) || getVal(targetRow2, colIdx.notes));
         const row2Card = document.getElementById('statRow2NotesCard');
         const row2TextElem = document.getElementById('statRow2NotesText');
-        const row2ImgCol = document.getElementById('statRow2ImageCol');
 
         if (row2NotesText && row2TextElem && row2Card) {
           row2TextElem.textContent = row2NotesText;
           row2Card.classList.remove('hidden');
         } else if (row2Card) {
           row2Card.classList.add('hidden');
-        }
-
-        let img21Raw = getVal(targetRow2, colIdx.img2) || getVal(targetRow2, colIdx.img1);
-        let featuredImgUrl = formatImageUrl(img21Raw) || 'https://drive.google.com/thumbnail?id=1LczuV7vwseFwLwSp8FLrLejJOJ8OAxMT&sz=s1000';
-
-        if (row2ImgCol) {
-          const isGoogleChart = featuredImgUrl.includes('pubchart') || featuredImgUrl.includes('docs.google.com/spreadsheets');
-          
-          if (isGoogleChart) {
-            const interactiveUrl = featuredImgUrl.includes('format=') 
-              ? featuredImgUrl.replace(/format=[^&]+/, 'format=interactive') 
-              : (featuredImgUrl.includes('?') ? `${featuredImgUrl}&format=interactive` : `${featuredImgUrl}?format=interactive`);
-
-            row2ImgCol.innerHTML = `
-              <div class="w-full h-[380px] sm:h-[480px] md:h-[580px] relative overflow-hidden rounded-xl bg-white flex items-center justify-center shadow-lg">
-                <iframe src="${interactiveUrl}" class="w-full h-full border-0 bg-white rounded-xl" title="Live Google Sheet Chart" loading="lazy"></iframe>
-                <button onclick="openEnlargeModal('${interactiveUrl}', true)" title="Open interactive chart in full scale pop-up" class="absolute bottom-3 right-3 bg-blue-600/90 hover:bg-blue-700 text-white backdrop-blur-md text-xs font-black px-3 py-1.5 rounded-xl shadow-lg border border-blue-400/40 transition z-10 flex items-center gap-1 active:scale-95">
-                  Enlarge ↗
-                </button>
-              </div>
-            `;
-            row2ImgCol.classList.remove('hidden');
-          } else {
-            row2ImgCol.innerHTML = `
-              <div class="w-full h-[350px] sm:h-[450px] md:h-[520px] relative overflow-hidden rounded-xl bg-slate-900 flex items-center justify-center shadow-lg group/img cursor-pointer" onclick="openEnlargeModal('${featuredImgUrl}', false)">
-                <img src="${featuredImgUrl}" alt="Featured Catalog Image" class="w-full h-full object-contain rounded-xl shadow-md group-hover/img:scale-102 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" />
-                <button onclick="event.stopPropagation(); openEnlargeModal('${featuredImgUrl}', false)" title="Open image in full scale pop-up" class="absolute bottom-3 right-3 bg-blue-600/90 hover:bg-blue-700 text-white backdrop-blur-md text-xs font-black px-3 py-1.5 rounded-xl shadow-lg border border-blue-400/40 transition z-10 flex items-center gap-1 active:scale-95">
-                  Enlarge ↗
-                </button>
-              </div>
-            `;
-            row2ImgCol.classList.remove('hidden');
-          }
         }
 
         const docUrl = getVal(targetRow2, colIdx.doc);
@@ -2443,22 +2419,20 @@
       rawExhibitsRows.forEach(row => {
         const qtyVal = getVal(row, colIdx.qty);
         const qtyNum = parseInt(qtyVal.replace(/[^0-9]/g, ''), 10);
-        if (!isNaN(qtyNum) && qtyNum > 0) {
-          itemsSumQty += qtyNum;
-        } else {
-          itemsSumQty += 1;
-        }
+        const itemQty = (!isNaN(qtyNum) && qtyNum > 0) ? qtyNum : 1;
+
+        itemsSumQty += itemQty;
 
         const ageVal = getVal(row, colIdx.age).toLowerCase();
         if (ageVal.includes('pre')) {
-          colPreCount++;
+          colPreCount += itemQty;
         } else if (ageVal.includes('post')) {
-          colPostCount++;
+          colPostCount += itemQty;
         } else {
           const ageNum = parseInt(ageVal.replace(/[^0-9]/g, ''), 10);
           if (!isNaN(ageNum)) {
-            if (ageNum < 1950) colPreCount++;
-            else colPostCount++;
+            if (ageNum < 1950) colPreCount += itemQty;
+            else colPostCount += itemQty;
           }
         }
 
@@ -2477,9 +2451,10 @@
           const rawType = getVal(row, colIdx.type);
           if (rawType && rawType.toLowerCase().trim() !== 'general') {
             allTypesSet.add(rawType);
-            const roundedPeriod = `${Math.floor(yearNum / 20) * 20}s`;
+            // Grouped by decade (10-year resolution)
+            const roundedPeriod = `${Math.floor(yearNum / 10) * 10}s`;
             if (!dateTypeMap[roundedPeriod]) dateTypeMap[roundedPeriod] = {};
-            dateTypeMap[roundedPeriod][rawType] = (dateTypeMap[roundedPeriod][rawType] || 0) + 1;
+            dateTypeMap[roundedPeriod][rawType] = (dateTypeMap[roundedPeriod][rawType] || 0) + itemQty;
           }
         }
 
@@ -2487,7 +2462,8 @@
         if (rawLoc) {
           const country = normalizeCountry(rawLoc);
           if (country) {
-            locationCounts[country] = (locationCounts[country] || 0) + 1;
+            // Count multiplied by quantity (Count x Made)
+            locationCounts[country] = (locationCounts[country] || 0) + itemQty;
           }
         }
       });
@@ -2562,6 +2538,29 @@
           });
         }
 
+        // Inline plugin to draw data values above vertical column bars
+        const barTopDataLabelsPlugin = {
+          id: 'barTopDataLabels',
+          afterDatasetsDraw(chart) {
+            const { ctx } = chart;
+            chart.data.datasets.forEach((dataset, i) => {
+              const meta = chart.getDatasetMeta(i);
+              meta.data.forEach((bar, index) => {
+                const dataVal = dataset.data[index];
+                if (dataVal !== null && dataVal !== undefined) {
+                  ctx.save();
+                  ctx.fillStyle = textColor;
+                  ctx.font = 'bold 11px Inter, sans-serif';
+                  ctx.textAlign = 'center';
+                  ctx.textBaseline = 'bottom';
+                  ctx.fillText(dataVal.toLocaleString(), bar.x, bar.y - 4);
+                  ctx.restore();
+                }
+              });
+            });
+          }
+        };
+
         const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
         const topLocations = sortedLocations.slice(0, 10);
         const canvasLoc = document.getElementById('chartLocations');
@@ -2578,13 +2577,14 @@
                 borderRadius: 8
               }]
             },
+            plugins: [barTopDataLabelsPlugin],
             options: {
               responsive: true,
               maintainAspectRatio: false,
               plugins: { legend: { display: false } },
               scales: {
                 x: { grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } },
-                y: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter', size: 10 } } }
+                y: { grace: '12%', grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter', size: 10 } } }
               }
             }
           });
