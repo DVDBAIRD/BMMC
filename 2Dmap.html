@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Map: Heatmap & Grid Layout</title>
+
+  <!-- Leaflet CSS & Cluster Plugin -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+  <style>
+    body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    #map { width: 100vw; height: 100vh; }
+
+    /* Custom Photo Cards */
+    .photo-card {
+      text-align: center;
+      padding: 4px;
+    }
+    .photo-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #0f172a;
+    }
+    .photo-card img {
+      width: 180px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+    .status-msg {
+      position: absolute;
+      top: 10px;
+      left: 50px;
+      z-index: 1000;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="status" class="status-msg">Loading spreadsheet data...</div>
+  <div id="map"></div>
+
+  <!-- JS Libraries -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+  <script>
+    // Robust Google Sheet GVIZ CSV Export Endpoint
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
+
+    // Helper: Turn Google Drive links into direct displayable image URLs
+    function formatImgUrl(url) {
+      if (!url) return '';
+      url = url.trim();
+      const match = url.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
+      if (url.includes('drive.google.com') && match && match[1]) {
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      }
+      return url;
+    }
+
+    // Flexible column key lookup (ignores casing and extra spaces)
+    function getColValue(row, targetKeys) {
+      for (let key in row) {
+        const cleanKey = key.trim().toLowerCase();
+        for (let target of targetKeys) {
+          if (cleanKey === target.toLowerCase()) {
+            return row[key] ? row[key].toString().trim() : '';
+          }
+        }
+      }
+      return '';
+    }
+
+    // Initialize Map
+    const map = L.map('map').setView([20, 0], 2);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap, © CARTO',
+      maxZoom: 19
+    }).addTo(map);
+
+    // Marker Cluster configured to SPIDERFY into a clean grid layout on close photos
+    const markers = L.markerClusterGroup({
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      spiderfyDistanceMultiplier: 1.8 // Spreads out icons neatly in grid/ring
+    });
+
+    let heatLayer = null;
+
+    Papa.parse(CSV_URL, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        const heatPoints = [];
+        let count = 0;
+
+        results.data.forEach(row => {
+          const latVal = getColValue(row, ['Lat', 'AA']);
+          const lngVal = getColValue(row, ['Lng', 'AB']);
+          const imgRaw = getColValue(row, ['Img1', 'U']);
+          const location = getColValue(row, ['Made', 'X']);
+
+          if (latVal && lngVal && !isNaN(latVal) && !isNaN(lngVal)) {
+            const lat = parseFloat(latVal);
+            const lng = parseFloat(lngVal);
+            const imgUrl = formatImgUrl(imgRaw);
+
+            // Add to Heatmap
+            heatPoints.push([lat, lng, 0.9]);
+
+            // Add to Marker Grid
+            const popupHTML = `
+              <div class="photo-card">
+                <strong>${location || 'Location'}</strong>
+                ${imgUrl ? `<img src="${imgUrl}" loading="lazy" alt="Photo"/>` : '<em>No Photo</em>'}
+              </div>
+            `;
+
+            const marker = L.marker([lat, lng]).bindPopup(popupHTML);
+            markers.addLayer(marker);
+            count++;
+          }
+        });
+
+        document.getElementById('status').innerText = `Mapped ${count} locations successfully!`;
+        setTimeout(() => document.getElementById('status').style.display = 'none', 3000);
+
+        // Add Heatmap Layer
+        heatLayer = L.heatLayer(heatPoints, {
+          radius: 30,
+          blur: 18,
+          maxZoom: 6,
+          gradient: { 0.4: 'blue', 0.65: 'yellow', 1: 'red' }
+        }).addTo(map);
+
+        // Add Photo Cluster Layer
+        map.addLayer(markers);
+
+        // Dynamic Zoom Control: Heatmap when zoomed out, Photo Grid when zoomed in
+        map.on('zoomend', function() {
+          if (map.getZoom() >= 6) {
+            if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+          } else {
+            if (!map.hasLayer(heatLayer)) map.addLayer(heatLayer);
+          }
+        });
+      },
+      error: function(err) {
+        document.getElementById('status').innerText = 'Failed to load spreadsheet. Check sharing permissions.';
+      }
+    });
+  </script>
+</body>
+</html>
