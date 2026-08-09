@@ -1673,7 +1673,7 @@
             const artistMatch = excludeField === 'artist' || !artistVal || getVal(row, 1) === artistVal;
             const labelMatch = excludeField === 'label' || !labelVal || getVal(row, 3) === labelMatch;
             const formatMatch = excludeField === 'format' || !formatVal || getVal(row, 4) === formatMatch;
-            const yearMatch = excludeField === 'year' || !yearVal || getVal(row, 6) === yearVal;
+            const yearMatch = excludeField === 'year' || !yearVal || getVal(row, 6) === yearMatch;
             const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
 
             return searchMatch && artistMatch && labelMatch && formatMatch && yearMatch && matchFav;
@@ -2332,8 +2332,8 @@
               : (featuredImgUrl.includes('?') ? `${featuredImgUrl}&format=interactive` : `${featuredImgUrl}?format=interactive`);
 
             row2ImgCol.innerHTML = `
-              <div class="w-full h-full relative overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                <iframe src="${interactiveUrl}" class="w-full h-full border-0 rounded-xl bg-white" scrolling="no" title="Live Google Sheet Chart" loading="lazy"></iframe>
+              <div class="w-[75%] max-w-full h-full relative overflow-hidden rounded-xl bg-white mx-auto flex items-center justify-center">
+                <iframe src="${interactiveUrl}" class="absolute left-0 border-0 bg-white" style="top: -33.33%; height: 133.33%; width: 100%;" scrolling="no" title="Live Google Sheet Chart" loading="lazy"></iframe>
                 <a href="${interactiveUrl}" target="_blank" title="Open live chart in new tab" class="absolute bottom-2 right-2 bg-blue-600/90 hover:bg-blue-600 text-white backdrop-blur-md text-[10px] font-black px-3 py-1 rounded-xl shadow border border-blue-400/40 transition z-10">
                   Enlarge ↗
                 </a>
@@ -2342,10 +2342,12 @@
             row2ImgCol.classList.remove('hidden');
           } else {
             row2ImgCol.innerHTML = `
-              <a id="statRow2ImgLink" href="${featuredImgUrl}" target="_blank" title="Click to view full size image in new tab" class="block group/img w-full h-full relative flex items-center justify-center">
-                <img id="statRow2Img" src="${featuredImgUrl}" alt="Featured Catalog Image" class="w-full h-full object-contain rounded-xl shadow-md group-hover/img:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" />
-                <span class="absolute bottom-2 right-2 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-3 py-1 rounded-xl shadow border border-blue-400/40 pointer-events-none">Enlarge ↗</span>
-              </a>
+              <div class="w-[75%] max-w-full h-full relative overflow-hidden rounded-xl bg-slate-900 mx-auto flex items-center justify-center">
+                <a id="statRow2ImgLink" href="${featuredImgUrl}" target="_blank" title="Click to view full size image in new tab" class="block group/img w-full h-full relative overflow-hidden flex items-center justify-center">
+                  <img id="statRow2Img" src="${featuredImgUrl}" alt="Featured Catalog Image" class="absolute left-0 object-cover rounded-xl shadow-md group-hover/img:scale-105 transition-transform duration-300 drop-shadow-lg" style="top: -33.33%; height: 133.33%; width: 100%;" onError="this.src='${NO_IMAGE_SVG}'" />
+                  <span class="absolute bottom-2 right-2 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-3 py-1 rounded-xl shadow border border-blue-400/40 pointer-events-none">Enlarge ↗</span>
+                </a>
+              </div>
             `;
             row2ImgCol.classList.remove('hidden');
           }
