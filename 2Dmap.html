@@ -8,6 +8,7 @@
   <!-- Leaflet CSS & Plugins -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
 
   <style>
     body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
@@ -131,10 +132,10 @@
   <div id="status" class="status-msg">Loading spreadsheet photos...</div>
   <div id="map"></div>
 
-  <!-- JS Libraries -->
+  <!-- JS Libraries (Fixed CDN URLs) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
   <script>
@@ -164,7 +165,7 @@
       return '';
     }
 
-    // Extract Title from Column C (index 2), taking text BEFORE the '#'
+    // Extract Title from Column C (3rd column), taking text BEFORE the '#'
     function getColCTitle(row) {
       const keys = Object.keys(row);
       if (keys.length >= 3) {
@@ -183,14 +184,15 @@
       maxZoom: 19
     }).addTo(map);
 
-    // Marker Cluster
+    // Marker Cluster: Splits clusters into individual photos when zoomed in (disableClusteringAtZoom: 6)
     const markers = L.markerClusterGroup({
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
-      spiderfyDistanceMultiplier: 2.5,
+      spiderfyDistanceMultiplier: 2.2,
+      disableClusteringAtZoom: 6, // Automatically splits all photos into individual 75x75px icons when zoomed in
       
-      // Cluster Icon Generator: Number Badge for > 3 photos
+      // Cluster Icon Generator: Number Badge for groups
       iconCreateFunction: function(cluster) {
         const totalCount = cluster.getChildCount();
         return L.divIcon({
@@ -201,16 +203,6 @@
         });
       }
     });
-
-    // Auto-spiderfy (fan out) any clusters with 3 or fewer photos so they show individually
-    function autoExpandSmallClusters() {
-      markers.eachLayer(function(layer) {
-        const parent = layer.__parent;
-        if (parent && parent.getChildCount() <= 3 && !parent._spiderfied) {
-          parent.spiderfy();
-        }
-      });
-    }
 
     let heatLayer = null;
 
@@ -249,7 +241,7 @@
               iconAnchor: [37.5, 37.5]
             });
 
-            // 3. Popup Card (Twice as big, Title before #, Location, 100% image)
+            // 3. Popup Card (Title before #, Location, 100% image window)
             const popupHTML = `
               <div class="photo-card-large">
                 ${title ? `<h3>${title}</h3>` : ''}
@@ -278,12 +270,8 @@
         // Add Markers Layer
         map.addLayer(markers);
 
-        // Automatically expand small clusters (<= 3 photos)
-        setTimeout(autoExpandSmallClusters, 300);
-
-        // Dynamic Zoom Control & Auto-Expand
-        map.on('zoomend moveend', function() {
-          autoExpandSmallClusters();
+        // Dynamic Zoom Control: Heatmap active when zoomed out (< 6), hides when zoomed in (>= 6)
+        map.on('zoomend', function() {
           if (map.getZoom() >= 6) {
             if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
           } else {
