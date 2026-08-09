@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Photo Map: 80px Thumbnails & Dynamic Clusters</title>
+  <title>Interactive Photo Map</title>
 
-  <!-- Leaflet CSS & Cluster Plugin -->
+  <!-- Leaflet CSS & Plugins -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
 
@@ -13,68 +13,34 @@
     body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     #map { width: 100vw; height: 100vh; }
 
-    /* 1. Single Photo Marker (80px x 80px) */
+    /* 1. 75px x 75px Photo Thumbnail Icon (White Background) */
     .single-photo-wrapper {
-      width: 80px;
-      height: 80px;
-      border-radius: 12px;
-      border: 3px solid #ffffff;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+      width: 75px;
+      height: 75px;
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
       overflow: hidden;
-      background: #0f172a;
+      background: #ffffff; /* White background */
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: transform 0.2s ease-in-out, border-color 0.2s ease-in-out;
     }
     .single-photo-wrapper:hover {
       transform: scale(1.15);
       z-index: 1000 !important;
-      border-color: #38bdf8;
+      border-color: #0284c7;
     }
     .single-photo-wrapper img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: cover; /* Centered photo view */
+      object-position: center;
       display: block;
     }
 
-    /* 2. Cluster Collage Wrapper (80px x 80px for <= 3 photos) */
-    .cluster-collage-wrapper {
-      width: 80px;
-      height: 80px;
-      border-radius: 12px;
-      border: 3px solid #ffffff;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-      overflow: hidden;
-      background: #0f172a;
-      display: flex;
-      flex-wrap: wrap;
-      transition: transform 0.2s ease-in-out;
-    }
-    .cluster-collage-wrapper:hover {
-      transform: scale(1.15);
-      border-color: #38bdf8;
-    }
-
-    .collage-tile {
-      position: relative;
-      overflow: hidden;
-      box-sizing: border-box;
-      border: 0.5px solid rgba(255, 255, 255, 0.3);
-    }
-    .collage-tile img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    /* Tile Layouts for 1, 2, or 3 Photos */
-    .count-1 .collage-tile { width: 100%; height: 100%; }
-    .count-2 .collage-tile { width: 50%; height: 100%; }
-    .count-3 .collage-tile:nth-child(1) { width: 100%; height: 50%; }
-    .count-3 .collage-tile:nth-child(2),
-    .count-3 .collage-tile:nth-child(3) { width: 50%; height: 50%; }
-
-    /* 3. Number Badge for > 3 Photos */
+    /* 2. Number Badge for > 3 Photos */
     .cluster-number-badge {
       width: 48px;
       height: 48px;
@@ -82,7 +48,7 @@
       background: linear-gradient(135deg, #0284c7, #0369a1);
       color: #ffffff;
       border: 3px solid #ffffff;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -96,32 +62,55 @@
       border-color: #38bdf8;
     }
 
-    /* Fallback Circle for missing images */
+    /* 3. Twice as Big Popup Window */
+    .leaflet-popup-content-wrapper {
+      padding: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+    .leaflet-popup-content {
+      margin: 0 !important;
+      width: 440px !important; /* Twice as big as previous */
+      max-width: 85vw !important;
+    }
+    .photo-card-large {
+      padding: 14px;
+      background: #ffffff;
+      text-align: center;
+    }
+    .photo-card-large h3 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .photo-card-large p {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: #64748b;
+    }
+    .photo-card-large .img-container {
+      width: 100%;
+      height: 310px; /* Large image window */
+      border-radius: 8px;
+      background: #f8fafc;
+      overflow: hidden;
+    }
+    .photo-card-large .img-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* Displays 100% width and height in window */
+      display: block;
+    }
+
+    /* Fallback Icon for missing images */
     .no-img-marker {
       width: 28px;
       height: 28px;
       background: #ef4444;
       border-radius: 50%;
       border: 2px solid #fff;
-    }
-
-    /* Popup Card Styles */
-    .photo-card {
-      text-align: center;
-      padding: 4px;
-    }
-    .photo-card strong {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 14px;
-      color: #0f172a;
-    }
-    .photo-card img {
-      width: 250px;
-      height: 170px;
-      object-fit: cover;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
     }
 
     .status-msg {
@@ -145,13 +134,13 @@
   <!-- JS Libraries -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.js"></script>
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
 
-    // Google Drive URL converter
+    // Google Drive URL Converter
     function formatImgUrl(url) {
       if (!url) return '';
       url = url.trim();
@@ -162,7 +151,7 @@
       return url;
     }
 
-    // Flexible column lookup (ignores casing and extra spaces)
+    // Flexible column lookup (by header name)
     function getColValue(row, targetKeys) {
       for (let key in row) {
         const cleanKey = key.trim().toLowerCase();
@@ -175,6 +164,17 @@
       return '';
     }
 
+    // Extract Title from Column C (index 2), taking text BEFORE the '#'
+    function getColCTitle(row) {
+      const keys = Object.keys(row);
+      if (keys.length >= 3) {
+        const colCKey = keys[2]; // 3rd column (Column C)
+        const rawVal = row[colCKey] ? row[colCKey].toString() : '';
+        return rawVal.split('#')[0].trim();
+      }
+      return '';
+    }
+
     // Initialize Map
     const map = L.map('map').setView([20, 0], 2);
 
@@ -183,55 +183,34 @@
       maxZoom: 19
     }).addTo(map);
 
-    // Marker Cluster Group
+    // Marker Cluster
     const markers = L.markerClusterGroup({
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
-      spiderfyDistanceMultiplier: 2.5, // Gives extra spacing for 80px thumbnails when expanded
+      spiderfyDistanceMultiplier: 2.5,
       
-      // DYNAMIC CLUSTER ICON GENERATOR
+      // Cluster Icon Generator: Number Badge for > 3 photos
       iconCreateFunction: function(cluster) {
-        const childMarkers = cluster.getAllChildMarkers();
-        const totalCount = childMarkers.length;
-
-        // RULE: If 3 or less photos, display 80px photo collage directly
-        if (totalCount <= 3) {
-          const images = [];
-          for (let i = 0; i < childMarkers.length; i++) {
-            const url = childMarkers[i].options.imgUrl;
-            if (url && !images.includes(url)) {
-              images.push(url);
-            }
-          }
-
-          let tilesHTML = '';
-          images.forEach(imgUrl => {
-            tilesHTML += `
-              <div class="collage-tile">
-                <img src="${imgUrl}" loading="lazy"/>
-              </div>
-            `;
-          });
-
-          return L.divIcon({
-            html: `<div class="cluster-collage-wrapper count-${images.length}">${tilesHTML}</div>`,
-            className: 'custom-cluster-collage-icon',
-            iconSize: [80, 80],
-            iconAnchor: [40, 40]
-          });
-        } 
-        // RULE: If > 3 photos, display clean numeric badge
-        else {
-          return L.divIcon({
-            html: `<div class="cluster-number-badge">${totalCount}</div>`,
-            className: 'custom-cluster-number-icon',
-            iconSize: [48, 48],
-            iconAnchor: [24, 24]
-          });
-        }
+        const totalCount = cluster.getChildCount();
+        return L.divIcon({
+          html: `<div class="cluster-number-badge">${totalCount}</div>`,
+          className: 'custom-cluster-number-icon',
+          iconSize: [48, 48],
+          iconAnchor: [24, 24]
+        });
       }
     });
+
+    // Auto-spiderfy (fan out) any clusters with 3 or fewer photos so they show individually
+    function autoExpandSmallClusters() {
+      markers.eachLayer(function(layer) {
+        const parent = layer.__parent;
+        if (parent && parent.getChildCount() <= 3 && !parent._spiderfied) {
+          parent.spiderfy();
+        }
+      });
+    }
 
     let heatLayer = null;
 
@@ -248,16 +227,17 @@
           const lngVal = getColValue(row, ['Lng', 'AB']);
           const imgRaw = getColValue(row, ['Img1', 'U']);
           const location = getColValue(row, ['Made', 'X']);
+          const title = getColCTitle(row);
 
           if (latVal && lngVal && !isNaN(latVal) && !isNaN(lngVal)) {
             const lat = parseFloat(latVal);
             const lng = parseFloat(lngVal);
             const imgUrl = formatImgUrl(imgRaw);
 
-            // 1. Add to Heatmap Dataset
+            // 1. Add to Heatmap
             heatPoints.push([lat, lng, 0.9]);
 
-            // 2. Custom 80px Single Photo Icon
+            // 2. Custom 75px x 75px Single Photo Icon (White Background, Centered)
             const customIconHTML = imgUrl 
               ? `<div class="single-photo-wrapper"><img src="${imgUrl}" loading="lazy"/></div>`
               : `<div class="no-img-marker"></div>`;
@@ -265,19 +245,19 @@
             const photoIcon = L.divIcon({
               html: customIconHTML,
               className: 'custom-single-photo-icon',
-              iconSize: [80, 80],
-              iconAnchor: [40, 40]
+              iconSize: [75, 75],
+              iconAnchor: [37.5, 37.5]
             });
 
-            // 3. Popup Card
+            // 3. Popup Card (Twice as big, Title before #, Location, 100% image)
             const popupHTML = `
-              <div class="photo-card">
-                <strong>${location || 'Location'}</strong>
-                ${imgUrl ? `<img src="${imgUrl}" loading="lazy" alt="Photo"/>` : '<em>No Photo Available</em>'}
+              <div class="photo-card-large">
+                ${title ? `<h3>${title}</h3>` : ''}
+                ${location ? `<p>📍 ${location}</p>` : ''}
+                ${imgUrl ? `<div class="img-container"><img src="${imgUrl}" loading="lazy" alt="Photo"/></div>` : '<em>No Photo Available</em>'}
               </div>
             `;
 
-            // Attach imgUrl to marker options for cluster generator access
             const marker = L.marker([lat, lng], { icon: photoIcon, imgUrl: imgUrl }).bindPopup(popupHTML);
             markers.addLayer(marker);
             count++;
@@ -295,11 +275,15 @@
           gradient: { 0.4: 'blue', 0.65: 'yellow', 1: 'red' }
         }).addTo(map);
 
-        // Add Marker Layer
+        // Add Markers Layer
         map.addLayer(markers);
 
-        // Dynamic Zoom Control: Heatmap active when zoomed out (< 6), hides when zoomed in (>= 6)
-        map.on('zoomend', function() {
+        // Automatically expand small clusters (<= 3 photos)
+        setTimeout(autoExpandSmallClusters, 300);
+
+        // Dynamic Zoom Control & Auto-Expand
+        map.on('zoomend moveend', function() {
+          autoExpandSmallClusters();
           if (map.getZoom() >= 6) {
             if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
           } else {
