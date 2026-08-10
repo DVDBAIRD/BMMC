@@ -65,7 +65,7 @@
       border-color: #38bdf8;
     }
 
-    /* 3. Responsive Popup Window (Mobile Friendly & Non-Flashing) */
+    /* 3. Responsive Popup Window */
     .leaflet-popup-content-wrapper {
       padding: 0;
       border-radius: 12px;
@@ -112,7 +112,7 @@
       display: block;
     }
 
-    /* Fallback Icon for missing images */
+    /* Fallback Icon */
     .no-img-marker {
       width: 28px;
       height: 28px;
@@ -146,11 +146,13 @@
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
   <script>
-    const CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
-    
+    // Primary & Fallback CSV Download URLs
+    const CSV_URL_PRIMARY  = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/export?format=csv&gid=1146027655';
+    const CSV_URL_FALLBACK = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
+
     const isMobile = window.innerWidth <= 768;
 
-    // Fast Google Drive Thumbnail Converter (sz=w600 reduces image size from ~10MB to ~80KB for mobile speed)
+    // Fast Google Drive Thumbnail Converter
     function formatImgUrl(url) {
       if (!url) return '';
       url = url.trim();
@@ -161,17 +163,25 @@
       return url;
     }
 
-    // Flexible column lookup
-    function getColValue(row, targetKeys) {
+    // Ultra-broad key search: searches for matching terms anywhere in the key name
+    function findRowVal(row, searchTerms) {
       for (let key in row) {
+        if (!row[key]) continue;
         const cleanKey = key.trim().toLowerCase();
-        for (let target of targetKeys) {
-          if (cleanKey === target.toLowerCase()) {
-            return row[key] ? row[key].toString().trim() : '';
+        for (let term of searchTerms) {
+          if (cleanKey.includes(term.toLowerCase())) {
+            return row[key].toString().trim();
           }
         }
       }
       return '';
+    }
+
+    // Safely parse numeric coordinates (handles commas, spaces, degree symbols)
+    function parseCoord(val) {
+      if (!val) return NaN;
+      const clean = val.replace(',', '.').replace(/[^0-9.-]/g, '');
+      return parseFloat(clean);
     }
 
     // Extract Title from Column C (3rd column), taking text BEFORE '#'
@@ -185,10 +195,10 @@
       return '';
     }
 
-    // Initialize Map - Centered on Australasia [-25, 135]
-    const initialZoom = isMobile ? 3 : 4;
+    // Initialize Map - Zoomed Out by 1 (Mobile: 2, Desktop: 3) centered on Australasia
+    const initialZoom = isMobile ? 2 : 3;
     const map = L.map('map', {
-      closePopupOnClick: false // Prevents popups from closing on background click
+      closePopupOnClick: false
     }).setView([-25, 135], initialZoom);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -196,15 +206,14 @@
       maxZoom: 19
     }).addTo(map);
 
-    // Marker Cluster Configuration
+    // Marker Cluster Group
     const markers = L.markerClusterGroup({
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
-      spiderfyDistanceMultiplier: isMobile ? 2.8 : 2.2, // Generous spacing for mobile touch
-      maxClusterRadius: isMobile ? 38 : 55, // Tighter clusters on mobile reveal far more distinct locations
+      spiderfyDistanceMultiplier: isMobile ? 2.8 : 2.2,
+      maxClusterRadius: isMobile ? 38 : 55,
       
-      // Cluster Icon Generator
       iconCreateFunction: function(cluster) {
         const totalCount = cluster.getChildCount();
         return L.divIcon({
@@ -216,98 +225,118 @@
       }
     });
 
-    // RELIABLE SPIDERFY: Clicking ANY cluster badge triggers the wheel of images every time
+    // RELIABLE SPIDERFY: Clicking ANY cluster badge triggers the wheel of images
     markers.on('clusterclick', function(a) {
       a.layer.spiderfy();
     });
 
     let heatLayer = null;
 
-    Papa.parse(CSV_URL, {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        const heatPoints = [];
-        let count = 0;
+    // Load CSV function
+    function loadMapData(url, isRetry = false) {
+      Papa.parse(url, {
+        download: true,
+        header: true,
+        skipEmptyLines: 'greedy',
+        complete: function(results) {
+          const heatPoints = [];
+          let count = 0;
 
-        results.data.forEach(row => {
-          const latVal = getColValue(row, ['Lat', 'AA']);
-          const lngVal = getColValue(row, ['Lng', 'AB']);
-          const imgRaw = getColValue(row, ['Img1', 'U']);
-          const location = getColValue(row, ['Made', 'X']);
-          const title = getColCTitle(row);
+          if (results.data && results.data.length > 0) {
+            results.data.forEach(row => {
+              // Flexible searching for coordinates and image columns
+              const latStr = findRowVal(row, ['lat', 'aa']);
+              const lngStr = findRowVal(row, ['lng', 'long', 'ab']);
+              const imgRaw = findRowVal(row, ['img1', 'img', 'image', 'u']);
+              const location = findRowVal(row, ['made', 'location', 'city', 'x']);
+              const title = getColCTitle(row);
 
-          if (latVal && lngVal && !isNaN(latVal) && !isNaN(lngVal)) {
-            const lat = parseFloat(latVal);
-            const lng = parseFloat(lngVal);
-            const imgUrl = formatImgUrl(imgRaw);
+              const lat = parseCoord(latStr);
+              const lng = parseCoord(lngStr);
 
-            // 1. Heatmap Point
-            heatPoints.push([lat, lng, 0.9]);
+              if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+                const imgUrl = formatImgUrl(imgRaw);
 
-            // 2. Custom 75px x 75px Single Photo Icon
-            const customIconHTML = imgUrl 
-              ? `<div class="single-photo-wrapper"><img src="${imgUrl}" loading="lazy"/></div>`
-              : `<div class="no-img-marker"></div>`;
+                // 1. Heatmap Point
+                heatPoints.push([lat, lng, 0.9]);
 
-            const photoIcon = L.divIcon({
-              html: customIconHTML,
-              className: 'custom-single-photo-icon',
-              iconSize: [75, 75],
-              iconAnchor: [37.5, 37.5]
+                // 2. Custom 75px x 75px Photo Icon
+                const customIconHTML = imgUrl 
+                  ? `<div class="single-photo-wrapper"><img src="${imgUrl}" loading="lazy"/></div>`
+                  : `<div class="no-img-marker"></div>`;
+
+                const photoIcon = L.divIcon({
+                  html: customIconHTML,
+                  className: 'custom-single-photo-icon',
+                  iconSize: [75, 75],
+                  iconAnchor: [37.5, 37.5]
+                });
+
+                // 3. Popup Card
+                const popupHTML = `
+                  <div class="photo-card-large">
+                    ${title ? `<h3>${title}</h3>` : ''}
+                    ${location ? `<p>📍 ${location}</p>` : ''}
+                    ${imgUrl ? `<div class="img-container"><img src="${imgUrl}" loading="lazy" alt="Photo"/></div>` : '<em>No Photo Available</em>'}
+                  </div>
+                `;
+
+                const marker = L.marker([lat, lng], { icon: photoIcon, imgUrl: imgUrl });
+                
+                marker.bindPopup(popupHTML, {
+                  autoPan: true,
+                  closeOnClick: false,
+                  autoClose: false
+                });
+
+                markers.addLayer(marker);
+                count++;
+              }
             });
-
-            // 3. Popup Card (PERSISTENT & NON-FLASHING)
-            const popupHTML = `
-              <div class="photo-card-large">
-                ${title ? `<h3>${title}</h3>` : ''}
-                ${location ? `<p>📍 ${location}</p>` : ''}
-                ${imgUrl ? `<div class="img-container"><img src="${imgUrl}" loading="lazy" alt="Photo"/></div>` : '<em>No Photo Available</em>'}
-              </div>
-            `;
-
-            const marker = L.marker([lat, lng], { icon: photoIcon, imgUrl: imgUrl });
-            
-            // Bind popup with explicit persistence options
-            marker.bindPopup(popupHTML, {
-              autoPan: true,
-              closeOnClick: false,
-              autoClose: false
-            });
-
-            markers.addLayer(marker);
-            count++;
           }
-        });
 
-        document.getElementById('status').innerText = `Mapped ${count} photos successfully!`;
-        setTimeout(() => document.getElementById('status').style.display = 'none', 3000);
+          // If primary URL produced 0 photos, retry with fallback URL
+          if (count === 0 && !isRetry) {
+            console.log('Primary URL returned 0 photos. Retrying with fallback URL...');
+            loadMapData(CSV_URL_FALLBACK, true);
+            return;
+          }
 
-        // Heatmap Layer
-        heatLayer = L.heatLayer(heatPoints, {
-          radius: isMobile ? 22 : 30,
-          blur: 16,
-          maxZoom: 6,
-          gradient: { 0.4: 'blue', 0.65: 'yellow', 1: 'red' }
-        }).addTo(map);
+          document.getElementById('status').innerText = `Mapped ${count} photos successfully!`;
+          setTimeout(() => document.getElementById('status').style.display = 'none', 3000);
 
-        // Add Markers Layer
-        map.addLayer(markers);
+          // Heatmap Layer
+          heatLayer = L.heatLayer(heatPoints, {
+            radius: isMobile ? 22 : 30,
+            blur: 16,
+            maxZoom: 6,
+            gradient: { 0.4: 'blue', 0.65: 'yellow', 1: 'red' }
+          }).addTo(map);
 
-        // Dynamic Zoom Control: Heatmap active when zoomed out (< 6), hides when zoomed in (>= 6)
-        map.on('zoomend', function() {
-          if (map.getZoom() >= 6) {
-            if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+          // Add Markers Layer
+          map.addLayer(markers);
+
+          // Dynamic Zoom Control (Heatmap < 6, Photos >= 6)
+          map.on('zoomend', function() {
+            if (map.getZoom() >= 6) {
+              if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+            } else {
+              if (!map.hasLayer(heatLayer)) map.addLayer(heatLayer);
+            }
+          });
+        },
+        error: function() {
+          if (!isRetry) {
+            loadMapData(CSV_URL_FALLBACK, true);
           } else {
-            if (!map.hasLayer(heatLayer)) map.addLayer(heatLayer);
+            document.getElementById('status').innerText = 'Failed to load spreadsheet. Verify sheet sharing settings.';
           }
-        });
-      },
-      error: function() {
-        document.getElementById('status').innerText = 'Failed to load spreadsheet data. Verify sharing permissions.';
-      }
-    });
+        }
+      });
+    }
+
+    // Start loading map data
+    loadMapData(CSV_URL_PRIMARY);
   </script>
 </body>
 </html>
