@@ -355,7 +355,7 @@
         </div>
       </div>
 
-      <!-- KPI Metric Cards Bar -->
+      <!-- KPI Metric Cards Bar (Tightened vertical spacing and removed bottom subheadings) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-blue-500/50 transition">
@@ -384,13 +384,10 @@
           <div class="w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500 absolute top-0 left-0"></div>
           <div>
             <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Era Breakdown</span>
+              <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Pre / Post 1950 %</span>
               <span class="p-1.5 bg-purple-50 dark:bg-purple-950/80 text-purple-600 rounded-xl text-base border border-purple-100 dark:border-purple-900/60">📜</span>
             </div>
-            <div class="text-xs sm:text-sm font-black text-slate-900 dark:text-white flex flex-col gap-0.5" id="statPrePost1950">
-              <div>Pre 1950: --%</div>
-              <div>Post 1950: --%</div>
-            </div>
+            <div class="text-2xl font-black text-slate-900 dark:text-white" id="statPrePost1950">--</div>
           </div>
         </div>
 
@@ -415,30 +412,20 @@
 
       </div>
 
-      <!-- Interactive Charts Grid Container -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Side-by-Side Charts Container -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between backdrop-blur-sm">
           <div>
-            <div class="mb-4">
-              <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1">Items by Date Stacked by Type</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Distribution of artifacts by decade (post-1800)</p>
+            <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white">Items by Date Stacked by Type</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Distribution of artifacts by decade (post-1800)</p>
+              </div>
             </div>
           </div>
           <div class="chart-container relative h-[380px] w-full">
             <canvas id="chartStackedDateType"></canvas>
-          </div>
-        </div>
-
-        <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between backdrop-blur-sm">
-          <div>
-            <div class="mb-4">
-              <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1">Subcategories Stacked by Category</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Subcategory breakdown per main collection category</p>
-            </div>
-          </div>
-          <div class="chart-container relative h-[380px] w-full">
-            <canvas id="chartSubcatCategory"></canvas>
           </div>
         </div>
 
@@ -535,12 +522,6 @@
           <p class="text-xs font-bold text-sky-400">Loading High-Resolution 3D Model...</p>
         </div>
 
-        <!-- Scale Ruler Overlay -->
-        <div id="lightboxScaleReference" class="absolute bottom-4 left-4 z-20 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700/80 flex items-center gap-2 pointer-events-none shadow-lg">
-          <span class="w-8 h-1 bg-sky-400 rounded-full inline-block shadow-sm"></span>
-          <span>~10 cm | Interactive Scale Reference</span>
-        </div>
-
         <model-viewer 
           id="lightboxViewer" 
           camera-controls 
@@ -585,11 +566,6 @@
       collections: { hex: '#4A5568', text: '#FFFFFF', name: 'Collections' },
       gramophones: { hex: '#D99B43', text: '#0F172A', name: 'Gramophones' }
     };
-
-    const SUBCAT_PALETTE = [
-      '#f43f5e', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b',
-      '#ec4899', '#6366f1', '#14b8a6', '#a855f7', '#f97316', '#3b82f6'
-    ];
 
     // In-memory 3D Model Blob Cache Map to ensure instant loading across views
     const glbBlobCache = new Map();
@@ -700,7 +676,6 @@
     };
 
     let chartStackedInstance = null;
-    let chartSubcatInstance = null;
     let chartLocationsInstance = null;
 
     let fuseExhibits = null;
@@ -1121,14 +1096,17 @@
       if (!url) return '';
       url = String(url).trim();
 
+      // Preserve Google Drive thumbnail URLs with custom size parameters (e.g. &sz=s200)
       if (url.includes('drive.google.com/thumbnail')) {
         return url;
       }
 
+      // Preserve Google Sheets published chart & spreadsheet URLs
       if (url.includes('docs.google.com/spreadsheets') || url.includes('pubchart')) {
         return url;
       }
 
+      // Process Dropbox URLs to direct raw links
       if (url.includes('dropbox.com')) {
         url = url.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
         if (!url.includes('raw=1')) {
@@ -1489,6 +1467,7 @@
 
           rawExhibitsRows = exhibitsData.slice(1);
 
+          // Pre-cache 3D models into memory in the background
           rawExhibitsRows.forEach(row => {
             const d3d = get3DUrlForItem(row);
             if (d3d) getCached3DUrl(d3d);
@@ -1565,6 +1544,7 @@
         const count = matchingRows.length;
         if (count === 0) return;
 
+        // Use custom defined image URL if present; fall back to catalog image or fallback SVG
         const customImg = HUB_CUSTOM_IMAGES[catName];
         const firstImgRow = matchingRows.find(r => getVal(r, colIdx.img1) !== '');
         const firstImgRaw = firstImgRow ? getVal(firstImgRow, colIdx.img1) : '';
@@ -2149,7 +2129,7 @@
                   style="width: 100%; height: 100%; display: block; --poster-color: transparent;"
                   class="w-full h-full">
                 </model-viewer>
-                <span class="absolute bottom-2.5 left-2.5 bg-purple-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-full shadow border border-purple-400/40 z-10">3D Interactive</span>
+                <span class="absolute top-2 left-2 bg-purple-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-full shadow border border-purple-400/40">3D Interactive</span>
               </div>
             `;
           } else {
@@ -2198,7 +2178,7 @@
               </span>
             ` : ''}
 
-            ${age ? `<span class="absolute top-2.5 left-2.5 ${ageBadgeClass} backdrop-blur-sm px-2.5 py-0.5 rounded-full text-xs shadow-md pointer-events-none z-10">${age}</span>` : ''}
+            ${age ? `<span class="absolute top-3 left-3 ${ageBadgeClass} backdrop-blur-sm px-3.5 py-1.5 rounded-full text-xs sm:text-sm shadow-md pointer-events-none">${age}</span>` : ''}
           </div>
           
           <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
@@ -2372,9 +2352,6 @@
       const dateTypeMap = {};
       const allTypesSet = new Set();
 
-      const subcatCatMap = {};
-      const allSubcatsSet = new Set();
-
       const targetRow2 = rawExhibitsRows[0];
 
       if (targetRow2) {
@@ -2448,24 +2425,18 @@
           const rawType = getVal(row, colIdx.type);
           if (rawType && rawType.toLowerCase().trim() !== 'general') {
             allTypesSet.add(rawType);
+            // Grouped by decade (10-year resolution)
             const roundedPeriod = `${Math.floor(yearNum / 10) * 10}s`;
             if (!dateTypeMap[roundedPeriod]) dateTypeMap[roundedPeriod] = {};
             dateTypeMap[roundedPeriod][rawType] = (dateTypeMap[roundedPeriod][rawType] || 0) + itemQty;
           }
         }
 
-        const cat = getVal(row, colIdx.category) || 'General';
-        const subcat = getVal(row, colIdx.subcategory) || 'Uncategorized';
-        if (cat && subcat) {
-          if (!subcatCatMap[cat]) subcatCatMap[cat] = {};
-          subcatCatMap[cat][subcat] = (subcatCatMap[cat][subcat] || 0) + itemQty;
-          allSubcatsSet.add(subcat);
-        }
-
         let rawLoc = getVal(row, colIdx.made);
         if (rawLoc) {
           const country = normalizeCountry(rawLoc);
           if (country) {
+            // Count multiplied by quantity (Count x Made)
             locationCounts[country] = (locationCounts[country] || 0) + itemQty;
           }
         }
@@ -2486,13 +2457,12 @@
       if (totalAgeItems > 0 && prePostElem) {
         const prePct = Math.round((colPreCount / totalAgeItems) * 100);
         const postPct = 100 - prePct;
-        prePostElem.innerHTML = `<div>Pre 1950: ${prePct}%</div><div>Post 1950: ${postPct}%</div>`;
+        prePostElem.textContent = `${prePct}% / ${postPct}%`;
       } else if (prePostElem) {
-        prePostElem.innerHTML = `<div>Pre 1950: 62%</div><div>Post 1950: 38%</div>`;
+        prePostElem.textContent = '62% / 38%';
       }
 
       if (chartStackedInstance) chartStackedInstance.destroy();
-      if (chartSubcatInstance) chartSubcatInstance.destroy();
       if (chartLocationsInstance) chartLocationsInstance.destroy();
 
       setTimeout(() => {
@@ -2509,6 +2479,7 @@
           };
         });
 
+        // Inline plugin to render stacked row totals at the end of each horizontal stacked bar
         const stackedTotalPlugin = {
           id: 'stackedTotalLabels',
           afterDatasetsDraw(chart) {
@@ -2562,7 +2533,7 @@
               responsive: true,
               maintainAspectRatio: false,
               plugins: {
-                legend: { labels: { color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } },
+                legend: { labels: { color: textColor, font: { family: 'Inter', size: 11, weight: '600' } } },
                 tooltip: { mode: 'index', intersect: false }
               },
               scales: {
@@ -2582,42 +2553,7 @@
           });
         }
 
-        // Subcategories Stacked by Category Chart
-        const catsArray = Object.keys(subcatCatMap).sort();
-        const subcatsArray = Array.from(allSubcatsSet);
-
-        const subcatDatasets = subcatsArray.map((subcat, idx) => ({
-          label: unescapeHTML(subcat),
-          data: catsArray.map(c => subcatCatMap[c][subcat] || 0),
-          backgroundColor: SUBCAT_PALETTE[idx % SUBCAT_PALETTE.length],
-          borderWidth: 0,
-          borderRadius: 4
-        }));
-
-        const canvasSubcat = document.getElementById('chartSubcatCategory');
-        if (canvasSubcat) {
-          const ctxSubcat = canvasSubcat.getContext('2d');
-          chartSubcatInstance = new Chart(ctxSubcat, {
-            type: 'bar',
-            data: {
-              labels: catsArray.map(c => unescapeHTML(c)),
-              datasets: subcatDatasets
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { labels: { color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } },
-                tooltip: { mode: 'index', intersect: false }
-              },
-              scales: {
-                x: { stacked: true, grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } },
-                y: { stacked: true, grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter', size: 10 } } }
-              }
-            }
-          });
-        }
-
+        // Inline plugin to draw data values above vertical column bars
         const barTopDataLabelsPlugin = {
           id: 'barTopDataLabels',
           afterDatasetsDraw(chart) {
@@ -3094,9 +3030,6 @@
       }
 
       document.getElementById('btn3DOnly').addEventListener('click', () => {
-        if (currentTab !== 'exhibits') {
-          setTab('exhibits');
-        }
         only3DActive = !only3DActive;
         const btn = document.getElementById('btn3DOnly');
         if (only3DActive) {
@@ -3109,9 +3042,6 @@
       });
 
       document.getElementById('btnHotOnly').addEventListener('click', () => {
-        if (currentTab !== 'exhibits') {
-          setTab('exhibits');
-        }
         hotOnlyActive = !hotOnlyActive;
         const btn = document.getElementById('btnHotOnly');
         if (hotOnlyActive) {
@@ -3134,9 +3064,6 @@
         scrollToGrid();
       });
 
-      document.getElementById('searchInput').addEventListener('input', () => filterCatalog(true));
-      document.getElementById('clearSearch').addEventListener('click', () => {
-        document.getElementById('searchInput').value =
       document.getElementById('searchInput').addEventListener('input', () => filterCatalog(true));
       document.getElementById('clearSearch').addEventListener('click', () => {
         document.getElementById('searchInput').value = '';
