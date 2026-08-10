@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- FIX FOR GOOGLE DRIVE EMBEDDED IMAGES: Prevents Google from blocking img embeds -->
+  <!-- Prevents Google from blocking embedded image requests -->
   <meta name="referrer" content="no-referrer">
 
   <title>Interactive Photo Map - Australasia</title>
@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
 
   <style>
-    body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background: #e2e8f0; }
-    #map { width: 100vw; height: 100vh; }
+    body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background: #c8d7e6; }
+    #map { width: 100vw; height: 100vh; background: #aad3df; }
 
     /* 1. 75px x 75px Photo Thumbnail Icon (White Background) */
     .single-photo-wrapper {
@@ -143,6 +143,18 @@
   <div id="status" class="status-msg">Loading spreadsheet photos...</div>
   <div id="map"></div>
 
+  <!-- FIX FOR CANVAS2D READBACK WARNING: Applies willReadFrequently to Leaflet Heatmap Canvas -->
+  <script>
+    const origGetContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function(type, attribs) {
+      if (type === '2d') {
+        attribs = attribs || {};
+        attribs.willReadFrequently = true;
+      }
+      return origGetContext.call(this, type, attribs);
+    };
+  </script>
+
   <!-- JS Libraries -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -150,20 +162,23 @@
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
   <script>
-    // Primary & Fallback CSV Download URLs
     const CSV_URL_PRIMARY  = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/export?format=csv&gid=1146027655';
     const CSV_URL_FALLBACK = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
 
     const isMobile = window.innerWidth <= 768;
 
-    // Google Drive Thumbnail Converter (Formatted to sz=s500)
-    function formatImgUrl(url) {
+    // Helper: Extract Google Drive File ID
+    function extractDriveId(url) {
       if (!url) return '';
-      url = url.trim();
-      // Match Google Drive File ID (20+ chars)
-      const match = url.match(/(?:id=|\/d\/|thumbnail\?id=)([a-zA-Z0-9_-]{20,})/);
-      if (match && match[1]) {
-        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=s500`;
+      const match = url.trim().match(/(?:id=|\/d\/|thumbnail\?id=)([a-zA-Z0-9_-]{20,})/);
+      return (match && match[1]) ? match[1] : '';
+    }
+
+    // Google Drive Direct Image CDN Link
+    function formatImgUrl(url) {
+      const fileId = extractDriveId(url);
+      if (fileId) {
+        return `https://lh3.googleusercontent.com/d/${fileId}`;
       }
       return url;
     }
@@ -200,15 +215,24 @@
       return '';
     }
 
-    // Initialize Map - Centered on [-10, 135] (Zoom: 2 Mobile, 3 Desktop)
+    // Initialize Map - Restricted to EXACTLY ONE WORLD MAP (no horizontal looping/wrapping)
     const initialZoom = isMobile ? 2 : 3;
+    const worldBounds = [[-89, -180], [89, 180]];
+
     const map = L.map('map', {
-      closePopupOnClick: false
+      closePopupOnClick: false,
+      maxBounds: worldBounds,
+      maxBoundsViscosity: 1.0, // Hard bounce at world edges to prevent infinite scrolling
+      minZoom: 2,
+      worldCopyJump: false
     }).setView([-10, 135], initialZoom);
 
+    // Tile Layer configured with noWrap: true
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap, © CARTO',
-      maxZoom: 19
+      maxZoom: 19,
+      noWrap: true, // Prevents duplicate/repeating globes
+      bounds: worldBounds
     }).addTo(map);
 
     // Marker Cluster Group
@@ -260,13 +284,17 @@
 
               if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
                 const imgUrl = formatImgUrl(imgRaw);
+                const fileId = extractDriveId(imgRaw);
+                
+                // Automatic dual fallback if one server fails
+                const fallbackAttr = fileId ? `onerror="this.onerror=null; this.src='https://drive.google.com/uc?export=view&id=${fileId}';"` : '';
 
                 // 1. Heatmap Point
                 heatPoints.push([lat, lng, 0.9]);
 
                 // 2. Custom 75px x 75px Photo Icon (White Background)
                 const customIconHTML = imgUrl 
-                  ? `<div class="single-photo-wrapper"><img src="${imgUrl}" loading="lazy"/></div>`
+                  ? `<div class="single-photo-wrapper"><img src="${imgUrl}" ${fallbackAttr} loading="lazy"/></div>`
                   : `<div class="no-img-marker"></div>`;
 
                 const photoIcon = L.divIcon({
@@ -281,7 +309,7 @@
                   <div class="photo-card-large">
                     ${title ? `<h3>${title}</h3>` : ''}
                     ${location ? `<p>📍 ${location}</p>` : ''}
-                    ${imgUrl ? `<div class="img-container"><img src="${imgUrl}" loading="lazy" alt="Photo"/></div>` : '<em>No Photo Available</em>'}
+                    ${imgUrl ? `<div class="img-container"><img src="${imgUrl}" ${fallbackAttr} loading="lazy" alt="Photo"/></div>` : '<em>No Photo Available</em>'}
                   </div>
                 `;
 
@@ -299,7 +327,6 @@
             });
           }
 
-          // Fallback retry if 0 rows parsed
           if (count === 0 && !isRetry) {
             console.log('Primary URL returned 0 photos. Trying fallback URL...');
             loadMapData(CSV_URL_FALLBACK, true);
