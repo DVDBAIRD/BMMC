@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Photo Map - Australasia</title>
+  <title>Interactive Photo Map</title>
 
   <!-- Leaflet CSS & Plugins -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -112,84 +112,21 @@
       display: block;
     }
 
-    .status-msg {
-      position: absolute;
-      top: 10px;
-      left: 50px;
-      z-index: 1000;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 10px 14px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-      font-size: 13px;
-      line-height: 1.5;
-      color: #1e293b;
-      max-width: 80vw;
+    .no-img-marker {
+      width: 28px;
+      height: 28px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 2px solid #fff;
     }
-
-    /* Debugger Button & Panel */
-    .debug-btn {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      z-index: 1000;
-      background: #0284c7;
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-    .debug-btn:hover { background: #0369a1; }
-
-    .debug-panel {
-      position: absolute;
-      top: 60px;
-      left: 20px;
-      right: 20px;
-      bottom: 70px;
-      z-index: 1001;
-      background: rgba(15, 23, 42, 0.96);
-      color: #f8fafc;
-      padding: 16px;
-      border-radius: 12px;
-      display: none;
-      overflow: auto;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      font-size: 12px;
-    }
-    .debug-panel h2 { margin-top: 0; font-size: 16px; color: #38bdf8; }
-    .debug-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .debug-table th, .debug-table td { border: 1px solid #334155; padding: 6px 8px; text-align: left; word-break: break-all; }
-    .debug-table th { background: #1e293b; color: #94a3b8; position: sticky; top: 0; }
-    .status-ok { color: #4ade80; font-weight: bold; }
-    .status-bad { color: #f87171; }
   </style>
 </head>
 <body>
 
-  <div id="status" class="status-msg">Loading spreadsheet photos...</div>
-  <button class="debug-btn" onclick="toggleDebug()">🔍 Debug Data Table</button>
-  
-  <div id="debugPanel" class="debug-panel">
-    <h2>Data Debugger: Detected Columns & Row Logic</h2>
-    <div id="debugContent">Parsing data...</div>
-  </div>
-
   <div id="map"></div>
 
-  <!-- Global script error catcher -->
+  <!-- Canvas2D warning fix -->
   <script>
-    window.onerror = function(msg, url, line) {
-      const statusEl = document.getElementById('status');
-      if (statusEl) {
-        statusEl.innerHTML = `<strong style="color:#ef4444;">Script Error (Line ${line}):</strong> ${msg}`;
-      }
-      return false;
-    };
-
     try {
       const origGetContext = HTMLCanvasElement.prototype.getContext;
       HTMLCanvasElement.prototype.getContext = function(type, attribs) {
@@ -200,11 +137,6 @@
         return origGetContext.call(this, type, attribs);
       };
     } catch(e) {}
-
-    function toggleDebug() {
-      const panel = document.getElementById('debugPanel');
-      panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
-    }
   </script>
 
   <!-- JS Libraries -->
@@ -231,9 +163,11 @@
       worldCopyJump: false
     }).setView([-10, 135], initialZoom);
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
+    // Fast Carto Voyager Tile Server (English place names, fast CDN raster tiles)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap contributors, © CARTO',
       maxZoom: 19,
+      subdomains: 'abcd',
       noWrap: true
     }).addTo(map);
 
@@ -286,9 +220,7 @@
       return url.trim();
     }
 
-    // STRICT EXACT MATCHING LOOKUP (Prevents matching Column 8 'IMG' instead of Column 18 'Img1')
     function getCellValStrict(row, possibleNames, colIndex) {
-      // 1. Exact Name Matching First
       for (let name of possibleNames) {
         const cleanName = name.trim().toLowerCase();
         for (let key in row) {
@@ -299,7 +231,6 @@
           }
         }
       }
-      // 2. Index Fallback
       const keys = Object.keys(row);
       if (colIndex !== undefined && keys[colIndex] && row[keys[colIndex]]) {
         return row[keys[colIndex]].toString().trim();
@@ -347,129 +278,63 @@
         complete: function(results) {
           const heatPoints = [];
           let mappedCount = 0;
-          let missingCoords = 0;
-          let missingImages = 0;
 
-          let debugHTML = '';
           if (results.data && results.data.length > 0) {
-            const detectedHeaders = Object.keys(results.data[0]);
-            debugHTML += `<p><strong>Detected CSV Headers (${detectedHeaders.length}):</strong> <code style="color:#38bdf8;">${detectedHeaders.join(' | ')}</code></p>`;
-            debugHTML += `<table class="debug-table">
-              <tr>
-                <th>Row #</th>
-                <th>Title Details (Col C)</th>
-                <th>Made (Col X)</th>
-                <th>Lat (Col AA)</th>
-                <th>Lng (Col AB)</th>
-                <th>Img1 Raw (Col R/U)</th>
-                <th>Result Status</th>
-              </tr>`;
-
-            results.data.forEach((row, rowIndex) => {
-              const rowNum = rowIndex + 2;
-
-              // STRICT TARGETING:
-              // Title: Header "Title Details" or "Title"
-              // Img1: Header "Img1" or "1st Image"
-              // Made: Header "Made"
-              // Lat: Header "Lat"
-              // Lng: Header "Lng"
+            results.data.forEach(row => {
               const title = getColCTitle(row);
               const imgRaw = getCellValStrict(row, ['Img1', '1st Image'], 17);
               const location = getCellValStrict(row, ['Made', 'Location'], 20);
               const latStr = getCellValStrict(row, ['Lat', 'Latitude'], 23);
               const lngStr = getCellValStrict(row, ['Lng', 'Longitude'], 24);
 
-              // Ignore blank trailing rows
-              if (!latStr && !lngStr && !imgRaw && !location && !title) {
-                return;
-              }
+              if (!latStr && !lngStr && !imgRaw && !location && !title) return;
 
               const lat = parseCoord(latStr);
               const lng = parseCoord(lngStr);
 
-              let statusText = '';
-              let isOk = false;
+              if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+              if (!isValidImgUrl(imgRaw)) return;
 
-              if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-                missingCoords++;
-                statusText = `<span class="status-bad">REJECTED: Invalid Lat/Lng ("${latStr}", "${lngStr}")</span>`;
-              } else if (!isValidImgUrl(imgRaw)) {
-                missingImages++;
-                statusText = `<span class="status-bad">REJECTED: Invalid Img1 ("${imgRaw}")</span>`;
-              } else {
-                isOk = true;
-                mappedCount++;
-                statusText = `<span class="status-ok">✔ MAPPED SUCCESS</span>`;
-              }
+              mappedCount++;
 
-              debugHTML += `
-                <tr>
-                  <td>${rowNum}</td>
-                  <td>${title || '<i style="color:#64748b;">(empty)</i>'}</td>
-                  <td>${location || '<i style="color:#64748b;">(empty)</i>'}</td>
-                  <td>${latStr || '<i style="color:#64748b;">(empty)</i>'}</td>
-                  <td>${lngStr || '<i style="color:#64748b;">(empty)</i>'}</td>
-                  <td>${imgRaw || '<i style="color:#64748b;">(empty)</i>'}</td>
-                  <td>${statusText}</td>
-                </tr>
+              const imgUrl = formatImgUrl(imgRaw);
+              const fileId = extractDriveId(imgRaw);
+              const fallbackAttr = fileId ? `onerror="this.onerror=null; this.src='https://drive.google.com/uc?export=view&id=${fileId}';"` : '';
+
+              heatPoints.push([lat, lng, 0.9]);
+
+              const customIconHTML = `<div class="single-photo-wrapper"><img src="${imgUrl}" ${fallbackAttr} loading="lazy" alt="Photo"/></div>`;
+
+              const photoIcon = L.divIcon({
+                html: customIconHTML,
+                className: 'custom-single-photo-icon',
+                iconSize: [75, 75],
+                iconAnchor: [37.5, 37.5]
+              });
+
+              const popupHTML = `
+                <div class="photo-card-large">
+                  ${title ? `<h3>${title}</h3>` : ''}
+                  ${location ? `<p>📍 ${location}</p>` : ''}
+                  <div class="img-container"><img src="${imgUrl}" ${fallbackAttr} loading="lazy" alt="Photo"/></div>
+                </div>
               `;
 
-              if (isOk) {
-                const imgUrl = formatImgUrl(imgRaw);
-                const fileId = extractDriveId(imgRaw);
-                const fallbackAttr = fileId ? `onerror="this.onerror=null; this.src='https://drive.google.com/uc?export=view&id=${fileId}';"` : '';
+              const marker = L.marker([lat, lng], { icon: photoIcon, imgUrl: imgUrl });
+              
+              marker.bindPopup(popupHTML, {
+                autoPan: true,
+                closeOnClick: false,
+                autoClose: false
+              });
 
-                heatPoints.push([lat, lng, 0.9]);
-
-                const customIconHTML = `<div class="single-photo-wrapper"><img src="${imgUrl}" ${fallbackAttr} loading="lazy" alt="Photo"/></div>`;
-
-                const photoIcon = L.divIcon({
-                  html: customIconHTML,
-                  className: 'custom-single-photo-icon',
-                  iconSize: [75, 75],
-                  iconAnchor: [37.5, 37.5]
-                });
-
-                const popupHTML = `
-                  <div class="photo-card-large">
-                    ${title ? `<h3>${title}</h3>` : ''}
-                    ${location ? `<p>📍 ${location}</p>` : ''}
-                    <div class="img-container"><img src="${imgUrl}" ${fallbackAttr} loading="lazy" alt="Photo"/></div>
-                  </div>
-                `;
-
-                const marker = L.marker([lat, lng], { icon: photoIcon, imgUrl: imgUrl });
-                
-                marker.bindPopup(popupHTML, {
-                  autoPan: true,
-                  closeOnClick: false,
-                  autoClose: false
-                });
-
-                markers.addLayer(marker);
-              }
+              markers.addLayer(marker);
             });
-
-            debugHTML += `</table>`;
-            document.getElementById('debugContent').innerHTML = debugHTML;
           }
 
           if (mappedCount === 0 && !isRetry) {
-            console.log('Primary URL returned 0 valid photos. Trying fallback URL...');
             loadMapData(CSV_URL_FALLBACK, true);
             return;
-          }
-
-          const statusEl = document.getElementById('status');
-          if (statusEl) {
-            statusEl.innerHTML = `
-              <strong>📍 Mapped ${mappedCount} photos successfully!</strong><br/>
-              <small style="color: #64748b;">
-                Skipped: ${missingCoords} missing Lat/Lng | ${missingImages} missing/invalid photos
-              </small>
-            `;
-            setTimeout(() => { statusEl.style.display = 'none'; }, 6000);
           }
 
           if (typeof L.heatLayer === 'function' && heatPoints.length > 0) {
@@ -491,19 +356,15 @@
 
           map.addLayer(markers);
         },
-        error: function(err) {
+        error: function() {
           if (!isRetry) {
             loadMapData(CSV_URL_FALLBACK, true);
-          } else {
-            const statusEl = document.getElementById('status');
-            if (statusEl) {
-              statusEl.innerHTML = `<strong style="color:#ef4444;">Failed to load CSV:</strong> ${err || 'Network Error'}`;
-            }
           }
         }
       });
     }
 
+    // Load data
     loadMapData(CSV_URL_PRIMARY);
   </script>
 </body>
