@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- FIX FOR GOOGLE DRIVE EMBEDDED IMAGES: Prevents Google from blocking img embeds -->
+  <meta name="referrer" content="no-referrer">
+
   <title>Interactive Photo Map - Australasia</title>
 
   <!-- Leaflet CSS & Plugins -->
@@ -146,7 +150,7 @@
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
   <script>
-    // Primary & Secondary Google Sheet CSV Download Endpoints
+    // Primary & Fallback CSV Download URLs
     const CSV_URL_PRIMARY  = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/export?format=csv&gid=1146027655';
     const CSV_URL_FALLBACK = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
 
@@ -156,7 +160,8 @@
     function formatImgUrl(url) {
       if (!url) return '';
       url = url.trim();
-      const match = url.match(/(?:id=|\/d\/|thumbnail\?id=)([a-zA-Z0-9_-]+)/);
+      // Match Google Drive File ID (20+ chars)
+      const match = url.match(/(?:id=|\/d\/|thumbnail\?id=)([a-zA-Z0-9_-]{20,})/);
       if (match && match[1]) {
         return `https://drive.google.com/thumbnail?id=${match[1]}&sz=s500`;
       }
@@ -195,11 +200,11 @@
       return '';
     }
 
-    // Initialize Map - Centered on [-15, 135] (Zoom: 4 Mobile, 5 Desktop)
-    const initialZoom = isMobile ? 4 : 5;
+    // Initialize Map - Centered on [-10, 135] (Zoom: 2 Mobile, 3 Desktop)
+    const initialZoom = isMobile ? 2 : 3;
     const map = L.map('map', {
       closePopupOnClick: false
-    }).setView([-15, 135], initialZoom);
+    }).setView([-10, 135], initialZoom);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap, © CARTO',
@@ -232,7 +237,7 @@
 
     let heatLayer = null;
 
-    // Load CSV Data
+    // Load CSV function
     function loadMapData(url, isRetry = false) {
       Papa.parse(url, {
         download: true,
@@ -259,9 +264,9 @@
                 // 1. Heatmap Point
                 heatPoints.push([lat, lng, 0.9]);
 
-                // 2. Custom 75px x 75px Photo Icon
+                // 2. Custom 75px x 75px Photo Icon (White Background)
                 const customIconHTML = imgUrl 
-                  ? `<div class="single-photo-wrapper"><img src="${imgUrl}" loading="lazy" onerror="this.onerror=null; this.src='https://via.placeholder.com/75?text=Photo';"/></div>`
+                  ? `<div class="single-photo-wrapper"><img src="${imgUrl}" loading="lazy"/></div>`
                   : `<div class="no-img-marker"></div>`;
 
                 const photoIcon = L.divIcon({
@@ -294,8 +299,9 @@
             });
           }
 
+          // Fallback retry if 0 rows parsed
           if (count === 0 && !isRetry) {
-            console.log('Primary endpoint returned 0 rows. Trying fallback endpoint...');
+            console.log('Primary URL returned 0 photos. Trying fallback URL...');
             loadMapData(CSV_URL_FALLBACK, true);
             return;
           }
@@ -327,7 +333,7 @@
           if (!isRetry) {
             loadMapData(CSV_URL_FALLBACK, true);
           } else {
-            document.getElementById('status').innerText = 'Failed to load spreadsheet. Verify sheet sharing settings.';
+            document.getElementById('status').innerText = 'Failed to load spreadsheet. Verify sharing permissions.';
           }
         }
       });
