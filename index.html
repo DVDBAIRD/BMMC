@@ -340,76 +340,63 @@
         </div>
       </div>
 
-      <!-- Details Card (Only Text) -->
-      <div id="statRow2NotesCard" class="hidden bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/30 border border-indigo-500/30 relative overflow-hidden backdrop-blur-md">
-        <div class="w-full">
-          <h3 class="text-base sm:text-lg font-black text-blue-300 uppercase tracking-wider mb-2.5 flex items-center gap-2">
-            <span>📝</span> Details
-          </h3>
-          <p id="statRow2NotesText" class="text-sm sm:text-base text-slate-100 leading-relaxed font-medium whitespace-pre-line"></p>
-        </div>
-      </div>
-
       <!-- Dedicated Interactive 2D Map Section -->
       <div id="statMapCard" class="bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/30 border border-indigo-500/30 relative overflow-hidden backdrop-blur-md flex flex-col gap-4">
         <div class="flex items-center justify-between flex-wrap gap-2">
           <h3 class="text-base sm:text-lg font-black text-blue-300 uppercase tracking-wider flex items-center gap-2">
-            <span>🗺️</span> Bonniefields Museum 2D Map
+            <span>🗺️</span> Map of item origin
           </h3>
           <button onclick="openEnlargeModal('https://dvdbaird.github.io/BMMC/2Dmap', true)" title="Open Map in Full Scale Pop-Up" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-black px-3.5 py-2 rounded-xl shadow-md border border-blue-400/40 transition flex items-center gap-1 active:scale-95">
             Enlarge ↗
           </button>
         </div>
         <div class="w-full h-[400px] sm:h-[520px] relative overflow-hidden rounded-2xl bg-slate-900 border border-indigo-500/30 shadow-inner">
-          <iframe src="https://dvdbaird.github.io/BMMC/2Dmap" class="w-full h-full border-0 rounded-2xl bg-white" title="Bonniefields Museum 2D Map" loading="lazy"></iframe>
+          <iframe src="https://dvdbaird.github.io/BMMC/2Dmap" class="w-full h-full border-0 rounded-2xl bg-white" title="Map of item origin" loading="lazy"></iframe>
         </div>
       </div>
 
-      <!-- KPI Metric Cards Bar -->
+      <!-- KPI Metric Cards Bar (Tightened vertical spacing and removed bottom subheadings) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-blue-500/50 transition">
+        <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-blue-500/50 transition">
           <div class="w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500 absolute top-0 left-0"></div>
           <div>
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center justify-between mb-1">
               <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Total Items</span>
-              <span class="p-2 bg-blue-50 dark:bg-blue-950/80 text-blue-600 rounded-xl text-base border border-blue-100 dark:border-blue-900/60">🏛️</span>
+              <span class="p-1.5 bg-blue-50 dark:bg-blue-950/80 text-blue-600 rounded-xl text-base border border-blue-100 dark:border-blue-900/60">🏛️</span>
             </div>
             <div class="text-2xl font-black text-slate-900 dark:text-white" id="statTotalItems">1,193</div>
           </div>
-          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1.5">Total number of preserved items</p>
         </div>
 
-        <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-amber-500/50 transition">
+        <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-amber-500/50 transition">
           <div class="w-full h-1 bg-gradient-to-r from-amber-500 to-orange-500 absolute top-0 left-0"></div>
           <div>
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center justify-between mb-1">
               <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Date Span</span>
-              <span class="p-2 bg-amber-50 dark:bg-amber-950/80 text-amber-600 rounded-xl text-base border border-amber-100 dark:border-amber-900/60">⏳</span>
+              <span class="p-1.5 bg-amber-50 dark:bg-amber-950/80 text-amber-600 rounded-xl text-base border border-amber-100 dark:border-amber-900/60">⏳</span>
             </div>
             <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white" id="statDateRange">--</div>
           </div>
-          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1.5">Earliest to newest date in catalog</p>
         </div>
 
-        <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-purple-500/50 transition">
+        <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-purple-500/50 transition">
           <div class="w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500 absolute top-0 left-0"></div>
           <div>
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center justify-between mb-1">
               <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Pre / Post 1950 %</span>
-              <span class="p-2 bg-purple-50 dark:bg-purple-950/80 text-purple-600 rounded-xl text-base border border-purple-100 dark:border-purple-900/60">📜</span>
+              <span class="p-1.5 bg-purple-50 dark:bg-purple-950/80 text-purple-600 rounded-xl text-base border border-purple-100 dark:border-purple-900/60">📜</span>
             </div>
             <div class="text-2xl font-black text-slate-900 dark:text-white" id="statPrePost1950">--</div>
           </div>
-          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1.5">Pre-1950 % / Post-1950 % ratio</p>
         </div>
 
-        <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-emerald-500/50 transition">
+        <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-emerald-500/50 transition">
           <div class="w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500 absolute top-0 left-0"></div>
           <div>
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center justify-between mb-1">
               <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Highlighted Links</span>
-              <span class="p-2 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 rounded-xl text-base border border-emerald-100 dark:border-emerald-900/60">🔗</span>
+              <span class="p-1.5 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 rounded-xl text-base border border-emerald-100 dark:border-emerald-900/60">🔗</span>
             </div>
             <div class="flex flex-wrap items-center gap-2 min-h-[32px]">
               <a id="statDocLink" href="#" target="_blank" class="hidden bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl border border-blue-500 shadow-sm transition flex items-center gap-1">
@@ -421,7 +408,6 @@
               <span id="statNoLinks" class="text-xs text-slate-400 italic">No links recorded</span>
             </div>
           </div>
-          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1.5">Direct catalog reference resources</p>
         </div>
 
       </div>
@@ -436,7 +422,6 @@
                 <h3 class="text-base font-bold text-slate-900 dark:text-white">Items by Date Stacked by Type</h3>
                 <p class="text-xs text-slate-500 dark:text-slate-400">Distribution of artifacts by decade (post-1800)</p>
               </div>
-              <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 self-start sm:self-auto">Filter: Year ≥ 1800</span>
             </div>
           </div>
           <div class="chart-container relative h-[380px] w-full">
@@ -448,7 +433,7 @@
           <div>
             <div class="mb-4">
               <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1">Origin Locations (Where Made)</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Top manufacturing places (Made x Item Quantity)</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Top manufacturing places</p>
             </div>
           </div>
           <div class="chart-container relative h-[380px] w-full">
@@ -2381,17 +2366,6 @@
           introCard.classList.add('hidden');
         }
 
-        const row2NotesText = unescapeHTML(getVal(targetRow2, colIdx.title) || getVal(targetRow2, colIdx.notes));
-        const row2Card = document.getElementById('statRow2NotesCard');
-        const row2TextElem = document.getElementById('statRow2NotesText');
-
-        if (row2NotesText && row2TextElem && row2Card) {
-          row2TextElem.textContent = row2NotesText;
-          row2Card.classList.remove('hidden');
-        } else if (row2Card) {
-          row2Card.classList.add('hidden');
-        }
-
         const docUrl = getVal(targetRow2, colIdx.doc);
         const webUrl = getVal(targetRow2, colIdx.web);
 
@@ -2505,6 +2479,45 @@
           };
         });
 
+        // Inline plugin to render stacked row totals at the end of each horizontal stacked bar
+        const stackedTotalPlugin = {
+          id: 'stackedTotalLabels',
+          afterDatasetsDraw(chart) {
+            const { ctx } = chart;
+            const periodCount = chart.data.labels.length;
+            const datasetCount = chart.data.datasets.length;
+
+            for (let index = 0; index < periodCount; index++) {
+              let total = 0;
+              let maxBarX = 0;
+              let barY = 0;
+
+              for (let d = 0; d < datasetCount; d++) {
+                const val = chart.data.datasets[d].data[index] || 0;
+                total += val;
+                const meta = chart.getDatasetMeta(d);
+                if (meta && meta.data[index]) {
+                  const bar = meta.data[index];
+                  if (bar.x > maxBarX) {
+                    maxBarX = bar.x;
+                  }
+                  barY = bar.y;
+                }
+              }
+
+              if (total > 0 && maxBarX > 0) {
+                ctx.save();
+                ctx.fillStyle = textColor;
+                ctx.font = 'bold 11px Inter, sans-serif';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(total.toLocaleString(), maxBarX + 6, barY);
+                ctx.restore();
+              }
+            }
+          }
+        };
+
         const canvasStacked = document.getElementById('chartStackedDateType');
         if (canvasStacked) {
           const ctxStacked = canvasStacked.getContext('2d');
@@ -2514,6 +2527,7 @@
               labels: periodsSorted,
               datasets: stackedDatasets
             },
+            plugins: [stackedTotalPlugin],
             options: {
               indexAxis: 'y',
               responsive: true,
@@ -2525,6 +2539,7 @@
               scales: {
                 x: {
                   stacked: true,
+                  grace: '10%',
                   grid: { color: gridColor },
                   ticks: { color: textColor, font: { family: 'Inter', size: 10 } }
                 },

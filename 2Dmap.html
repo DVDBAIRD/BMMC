@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Photo Map</title>
+  <title>Interactive Photo Map with Year Slider</title>
 
   <!-- Leaflet CSS & Plugins -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -65,7 +65,7 @@
       border-color: #38bdf8;
     }
 
-    /* 3. Responsive Popup Window */
+    /* 3. Popup Window Styling */
     .leaflet-popup-content-wrapper {
       padding: 0;
       border-radius: 12px;
@@ -74,13 +74,8 @@
     }
     .leaflet-popup-content {
       margin: 0 !important;
-      width: 82vw !important;
-      max-width: 440px !important;
-    }
-    @media (min-width: 768px) {
-      .leaflet-popup-content {
-        width: 440px !important;
-      }
+      width: 440px !important;
+      max-width: 82vw !important;
     }
     .photo-card-large {
       padding: 14px;
@@ -96,7 +91,8 @@
     .photo-card-large p {
       margin: 0 0 10px 0;
       font-size: 13px;
-      color: #64748b;
+      color: #0284c7;
+      font-weight: 600;
     }
     .photo-card-large .img-container {
       width: 100%;
@@ -112,6 +108,78 @@
       display: block;
     }
 
+    /* MOBILE SPECIFIC OVERRIDES */
+    @media (max-width: 768px) {
+      /* Mobile Enlarge Popup: Docks to Bottom-Left over the map */
+      .leaflet-popup {
+        position: fixed !important;
+        bottom: 85px !important;
+        left: 12px !important;
+        top: auto !important;
+        transform: none !important;
+        margin: 0 !important;
+        z-index: 1500 !important;
+      }
+      .leaflet-popup-content-wrapper {
+        max-width: 78vw !important;
+        border-radius: 12px;
+      }
+      .leaflet-popup-tip-container {
+        display: none !important; /* Hide popup pointer tail on mobile overlay */
+      }
+
+      /* Shrink Leaflet Branding & Controls by 20% on Mobile */
+      .leaflet-control-container .leaflet-control-attribution {
+        font-size: 9px !important;
+        padding: 2px 6px !important;
+        transform: scale(0.8);
+        transform-origin: bottom right;
+      }
+      .leaflet-control-zoom {
+        transform: scale(0.8);
+        transform-origin: top left;
+      }
+    }
+
+    /* 4. Floating Interactive Year Range Slider */
+    .year-slider-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.90);
+      backdrop-filter: blur(10px);
+      padding: 10px 18px;
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #f8fafc;
+      min-width: 280px;
+      max-width: 90vw;
+      text-align: center;
+    }
+    .year-slider-header {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .year-slider-header span { color: #38bdf8; font-weight: 700; }
+    .slider-inputs {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .slider-inputs input[type=range] {
+      flex: 1;
+      accent-color: #0284c7;
+      cursor: pointer;
+      height: 6px;
+    }
+
     .no-img-marker {
       width: 28px;
       height: 28px;
@@ -124,6 +192,18 @@
 <body>
 
   <div id="map"></div>
+
+  <!-- Interactive Year Range Slider Control -->
+  <div class="year-slider-bar">
+    <div class="year-slider-header">
+      <div>Year Range:</div>
+      <span id="yearRangeText">Loading...</span>
+    </div>
+    <div class="slider-inputs">
+      <input type="range" id="minYearSlider" min="1800" max="2026" value="1800" step="1" oninput="updateYearFilter()">
+      <input type="range" id="maxYearSlider" min="1800" max="2026" value="2026" step="1" oninput="updateYearFilter()">
+    </div>
+  </div>
 
   <!-- Canvas2D warning fix -->
   <script>
@@ -151,19 +231,19 @@
 
     const isMobile = window.innerWidth <= 768;
 
-    // STEP 1: Initialize Map FIRST
+    // STEP 1: Initialize Map
     const initialZoom = isMobile ? 2 : 3;
     const worldBounds = [[-89, -180], [89, 180]];
 
     const map = L.map('map', {
-      closePopupOnClick: false,
+      closePopupOnClick: true,
       maxBounds: worldBounds,
       maxBoundsViscosity: 1.0,
       minZoom: 2,
       worldCopyJump: false
     }).setView([-10, 135], initialZoom);
 
-    // Fast Carto Voyager Tile Server (English place names, fast CDN raster tiles)
+    // Carto Voyager English Tile Server
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap contributors, © CARTO',
       maxZoom: 19,
@@ -172,36 +252,34 @@
     }).addTo(map);
 
     // STEP 2: Initialize Plugins
-    let markers;
-    if (typeof L.markerClusterGroup === 'function') {
-      markers = L.markerClusterGroup({
-        spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false,
-        zoomToBoundsOnClick: true,
-        spiderfyDistanceMultiplier: isMobile ? 2.8 : 2.2,
-        maxClusterRadius: isMobile ? 38 : 55,
-        
-        iconCreateFunction: function(cluster) {
-          const totalCount = cluster.getChildCount();
-          return L.divIcon({
-            html: `<div class="cluster-number-badge">${totalCount}</div>`,
-            className: 'custom-cluster-number-icon',
-            iconSize: [48, 48],
-            iconAnchor: [24, 24]
-          });
-        }
-      });
+    let markers = L.markerClusterGroup({
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      spiderfyDistanceMultiplier: isMobile ? 2.8 : 2.2,
+      maxClusterRadius: isMobile ? 38 : 55,
+      
+      iconCreateFunction: function(cluster) {
+        const totalCount = cluster.getChildCount();
+        return L.divIcon({
+          html: `<div class="cluster-number-badge">${totalCount}</div>`,
+          className: 'custom-cluster-number-icon',
+          iconSize: [48, 48],
+          iconAnchor: [24, 24]
+        });
+      }
+    });
 
-      markers.on('clusterclick', function(a) {
-        if (a.layer && typeof a.layer.spiderfy === 'function') {
-          a.layer.spiderfy();
-        }
-      });
-    } else {
-      markers = L.featureGroup();
-    }
+    markers.on('clusterclick', function(a) {
+      if (a.layer && typeof a.layer.spiderfy === 'function') {
+        a.layer.spiderfy();
+      }
+    });
 
     let heatLayer = null;
+    let allPhotoRecords = [];
+    let globalMinYear = 1800;
+    let globalMaxYear = 2026;
 
     // Helper Functions
     function extractDriveId(url) {
@@ -269,6 +347,117 @@
       return rawVal.split('#')[0].trim();
     }
 
+    // Render dataset onto map
+    function renderDataset(records) {
+      markers.clearLayers();
+      if (heatLayer) map.removeLayer(heatLayer);
+
+      const heatPoints = [];
+
+      records.forEach(item => {
+        heatPoints.push([item.lat, item.lng, 0.9]);
+
+        const customIconHTML = `<div class="single-photo-wrapper"><img src="${item.imgUrl}" ${item.fallbackAttr} loading="eager" alt="Photo"/></div>`;
+
+        const photoIcon = L.divIcon({
+          html: customIconHTML,
+          className: 'custom-single-photo-icon',
+          iconSize: [75, 75],
+          iconAnchor: [37.5, 37.5]
+        });
+
+        const locationYearText = item.location 
+          ? (item.year ? `📍 ${item.location} &bull; ${item.year}` : `📍 ${item.location}`)
+          : (item.year ? `📅 ${item.year}` : '');
+
+        const popupHTML = `
+          <div class="photo-card-large">
+            ${item.title ? `<h3>${item.title}</h3>` : ''}
+            ${locationYearText ? `<p>${locationYearText}</p>` : ''}
+            <div class="img-container"><img src="${item.imgUrl}" ${item.fallbackAttr} loading="eager" alt="Photo"/></div>
+          </div>
+        `;
+
+        const marker = L.marker([item.lat, item.lng], { icon: photoIcon, imgUrl: item.imgUrl });
+        
+        marker.bindPopup(popupHTML, {
+          autoPan: true,
+          keepInView: true,
+          autoClose: true,
+          closeOnClick: true
+        });
+
+        markers.addLayer(marker);
+      });
+
+      if (typeof L.heatLayer === 'function' && heatPoints.length > 0) {
+        heatLayer = L.heatLayer(heatPoints, {
+          radius: isMobile ? 22 : 30,
+          blur: 16,
+          maxZoom: 6,
+          gradient: { 0.4: 'blue', 0.65: 'yellow', 1: 'red' }
+        }).addTo(map);
+
+        map.on('zoomend', function() {
+          if (map.getZoom() >= 6) {
+            if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+          } else {
+            if (!map.hasLayer(heatLayer)) map.addLayer(heatLayer);
+          }
+        });
+      }
+
+      map.addLayer(markers);
+    }
+
+    // Initialize Year Slider Controls with dynamic min/max years from dataset
+    function initYearSliderUI() {
+      const years = allPhotoRecords
+        .map(r => parseInt(r.year, 10))
+        .filter(y => !isNaN(y) && y > 1500 && y <= 2026);
+
+      if (years.length > 0) {
+        globalMinYear = Math.min(...years);
+        globalMaxYear = Math.max(...years);
+      }
+
+      const minSlider = document.getElementById('minYearSlider');
+      const maxSlider = document.getElementById('maxYearSlider');
+
+      minSlider.min = globalMinYear;
+      minSlider.max = globalMaxYear;
+      minSlider.value = globalMinYear;
+
+      maxSlider.min = globalMinYear;
+      maxSlider.max = globalMaxYear;
+      maxSlider.value = globalMaxYear;
+
+      document.getElementById('yearRangeText').innerText = `${globalMinYear} – ${globalMaxYear}`;
+    }
+
+    // Dynamic Year Filter Update
+    function updateYearFilter() {
+      let minVal = parseInt(document.getElementById('minYearSlider').value, 10);
+      let maxVal = parseInt(document.getElementById('maxYearSlider').value, 10);
+
+      // Ensure min <= max
+      if (minVal > maxVal) {
+        const temp = minVal;
+        minVal = maxVal;
+        maxVal = temp;
+      }
+
+      document.getElementById('yearRangeText').innerText = `${minVal} – ${maxVal}`;
+
+      const filtered = allPhotoRecords.filter(item => {
+        const y = parseInt(item.year, 10);
+        if (isNaN(y)) return true; // Keep items without a year
+        return y >= minVal && y <= maxVal;
+      });
+
+      renderDataset(filtered);
+    }
+
     // Data Parser Function
     function loadMapData(url, isRetry = false) {
       Papa.parse(url, {
@@ -276,14 +465,14 @@
         header: true,
         skipEmptyLines: 'greedy',
         complete: function(results) {
-          const heatPoints = [];
-          let mappedCount = 0;
+          allPhotoRecords = [];
 
           if (results.data && results.data.length > 0) {
             results.data.forEach(row => {
               const title = getColCTitle(row);
               const imgRaw = getCellValStrict(row, ['Img1', '1st Image'], 17);
               const location = getCellValStrict(row, ['Made', 'Location'], 20);
+              const year = getCellValStrict(row, ['Year'], 21); // Column Y (Year)
               const latStr = getCellValStrict(row, ['Lat', 'Latitude'], 23);
               const lngStr = getCellValStrict(row, ['Lng', 'Longitude'], 24);
 
@@ -295,66 +484,29 @@
               if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
               if (!isValidImgUrl(imgRaw)) return;
 
-              mappedCount++;
-
               const imgUrl = formatImgUrl(imgRaw);
               const fileId = extractDriveId(imgRaw);
               const fallbackAttr = fileId ? `onerror="this.onerror=null; this.src='https://drive.google.com/uc?export=view&id=${fileId}';"` : '';
 
-              heatPoints.push([lat, lng, 0.9]);
-
-              const customIconHTML = `<div class="single-photo-wrapper"><img src="${imgUrl}" ${fallbackAttr} loading="lazy" alt="Photo"/></div>`;
-
-              const photoIcon = L.divIcon({
-                html: customIconHTML,
-                className: 'custom-single-photo-icon',
-                iconSize: [75, 75],
-                iconAnchor: [37.5, 37.5]
+              allPhotoRecords.push({
+                lat: lat,
+                lng: lng,
+                title: title,
+                location: location,
+                year: year,
+                imgUrl: imgUrl,
+                fallbackAttr: fallbackAttr
               });
-
-              const popupHTML = `
-                <div class="photo-card-large">
-                  ${title ? `<h3>${title}</h3>` : ''}
-                  ${location ? `<p>📍 ${location}</p>` : ''}
-                  <div class="img-container"><img src="${imgUrl}" ${fallbackAttr} loading="lazy" alt="Photo"/></div>
-                </div>
-              `;
-
-              const marker = L.marker([lat, lng], { icon: photoIcon, imgUrl: imgUrl });
-              
-              marker.bindPopup(popupHTML, {
-                autoPan: true,
-                closeOnClick: false,
-                autoClose: false
-              });
-
-              markers.addLayer(marker);
             });
           }
 
-          if (mappedCount === 0 && !isRetry) {
+          if (allPhotoRecords.length === 0 && !isRetry) {
             loadMapData(CSV_URL_FALLBACK, true);
             return;
           }
 
-          if (typeof L.heatLayer === 'function' && heatPoints.length > 0) {
-            heatLayer = L.heatLayer(heatPoints, {
-              radius: isMobile ? 22 : 30,
-              blur: 16,
-              maxZoom: 6,
-              gradient: { 0.4: 'blue', 0.65: 'yellow', 1: 'red' }
-            }).addTo(map);
-
-            map.on('zoomend', function() {
-              if (map.getZoom() >= 6) {
-                if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
-              } else {
-                if (!map.hasLayer(heatLayer)) map.addLayer(heatLayer);
-              }
-            });
-          }
-
-          map.addLayer(markers);
+          initYearSliderUI();
+          renderDataset(allPhotoRecords);
         },
         error: function() {
           if (!isRetry) {
