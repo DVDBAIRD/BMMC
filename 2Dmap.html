@@ -146,24 +146,24 @@
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
   <script>
-    // Primary & Fallback CSV Download URLs
+    // Primary & Secondary Google Sheet CSV Download Endpoints
     const CSV_URL_PRIMARY  = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/export?format=csv&gid=1146027655';
     const CSV_URL_FALLBACK = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
 
     const isMobile = window.innerWidth <= 768;
 
-    // Fast Google Drive Thumbnail Converter
+    // Google Drive Thumbnail Converter (Formatted to sz=s500)
     function formatImgUrl(url) {
       if (!url) return '';
       url = url.trim();
-      const match = url.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
-      if (url.includes('drive.google.com') && match && match[1]) {
-        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w600`;
+      const match = url.match(/(?:id=|\/d\/|thumbnail\?id=)([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=s500`;
       }
       return url;
     }
 
-    // Ultra-broad key search: searches for matching terms anywhere in the key name
+    // Flexible key search
     function findRowVal(row, searchTerms) {
       for (let key in row) {
         if (!row[key]) continue;
@@ -177,7 +177,7 @@
       return '';
     }
 
-    // Safely parse numeric coordinates (handles commas, spaces, degree symbols)
+    // Coordinate parser
     function parseCoord(val) {
       if (!val) return NaN;
       const clean = val.replace(',', '.').replace(/[^0-9.-]/g, '');
@@ -195,11 +195,11 @@
       return '';
     }
 
-    // Initialize Map - Zoomed Out by 1 (Mobile: 2, Desktop: 3) centered on Australasia
-    const initialZoom = isMobile ? 2 : 3;
+    // Initialize Map - Centered on [-15, 135] (Zoom: 4 Mobile, 5 Desktop)
+    const initialZoom = isMobile ? 4 : 5;
     const map = L.map('map', {
       closePopupOnClick: false
-    }).setView([-25, 135], initialZoom);
+    }).setView([-15, 135], initialZoom);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap, © CARTO',
@@ -232,7 +232,7 @@
 
     let heatLayer = null;
 
-    // Load CSV function
+    // Load CSV Data
     function loadMapData(url, isRetry = false) {
       Papa.parse(url, {
         download: true,
@@ -244,7 +244,6 @@
 
           if (results.data && results.data.length > 0) {
             results.data.forEach(row => {
-              // Flexible searching for coordinates and image columns
               const latStr = findRowVal(row, ['lat', 'aa']);
               const lngStr = findRowVal(row, ['lng', 'long', 'ab']);
               const imgRaw = findRowVal(row, ['img1', 'img', 'image', 'u']);
@@ -262,7 +261,7 @@
 
                 // 2. Custom 75px x 75px Photo Icon
                 const customIconHTML = imgUrl 
-                  ? `<div class="single-photo-wrapper"><img src="${imgUrl}" loading="lazy"/></div>`
+                  ? `<div class="single-photo-wrapper"><img src="${imgUrl}" loading="lazy" onerror="this.onerror=null; this.src='https://via.placeholder.com/75?text=Photo';"/></div>`
                   : `<div class="no-img-marker"></div>`;
 
                 const photoIcon = L.divIcon({
@@ -295,9 +294,8 @@
             });
           }
 
-          // If primary URL produced 0 photos, retry with fallback URL
           if (count === 0 && !isRetry) {
-            console.log('Primary URL returned 0 photos. Retrying with fallback URL...');
+            console.log('Primary endpoint returned 0 rows. Trying fallback endpoint...');
             loadMapData(CSV_URL_FALLBACK, true);
             return;
           }
