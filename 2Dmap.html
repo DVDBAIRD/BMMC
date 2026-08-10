@@ -22,7 +22,7 @@
       border: 2px solid #e2e8f0;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
       overflow: hidden;
-      background: #ffffff;
+      background: #ffffff; /* White background */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -37,7 +37,7 @@
     .single-photo-wrapper img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: cover; /* Centered photo view */
       object-position: center;
       display: block;
     }
@@ -74,12 +74,12 @@
     }
     .leaflet-popup-content {
       margin: 0 !important;
-      width: 82vw !important;
+      width: 82vw !important; /* Mobile default */
       max-width: 440px !important;
     }
     @media (min-width: 768px) {
       .leaflet-popup-content {
-        width: 440px !important;
+        width: 440px !important; /* Desktop width */
       }
     }
     .photo-card-large {
@@ -100,7 +100,7 @@
     }
     .photo-card-large .img-container {
       width: 100%;
-      height: 280px;
+      height: 280px; /* Large image window */
       border-radius: 8px;
       background: #f8fafc;
       overflow: hidden;
@@ -108,10 +108,11 @@
     .photo-card-large .img-container img {
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: contain; /* Displays 100% width and height in window */
       display: block;
     }
 
+    /* Fallback Icon */
     .no-img-marker {
       width: 28px;
       height: 28px;
@@ -164,13 +165,15 @@
 
     const isMobile = window.innerWidth <= 768;
 
+    // Helper: Extract File ID from Google Drive links
     function extractDriveId(url) {
       if (!url) return '';
       url = url.trim();
-      const match = url.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
+      const match = url.match(/(?:id=|\/d\/|thumbnail\?id=)([a-zA-Z0-9_-]+)/);
       return (match && match[1]) ? match[1] : '';
     }
 
+    // Direct Image Download / View Link Formatter
     function formatImgUrl(url) {
       if (!url) return '';
       const fileId = extractDriveId(url);
@@ -180,6 +183,7 @@
       return url.trim();
     }
 
+    // VALIDATION: Reject invalid or non-URL image entries
     function isValidImgUrl(url) {
       if (!url || typeof url !== 'string') return false;
       url = url.trim();
@@ -190,12 +194,14 @@
       return false;
     }
 
-    function findRowVal(row, searchTerms) {
+    // STRICT Column Key Matcher (Prevents matching wrong columns like Category/Status)
+    function findRowValStrict(row, possibleNames) {
       for (let key in row) {
         if (!row[key]) continue;
         const cleanKey = key.trim().toLowerCase();
-        for (let term of searchTerms) {
-          if (cleanKey.includes(term.toLowerCase())) {
+        for (let name of possibleNames) {
+          const cleanName = name.trim().toLowerCase();
+          if (cleanKey === cleanName || cleanKey.startsWith(cleanName + ' ') || cleanKey.endsWith(' ' + cleanName)) {
             return row[key].toString().trim();
           }
         }
@@ -203,12 +209,14 @@
       return '';
     }
 
+    // Coordinate parser
     function parseCoord(val) {
       if (!val) return NaN;
       const clean = val.replace(',', '.').replace(/[^0-9.-]/g, '');
       return parseFloat(clean);
     }
 
+    // Extract Title from Column C (3rd column), taking text BEFORE '#'
     function getColCTitle(row) {
       const keys = Object.keys(row);
       if (keys.length >= 3) {
@@ -231,6 +239,7 @@
       worldCopyJump: false
     }).setView([-10, 135], initialZoom);
 
+    // Tile Layer configured with noWrap: true
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap, © CARTO',
       maxZoom: 19,
@@ -238,6 +247,7 @@
       bounds: worldBounds
     }).addTo(map);
 
+    // Marker Cluster Group
     const markers = L.markerClusterGroup({
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
@@ -262,6 +272,7 @@
 
     let heatLayer = null;
 
+    // Load CSV function
     function loadMapData(url, isRetry = false) {
       Papa.parse(url, {
         download: true,
@@ -276,13 +287,14 @@
           if (results.data && results.data.length > 0) {
             results.data.forEach((row, rowIndex) => {
               try {
-                const latStr = findRowVal(row, ['lat', 'aa']);
-                const lngStr = findRowVal(row, ['lng', 'long', 'ab']);
-                const imgRaw = findRowVal(row, ['img1', 'img', 'image', 'u']);
-                const location = findRowVal(row, ['made', 'location', 'city', 'x']);
+                // Strict targeting for specific columns
+                const latStr = findRowValStrict(row, ['Lat', 'Latitude']);
+                const lngStr = findRowValStrict(row, ['Lng', 'Longitude', 'Long']);
+                const imgRaw = findRowValStrict(row, ['Img1', 'Img', 'Image']);
+                const location = findRowValStrict(row, ['Made', 'Location', 'City']);
                 const title = getColCTitle(row);
 
-                // Ignore completely empty rows (blank trailing spreadsheet rows)
+                // Ignore completely blank rows
                 if (!latStr && !lngStr && !imgRaw && !location && !title) {
                   return;
                 }
@@ -304,6 +316,8 @@
 
                 const imgUrl = formatImgUrl(imgRaw);
                 const fileId = extractDriveId(imgRaw);
+                
+                // Fallback direct download link
                 const fallbackAttr = fileId ? `onerror="this.onerror=null; this.src='https://drive.google.com/uc?export=view&id=${fileId}';"` : '';
 
                 heatPoints.push([lat, lng, 0.9]);
@@ -348,13 +362,12 @@
             return;
           }
 
-          // Display detailed diagnostic status
+          // Display diagnostic status
           const statusEl = document.getElementById('status');
           statusEl.innerHTML = `
             <strong>📍 Mapped ${mappedCount} photos successfully!</strong><br/>
             <small style="color: #64748b;">
-              Skipped: ${missingCoords} missing Lat/Lng | ${missingImages} missing/invalid photos<br/>
-              <em>(Blank trailing spreadsheet rows are ignored)</em>
+              Skipped: ${missingCoords} missing Lat/Lng | ${missingImages} missing/invalid photos
             </small>
           `;
           setTimeout(() => { statusEl.style.display = 'none'; }, 6000);
