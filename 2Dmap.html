@@ -22,7 +22,7 @@
       border: 2px solid #e2e8f0;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
       overflow: hidden;
-      background: #ffffff; /* White background */
+      background: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -37,7 +37,7 @@
     .single-photo-wrapper img {
       width: 100%;
       height: 100%;
-      object-fit: cover; /* Centered photo view */
+      object-fit: cover;
       object-position: center;
       display: block;
     }
@@ -74,12 +74,12 @@
     }
     .leaflet-popup-content {
       margin: 0 !important;
-      width: 82vw !important; /* Mobile default */
+      width: 82vw !important;
       max-width: 440px !important;
     }
     @media (min-width: 768px) {
       .leaflet-popup-content {
-        width: 440px !important; /* Desktop width */
+        width: 440px !important;
       }
     }
     .photo-card-large {
@@ -100,7 +100,7 @@
     }
     .photo-card-large .img-container {
       width: 100%;
-      height: 280px; /* Large image window */
+      height: 280px;
       border-radius: 8px;
       background: #f8fafc;
       overflow: hidden;
@@ -108,17 +108,8 @@
     .photo-card-large .img-container img {
       width: 100%;
       height: 100%;
-      object-fit: contain; /* Displays 100% width and height in window */
+      object-fit: contain;
       display: block;
-    }
-
-    /* Fallback Icon */
-    .no-img-marker {
-      width: 28px;
-      height: 28px;
-      background: #ef4444;
-      border-radius: 50%;
-      border: 2px solid #fff;
     }
 
     .status-msg {
@@ -134,11 +125,58 @@
       line-height: 1.5;
       color: #1e293b;
     }
+
+    /* Optional Debugger Panel */
+    .debug-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1000;
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .debug-btn:hover { background: #0369a1; }
+
+    .debug-panel {
+      position: absolute;
+      top: 60px;
+      left: 20px;
+      right: 20px;
+      bottom: 70px;
+      z-index: 1001;
+      background: rgba(15, 23, 42, 0.96);
+      color: #f8fafc;
+      padding: 16px;
+      border-radius: 12px;
+      display: none;
+      overflow: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      font-size: 12px;
+    }
+    .debug-panel h2 { margin-top: 0; font-size: 16px; color: #38bdf8; }
+    .debug-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .debug-table th, .debug-table td { border: 1px solid #334155; padding: 6px 8px; text-align: left; word-break: break-all; }
+    .debug-table th { background: #1e293b; color: #94a3b8; position: sticky; top: 0; }
+    .status-ok { color: #4ade80; font-weight: bold; }
+    .status-bad { color: #f87171; }
   </style>
 </head>
 <body>
 
   <div id="status" class="status-msg">Loading spreadsheet photos...</div>
+  <button class="debug-btn" onclick="toggleDebug()">🔍 Debug Data Table</button>
+  
+  <div id="debugPanel" class="debug-panel">
+    <h2>Data Debugger: Detected Columns & Row Logic</h2>
+    <div id="debugContent">Parsing data...</div>
+  </div>
+
   <div id="map"></div>
 
   <!-- Canvas2D warning fix -->
@@ -151,6 +189,11 @@
       }
       return origGetContext.call(this, type, attribs);
     };
+
+    function toggleDebug() {
+      const panel = document.getElementById('debugPanel');
+      panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+    }
   </script>
 
   <!-- JS Libraries -->
@@ -165,7 +208,7 @@
 
     const isMobile = window.innerWidth <= 768;
 
-    // Helper: Extract File ID from Google Drive links
+    // Extract File ID from Google Drive URLs
     function extractDriveId(url) {
       if (!url) return '';
       url = url.trim();
@@ -173,7 +216,7 @@
       return (match && match[1]) ? match[1] : '';
     }
 
-    // Direct Image Download / View Link Formatter
+    // Direct Image Link Formatter
     function formatImgUrl(url) {
       if (!url) return '';
       const fileId = extractDriveId(url);
@@ -183,51 +226,61 @@
       return url.trim();
     }
 
-    // VALIDATION: Reject invalid or non-URL image entries
+    // DUAL COLUMN LOOKUP: Header Name Match -> Column Letter/Index Fallback
+    function getCellVal(row, possibleNames, colIndex) {
+      // 1. Header Name Match
+      for (let key in row) {
+        if (!row[key]) continue;
+        const cleanKey = key.trim().toLowerCase();
+        for (let name of possibleNames) {
+          if (cleanKey === name.toLowerCase() || cleanKey.includes(name.toLowerCase())) {
+            return row[key].toString().trim();
+          }
+        }
+      }
+      // 2. Index Fallback (C=2, U=20, X=23, AA=26, AB=27)
+      const keys = Object.keys(row);
+      if (colIndex !== undefined && keys[colIndex] && row[keys[colIndex]]) {
+        return row[keys[colIndex]].toString().trim();
+      }
+      return '';
+    }
+
+    // VALIDATION LOGIC: Accept http/https/drive.google/googleusercontent/thumbnail/id=
     function isValidImgUrl(url) {
       if (!url || typeof url !== 'string') return false;
       url = url.trim();
-      if (url.toLowerCase() === 'img1' || url.toLowerCase().startsWith('img:')) return false;
-      if (url.startsWith('http://') || url.startsWith('https://') || url.includes('drive.google.com') || url.includes('googleusercontent.com')) {
+      if (/^(img1|img:1|n\/a|none|null|undefined)$/i.test(url)) return false;
+      if (
+        url.startsWith('http://') || 
+        url.startsWith('https://') || 
+        url.includes('drive.google.com') || 
+        url.includes('googleusercontent.com') || 
+        url.includes('thumbnail') || 
+        url.includes('id=')
+      ) {
         return true;
       }
       return false;
     }
 
-    // STRICT Column Key Matcher (Prevents matching wrong columns like Category/Status)
-    function findRowValStrict(row, possibleNames) {
-      for (let key in row) {
-        if (!row[key]) continue;
-        const cleanKey = key.trim().toLowerCase();
-        for (let name of possibleNames) {
-          const cleanName = name.trim().toLowerCase();
-          if (cleanKey === cleanName || cleanKey.startsWith(cleanName + ' ') || cleanKey.endsWith(' ' + cleanName)) {
-            return row[key].toString().trim();
-          }
-        }
-      }
-      return '';
-    }
-
-    // Coordinate parser
+    // COORDINATE LOGIC: Replaces commas with dots, converts to numbers, checks bounds
     function parseCoord(val) {
       if (!val) return NaN;
       const clean = val.replace(',', '.').replace(/[^0-9.-]/g, '');
-      return parseFloat(clean);
+      const num = parseFloat(clean);
+      if (isNaN(num) || num === 0) return NaN;
+      return num;
     }
 
-    // Extract Title from Column C (3rd column), taking text BEFORE '#'
+    // TITLE LOGIC: Column C (index 2), strips everything after '#'
     function getColCTitle(row) {
-      const keys = Object.keys(row);
-      if (keys.length >= 3) {
-        const colCKey = keys[2];
-        const rawVal = row[colCKey] ? row[colCKey].toString() : '';
-        return rawVal.split('#')[0].trim();
-      }
-      return '';
+      const rawVal = getCellVal(row, ['Title', 'C'], 2);
+      if (!rawVal) return '';
+      return rawVal.split('#')[0].trim();
     }
 
-    // Initialize Map - Restricted to ONE World Map
+    // Initialize Map - Restricted to EXACTLY ONE WORLD MAP
     const initialZoom = isMobile ? 2 : 3;
     const worldBounds = [[-89, -180], [89, 180]];
 
@@ -239,7 +292,6 @@
       worldCopyJump: false
     }).setView([-10, 135], initialZoom);
 
-    // Tile Layer configured with noWrap: true
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap, © CARTO',
       maxZoom: 19,
@@ -247,7 +299,6 @@
       bounds: worldBounds
     }).addTo(map);
 
-    // Marker Cluster Group
     const markers = L.markerClusterGroup({
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
@@ -272,7 +323,6 @@
 
     let heatLayer = null;
 
-    // Load CSV function
     function loadMapData(url, isRetry = false) {
       Papa.parse(url, {
         download: true,
@@ -284,40 +334,74 @@
           let missingCoords = 0;
           let missingImages = 0;
 
+          let debugHTML = '';
           if (results.data && results.data.length > 0) {
+            const detectedHeaders = Object.keys(results.data[0]);
+            debugHTML += `<p><strong>Detected CSV Headers (${detectedHeaders.length}):</strong> <code style="color:#38bdf8;">${detectedHeaders.join(' | ')}</code></p>`;
+            debugHTML += `<table class="debug-table">
+              <tr>
+                <th>Row #</th>
+                <th>Title (Col C)</th>
+                <th>Location (Col X)</th>
+                <th>Lat (Col AA)</th>
+                <th>Lng (Col AB)</th>
+                <th>Img1 Raw (Col U)</th>
+                <th>Result Status</th>
+              </tr>`;
+
             results.data.forEach((row, rowIndex) => {
-              try {
-                // Strict targeting for specific columns
-                const latStr = findRowValStrict(row, ['Lat', 'Latitude']);
-                const lngStr = findRowValStrict(row, ['Lng', 'Longitude', 'Long']);
-                const imgRaw = findRowValStrict(row, ['Img1', 'Img', 'Image']);
-                const location = findRowValStrict(row, ['Made', 'Location', 'City']);
-                const title = getColCTitle(row);
+              const rowNum = rowIndex + 2; // Row number matching Google Sheets
 
-                // Ignore completely blank rows
-                if (!latStr && !lngStr && !imgRaw && !location && !title) {
-                  return;
-                }
+              // DUAL LOOKUPS:
+              // Title: Header "Title" or Col C (index 2)
+              // Img1: Header "Img1" or Col U (index 20)
+              // Location: Header "Made" or Col X (index 23)
+              // Lat: Header "Lat" or Col AA (index 26)
+              // Lng: Header "Lng" or Col AB (index 27)
+              const title = getColCTitle(row);
+              const imgRaw = getCellVal(row, ['Img1', 'Img'], 20);
+              const location = getCellVal(row, ['Made', 'Location'], 23);
+              const latStr = getCellVal(row, ['Lat', 'Latitude'], 26);
+              const lngStr = getCellVal(row, ['Lng', 'Longitude', 'Long'], 27);
 
-                const lat = parseCoord(latStr);
-                const lng = parseCoord(lngStr);
+              // Ignore blank trailing rows
+              if (!latStr && !lngStr && !imgRaw && !location && !title) {
+                return;
+              }
 
-                // 1. REJECT if invalid coordinates
-                if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0 || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-                  missingCoords++;
-                  return;
-                }
+              const lat = parseCoord(latStr);
+              const lng = parseCoord(lngStr);
 
-                // 2. REJECT if missing or invalid image URL
-                if (!isValidImgUrl(imgRaw)) {
-                  missingImages++;
-                  return;
-                }
+              let statusText = '';
+              let isOk = false;
 
+              if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                missingCoords++;
+                statusText = `<span class="status-bad">REJECTED: Invalid Lat/Lng ("${latStr}", "${lngStr}")</span>`;
+              } else if (!isValidImgUrl(imgRaw)) {
+                missingImages++;
+                statusText = `<span class="status-bad">REJECTED: Invalid Img1 ("${imgRaw}")</span>`;
+              } else {
+                isOk = true;
+                mappedCount++;
+                statusText = `<span class="status-ok">✔ MAPPED SUCCESS</span>`;
+              }
+
+              debugHTML += `
+                <tr>
+                  <td>${rowNum}</td>
+                  <td>${title || '<i style="color:#64748b;">(empty)</i>'}</td>
+                  <td>${location || '<i style="color:#64748b;">(empty)</i>'}</td>
+                  <td>${latStr || '<i style="color:#64748b;">(empty)</i>'}</td>
+                  <td>${lngStr || '<i style="color:#64748b;">(empty)</i>'}</td>
+                  <td>${imgRaw || '<i style="color:#64748b;">(empty)</i>'}</td>
+                  <td>${statusText}</td>
+                </tr>
+              `;
+
+              if (isOk) {
                 const imgUrl = formatImgUrl(imgRaw);
                 const fileId = extractDriveId(imgRaw);
-                
-                // Fallback direct download link
                 const fallbackAttr = fileId ? `onerror="this.onerror=null; this.src='https://drive.google.com/uc?export=view&id=${fileId}';"` : '';
 
                 heatPoints.push([lat, lng, 0.9]);
@@ -348,12 +432,11 @@
                 });
 
                 markers.addLayer(marker);
-                mappedCount++;
-
-              } catch (itemErr) {
-                console.warn(`Error row ${rowIndex}:`, itemErr);
               }
             });
+
+            debugHTML += `</table>`;
+            document.getElementById('debugContent').innerHTML = debugHTML;
           }
 
           if (mappedCount === 0 && !isRetry) {
@@ -362,7 +445,6 @@
             return;
           }
 
-          // Display diagnostic status
           const statusEl = document.getElementById('status');
           statusEl.innerHTML = `
             <strong>📍 Mapped ${mappedCount} photos successfully!</strong><br/>
@@ -372,7 +454,6 @@
           `;
           setTimeout(() => { statusEl.style.display = 'none'; }, 6000);
 
-          // Heatmap Layer
           heatLayer = L.heatLayer(heatPoints, {
             radius: isMobile ? 22 : 30,
             blur: 16,
@@ -388,19 +469,4 @@
             } else {
               if (!map.hasLayer(heatLayer)) map.addLayer(heatLayer);
             }
-          });
-        },
-        error: function() {
-          if (!isRetry) {
-            loadMapData(CSV_URL_FALLBACK, true);
-          } else {
-            document.getElementById('status').innerText = 'Failed to load spreadsheet. Verify sharing permissions.';
-          }
-        }
-      });
-    }
-
-    loadMapData(CSV_URL_PRIMARY);
-  </script>
-</body>
-</html>
+   
