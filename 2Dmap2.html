@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
 
   <style>
-    body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background: #c8d7e6; }
+    body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background: #aad3df; }
     #map { width: 100vw; height: 100vh; background: #aad3df; }
 
     /* 1. 75px x 75px Photo Thumbnail Icon (White Background) */
@@ -112,6 +112,14 @@
       display: block;
     }
 
+    .no-img-marker {
+      width: 28px;
+      height: 28px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 2px solid #fff;
+    }
+
     .status-msg {
       position: absolute;
       top: 10px;
@@ -124,9 +132,10 @@
       font-size: 13px;
       line-height: 1.5;
       color: #1e293b;
+      max-width: 80vw;
     }
 
-    /* Optional Debugger Panel */
+    /* Debugger Button & Panel */
     .debug-btn {
       position: absolute;
       bottom: 20px;
@@ -179,16 +188,27 @@
 
   <div id="map"></div>
 
-  <!-- Canvas2D warning fix -->
+  <!-- GLOBAL SCRIPT ERROR CATCHER: Displays exact error line if anything fails -->
   <script>
-    const origGetContext = HTMLCanvasElement.prototype.getContext;
-    HTMLCanvasElement.prototype.getContext = function(type, attribs) {
-      if (type === '2d') {
-        attribs = attribs || {};
-        attribs.willReadFrequently = true;
+    window.onerror = function(msg, url, line) {
+      const statusEl = document.getElementById('status');
+      if (statusEl) {
+        statusEl.innerHTML = `<strong style="color:#ef4444;">Script Error (Line ${line}):</strong> ${msg}`;
       }
-      return origGetContext.call(this, type, attribs);
+      return false;
     };
+
+    // Canvas2D warning fix
+    try {
+      const origGetContext = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function(type, attribs) {
+        if (type === '2d') {
+          attribs = attribs || {};
+          attribs.willReadFrequently = true;
+        }
+        return origGetContext.call(this, type, attribs);
+      };
+    } catch(e) {}
 
     function toggleDebug() {
       const panel = document.getElementById('debugPanel');
@@ -203,84 +223,13 @@
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
   <script>
+    // Primary & Fallback CSV Endpoint
     const CSV_URL_PRIMARY  = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/export?format=csv&gid=1146027655';
     const CSV_URL_FALLBACK = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
 
     const isMobile = window.innerWidth <= 768;
 
-    // Extract File ID from Google Drive URLs
-    function extractDriveId(url) {
-      if (!url) return '';
-      url = url.trim();
-      const match = url.match(/(?:id=|\/d\/|thumbnail\?id=)([a-zA-Z0-9_-]+)/);
-      return (match && match[1]) ? match[1] : '';
-    }
-
-    // Direct Image Link Formatter
-    function formatImgUrl(url) {
-      if (!url) return '';
-      const fileId = extractDriveId(url);
-      if (fileId) {
-        return `https://lh3.googleusercontent.com/d/${fileId}`;
-      }
-      return url.trim();
-    }
-
-    // DUAL COLUMN LOOKUP: Header Name Match -> Column Letter/Index Fallback
-    function getCellVal(row, possibleNames, colIndex) {
-      // 1. Header Name Match
-      for (let key in row) {
-        if (!row[key]) continue;
-        const cleanKey = key.trim().toLowerCase();
-        for (let name of possibleNames) {
-          if (cleanKey === name.toLowerCase() || cleanKey.includes(name.toLowerCase())) {
-            return row[key].toString().trim();
-          }
-        }
-      }
-      // 2. Index Fallback (C=2, U=20, X=23, AA=26, AB=27)
-      const keys = Object.keys(row);
-      if (colIndex !== undefined && keys[colIndex] && row[keys[colIndex]]) {
-        return row[keys[colIndex]].toString().trim();
-      }
-      return '';
-    }
-
-    // VALIDATION LOGIC: Accept http/https/drive.google/googleusercontent/thumbnail/id=
-    function isValidImgUrl(url) {
-      if (!url || typeof url !== 'string') return false;
-      url = url.trim();
-      if (/^(img1|img:1|n\/a|none|null|undefined)$/i.test(url)) return false;
-      if (
-        url.startsWith('http://') || 
-        url.startsWith('https://') || 
-        url.includes('drive.google.com') || 
-        url.includes('googleusercontent.com') || 
-        url.includes('thumbnail') || 
-        url.includes('id=')
-      ) {
-        return true;
-      }
-      return false;
-    }
-
-    // COORDINATE LOGIC: Replaces commas with dots, converts to numbers, checks bounds
-    function parseCoord(val) {
-      if (!val) return NaN;
-      const clean = val.replace(',', '.').replace(/[^0-9.-]/g, '');
-      const num = parseFloat(clean);
-      if (isNaN(num) || num === 0) return NaN;
-      return num;
-    }
-
-    // TITLE LOGIC: Column C (index 2), strips everything after '#'
-    function getColCTitle(row) {
-      const rawVal = getCellVal(row, ['Title', 'C'], 2);
-      if (!rawVal) return '';
-      return rawVal.split('#')[0].trim();
-    }
-
-    // Initialize Map - Restricted to EXACTLY ONE WORLD MAP
+    // STEP 1: Initialize Map FIRST so background tiles ALWAYS load immediately
     const initialZoom = isMobile ? 2 : 3;
     const worldBounds = [[-89, -180], [89, 180]];
 
@@ -292,37 +241,111 @@
       worldCopyJump: false
     }).setView([-10, 135], initialZoom);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap, © CARTO',
+    // Primary OpenStreetMap Tile Server (guaranteed global availability & noWrap)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
       maxZoom: 19,
-      noWrap: true,
-      bounds: worldBounds
+      noWrap: true
     }).addTo(map);
 
-    const markers = L.markerClusterGroup({
-      spiderfyOnMaxZoom: true,
-      showCoverageOnHover: false,
-      zoomToBoundsOnClick: true,
-      spiderfyDistanceMultiplier: isMobile ? 2.8 : 2.2,
-      maxClusterRadius: isMobile ? 38 : 55,
-      
-      iconCreateFunction: function(cluster) {
-        const totalCount = cluster.getChildCount();
-        return L.divIcon({
-          html: `<div class="cluster-number-badge">${totalCount}</div>`,
-          className: 'custom-cluster-number-icon',
-          iconSize: [48, 48],
-          iconAnchor: [24, 24]
-        });
-      }
-    });
+    // STEP 2: Initialize Plugins with Fallbacks
+    let markers;
+    if (typeof L.markerClusterGroup === 'function') {
+      markers = L.markerClusterGroup({
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        spiderfyDistanceMultiplier: isMobile ? 2.8 : 2.2,
+        maxClusterRadius: isMobile ? 38 : 55,
+        
+        iconCreateFunction: function(cluster) {
+          const totalCount = cluster.getChildCount();
+          return L.divIcon({
+            html: `<div class="cluster-number-badge">${totalCount}</div>`,
+            className: 'custom-cluster-number-icon',
+            iconSize: [48, 48],
+            iconAnchor: [24, 24]
+          });
+        }
+      });
 
-    markers.on('clusterclick', function(a) {
-      a.layer.spiderfy();
-    });
+      markers.on('clusterclick', function(a) {
+        if (a.layer && typeof a.layer.spiderfy === 'function') {
+          a.layer.spiderfy();
+        }
+      });
+    } else {
+      markers = L.featureGroup(); // Fallback if cluster plugin is blocked
+    }
 
     let heatLayer = null;
 
+    // STEP 3: Helper Functions
+    function extractDriveId(url) {
+      if (!url) return '';
+      url = url.trim();
+      const match = url.match(/(?:id=|\/d\/|thumbnail\?id=)([a-zA-Z0-9_-]+)/);
+      return (match && match[1]) ? match[1] : '';
+    }
+
+    function formatImgUrl(url) {
+      if (!url) return '';
+      const fileId = extractDriveId(url);
+      if (fileId) {
+        return `https://lh3.googleusercontent.com/d/${fileId}`;
+      }
+      return url.trim();
+    }
+
+    function getCellVal(row, possibleNames, colIndex) {
+      for (let key in row) {
+        if (!row[key]) continue;
+        const cleanKey = key.trim().toLowerCase();
+        for (let name of possibleNames) {
+          if (cleanKey === name.toLowerCase() || cleanKey.includes(name.toLowerCase())) {
+            return row[key].toString().trim();
+          }
+        }
+      }
+      const keys = Object.keys(row);
+      if (colIndex !== undefined && keys[colIndex] && row[keys[colIndex]]) {
+        return row[keys[colIndex]].toString().trim();
+      }
+      return '';
+    }
+
+    function isValidImgUrl(url) {
+      if (!url || typeof url !== 'string') return false;
+      url = url.trim();
+      if (/^(img1|img:1|n\/a|none|null|undefined)$/i.test(url)) return false;
+      if (
+        url.startsWith('http://') || 
+        url.startsWith('https://') || 
+        url.includes('drive.google') || 
+        url.includes('googleusercontent') || 
+        url.includes('thumbnail') || 
+        url.includes('id=')
+      ) {
+        return true;
+      }
+      return false;
+    }
+
+    function parseCoord(val) {
+      if (!val) return NaN;
+      const clean = val.replace(',', '.').replace(/[^0-9.-]/g, '');
+      const num = parseFloat(clean);
+      if (isNaN(num) || num === 0) return NaN;
+      return num;
+    }
+
+    function getColCTitle(row) {
+      const rawVal = getCellVal(row, ['Title', 'C'], 2);
+      if (!rawVal) return '';
+      return rawVal.split('#')[0].trim();
+    }
+
+    // STEP 4: Data Parser Function
     function loadMapData(url, isRetry = false) {
       Papa.parse(url, {
         download: true,
@@ -350,14 +373,8 @@
               </tr>`;
 
             results.data.forEach((row, rowIndex) => {
-              const rowNum = rowIndex + 2; // Row number matching Google Sheets
+              const rowNum = rowIndex + 2;
 
-              // DUAL LOOKUPS:
-              // Title: Header "Title" or Col C (index 2)
-              // Img1: Header "Img1" or Col U (index 20)
-              // Location: Header "Made" or Col X (index 23)
-              // Lat: Header "Lat" or Col AA (index 26)
-              // Lng: Header "Lng" or Col AB (index 27)
               const title = getColCTitle(row);
               const imgRaw = getCellVal(row, ['Img1', 'Img'], 20);
               const location = getCellVal(row, ['Made', 'Location'], 23);
@@ -446,41 +463,50 @@
           }
 
           const statusEl = document.getElementById('status');
-          statusEl.innerHTML = `
-            <strong>📍 Mapped ${mappedCount} photos successfully!</strong><br/>
-            <small style="color: #64748b;">
-              Skipped: ${missingCoords} missing Lat/Lng | ${missingImages} missing/invalid photos
-            </small>
-          `;
-          setTimeout(() => { statusEl.style.display = 'none'; }, 6000);
+          if (statusEl) {
+            statusEl.innerHTML = `
+              <strong>📍 Mapped ${mappedCount} photos successfully!</strong><br/>
+              <small style="color: #64748b;">
+                Skipped: ${missingCoords} missing Lat/Lng | ${missingImages} missing/invalid photos
+              </small>
+            `;
+            setTimeout(() => { statusEl.style.display = 'none'; }, 6000);
+          }
 
-          heatLayer = L.heatLayer(heatPoints, {
-            radius: isMobile ? 22 : 30,
-            blur: 16,
-            maxZoom: 6,
-            gradient: { 0.4: 'blue', 0.65: 'yellow', 1: 'red' }
-          }).addTo(map);
+          // Initialize Heatmap if plugin is available
+          if (typeof L.heatLayer === 'function' && heatPoints.length > 0) {
+            heatLayer = L.heatLayer(heatPoints, {
+              radius: isMobile ? 22 : 30,
+              blur: 16,
+              maxZoom: 6,
+              gradient: { 0.4: 'blue', 0.65: 'yellow', 1: 'red' }
+            }).addTo(map);
+
+            map.on('zoomend', function() {
+              if (map.getZoom() >= 6) {
+                if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+              } else {
+                if (!map.hasLayer(heatLayer)) map.addLayer(heatLayer);
+              }
+            });
+          }
 
           map.addLayer(markers);
-
-          map.on('zoomend', function() {
-            if (map.getZoom() >= 6) {
-              if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
-            } else {
-              if (!map.hasLayer(heatLayer)) map.addLayer(heatLayer);
-            }
-          });
         },
-        error: function() {
+        error: function(err) {
           if (!isRetry) {
             loadMapData(CSV_URL_FALLBACK, true);
           } else {
-            document.getElementById('status').innerText = 'Failed to load spreadsheet. Verify sharing permissions.';
+            const statusEl = document.getElementById('status');
+            if (statusEl) {
+              statusEl.innerHTML = `<strong style="color:#ef4444;">Failed to load CSV:</strong> ${err || 'Network Error'}`;
+            }
           }
         }
       });
     }
 
+    // Start loading spreadsheet data
     loadMapData(CSV_URL_PRIMARY);
   </script>
 </body>
