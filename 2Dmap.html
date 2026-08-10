@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Photo Map with Year Slider</title>
+  <title>Interactive Photo Map with Dual Year Slider</title>
 
   <!-- Leaflet CSS & Plugins -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -108,9 +108,35 @@
       display: block;
     }
 
+    /* DESKTOP LAYOUT (Default): Slider docked at Bottom-Left */
+    .year-slider-container {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(10px);
+      padding: 12px 18px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #f8fafc;
+      width: 290px;
+      box-sizing: border-box;
+    }
+
     /* MOBILE SPECIFIC OVERRIDES */
     @media (max-width: 768px) {
-      /* Mobile Enlarge Popup: Docks to Bottom-Left over the map */
+      /* Mobile Slider: Centered at Bottom */
+      .year-slider-container {
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        bottom: 15px !important;
+        width: 85vw !important;
+        max-width: 320px !important;
+      }
+
+      /* Mobile Enlarge Popup: Docks to Bottom-Left */
       .leaflet-popup {
         position: fixed !important;
         bottom: 85px !important;
@@ -125,7 +151,7 @@
         border-radius: 12px;
       }
       .leaflet-popup-tip-container {
-        display: none !important; /* Hide popup pointer tail on mobile overlay */
+        display: none !important;
       }
 
       /* Shrink Leaflet Branding & Controls by 20% on Mobile */
@@ -141,43 +167,87 @@
       }
     }
 
-    /* 4. Floating Interactive Year Range Slider */
-    .year-slider-bar {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1000;
-      background: rgba(15, 23, 42, 0.90);
-      backdrop-filter: blur(10px);
-      padding: 10px 18px;
-      border-radius: 20px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-      border: 1px solid rgba(255,255,255,0.15);
-      color: #f8fafc;
-      min-width: 280px;
-      max-width: 90vw;
-      text-align: center;
-    }
+    /* 4. Single Continuous Track with Blue Highlight Span */
     .year-slider-header {
       font-size: 13px;
       font-weight: 600;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .year-slider-header span { color: #38bdf8; font-weight: 700; }
-    .slider-inputs {
+    .year-slider-header span { color: #38bdf8; font-weight: 700; font-size: 14px; }
+
+    .dual-slider-track-wrapper {
+      position: relative;
+      width: 100%;
+      height: 22px;
       display: flex;
-      gap: 10px;
       align-items: center;
     }
-    .slider-inputs input[type=range] {
-      flex: 1;
-      accent-color: #0284c7;
-      cursor: pointer;
+
+    .slider-track-bg {
+      position: absolute;
+      width: 100%;
       height: 6px;
+      background: #334155;
+      border-radius: 3px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    /* Blue highlighted span between the two slider thumbs */
+    .slider-track-fill {
+      position: absolute;
+      height: 6px;
+      background: #0284c7;
+      border-radius: 3px;
+      top: 50%;
+      transform: translateY(-50%);
+      left: 0%;
+      width: 100%;
+    }
+
+    .dual-slider-track-wrapper input[type="range"] {
+      position: absolute;
+      width: 100%;
+      height: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      pointer-events: none;
+      -webkit-appearance: none;
+      appearance: none;
+      margin: 0;
+    }
+
+    /* Custom Webkit Thumb */
+    .dual-slider-track-wrapper input[type="range"]::-webkit-slider-thumb {
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid #0284c7;
+      pointer-events: auto;
+      -webkit-appearance: none;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      transition: transform 0.1s ease;
+    }
+    .dual-slider-track-wrapper input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Custom Firefox Thumb */
+    .dual-slider-track-wrapper input[type="range"]::-moz-range-thumb {
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid #0284c7;
+      pointer-events: auto;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
     }
 
     .no-img-marker {
@@ -193,15 +263,17 @@
 
   <div id="map"></div>
 
-  <!-- Interactive Year Range Slider Control -->
-  <div class="year-slider-bar">
+  <!-- Dual-Thumb Range Slider with Blue Span Line -->
+  <div class="year-slider-container">
     <div class="year-slider-header">
-      <div>Year Range:</div>
+      <div>Year Range</div>
       <span id="yearRangeText">Loading...</span>
     </div>
-    <div class="slider-inputs">
-      <input type="range" id="minYearSlider" min="1800" max="2026" value="1800" step="1" oninput="updateYearFilter()">
-      <input type="range" id="maxYearSlider" min="1800" max="2026" value="2026" step="1" oninput="updateYearFilter()">
+    <div class="dual-slider-track-wrapper">
+      <div class="slider-track-bg"></div>
+      <div class="slider-track-fill" id="sliderTrackFill"></div>
+      <input type="range" id="minYearSlider" min="1800" max="2026" value="1800" step="1" oninput="updateYearFilter(event)">
+      <input type="range" id="maxYearSlider" min="1800" max="2026" value="2026" step="1" oninput="updateYearFilter(event)">
     </div>
   </div>
 
@@ -410,7 +482,7 @@
       map.addLayer(markers);
     }
 
-    // Initialize Year Slider Controls with dynamic min/max years from dataset
+    // Initialize Dual Slider with Min/Max Years from Dataset
     function initYearSliderUI() {
       const years = allPhotoRecords
         .map(r => parseInt(r.year, 10))
@@ -432,23 +504,43 @@
       maxSlider.max = globalMaxYear;
       maxSlider.value = globalMaxYear;
 
-      document.getElementById('yearRangeText').innerText = `${globalMinYear} – ${globalMaxYear}`;
+      updateYearFilter();
     }
 
-    // Dynamic Year Filter Update
-    function updateYearFilter() {
-      let minVal = parseInt(document.getElementById('minYearSlider').value, 10);
-      let maxVal = parseInt(document.getElementById('maxYearSlider').value, 10);
+    // Dynamic Dual Slider Update & Blue Span Bar Position
+    function updateYearFilter(evt) {
+      const minSlider = document.getElementById('minYearSlider');
+      const maxSlider = document.getElementById('maxYearSlider');
+      const trackFill = document.getElementById('sliderTrackFill');
 
-      // Ensure min <= max
+      let minVal = parseInt(minSlider.value, 10);
+      let maxVal = parseInt(maxSlider.value, 10);
+
+      // Prevent thumbs from crossing
       if (minVal > maxVal) {
-        const temp = minVal;
-        minVal = maxVal;
-        maxVal = temp;
+        if (evt && evt.target === minSlider) {
+          minSlider.value = maxVal;
+          minVal = maxVal;
+        } else {
+          maxSlider.value = minVal;
+          maxVal = minVal;
+        }
       }
+
+      // Update Blue Line Fill Width & Left Position
+      const minRange = parseInt(minSlider.min, 10);
+      const maxRange = parseInt(minSlider.max, 10);
+      const rangeSpan = (maxRange - minRange) || 1;
+
+      const leftPercent = ((minVal - minRange) / rangeSpan) * 100;
+      const rightPercent = ((maxVal - minRange) / rangeSpan) * 100;
+
+      trackFill.style.left = leftPercent + '%';
+      trackFill.style.width = (rightPercent - leftPercent) + '%';
 
       document.getElementById('yearRangeText').innerText = `${minVal} – ${maxVal}`;
 
+      // Filter Photo Dataset
       const filtered = allPhotoRecords.filter(item => {
         const y = parseInt(item.year, 10);
         if (isNaN(y)) return true; // Keep items without a year
@@ -506,7 +598,6 @@
           }
 
           initYearSliderUI();
-          renderDataset(allPhotoRecords);
         },
         error: function() {
           if (!isRetry) {
