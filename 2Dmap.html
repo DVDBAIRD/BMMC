@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Photo Map</title>
+  <title>Interactive Photo Map - Australasia</title>
 
   <!-- Leaflet CSS & Plugins -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
 
   <style>
-    body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background: #e2e8f0; }
     #map { width: 100vw; height: 100vh; }
 
     /* 1. 75px x 75px Photo Thumbnail Icon (White Background) */
@@ -27,6 +27,7 @@
       align-items: center;
       justify-content: center;
       transition: transform 0.2s ease-in-out, border-color 0.2s ease-in-out;
+      cursor: pointer;
     }
     .single-photo-wrapper:hover {
       transform: scale(1.15);
@@ -41,7 +42,7 @@
       display: block;
     }
 
-    /* 2. Number Badge for > 3 Photos */
+    /* 2. Number Badge for Clusters */
     .cluster-number-badge {
       width: 48px;
       height: 48px;
@@ -55,6 +56,7 @@
       justify-content: center;
       font-weight: 700;
       font-size: 16px;
+      cursor: pointer;
       transition: transform 0.2s ease, background 0.2s ease;
     }
     .cluster-number-badge:hover {
@@ -63,17 +65,22 @@
       border-color: #38bdf8;
     }
 
-    /* 3. Twice as Big Popup Window */
+    /* 3. Responsive Popup Window (Mobile Friendly & Non-Flashing) */
     .leaflet-popup-content-wrapper {
       padding: 0;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
     }
     .leaflet-popup-content {
       margin: 0 !important;
-      width: 440px !important; /* Twice as big as previous */
-      max-width: 85vw !important;
+      width: 82vw !important; /* Mobile default */
+      max-width: 440px !important;
+    }
+    @media (min-width: 768px) {
+      .leaflet-popup-content {
+        width: 440px !important; /* Desktop width */
+      }
     }
     .photo-card-large {
       padding: 14px;
@@ -82,18 +89,18 @@
     }
     .photo-card-large h3 {
       margin: 0 0 4px 0;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
       color: #0f172a;
     }
     .photo-card-large p {
       margin: 0 0 10px 0;
-      font-size: 14px;
+      font-size: 13px;
       color: #64748b;
     }
     .photo-card-large .img-container {
       width: 100%;
-      height: 310px; /* Large image window */
+      height: 280px; /* Large image window */
       border-radius: 8px;
       background: #f8fafc;
       overflow: hidden;
@@ -140,14 +147,16 @@
 
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
+    
+    const isMobile = window.innerWidth <= 768;
 
-    // Google Drive URL Converter
+    // Fast Google Drive Thumbnail Converter (sz=w600 reduces image size from ~10MB to ~80KB for mobile speed)
     function formatImgUrl(url) {
       if (!url) return '';
       url = url.trim();
       const match = url.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
       if (url.includes('drive.google.com') && match && match[1]) {
-        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w600`;
       }
       return url;
     }
@@ -176,8 +185,11 @@
       return '';
     }
 
-    // Initialize Map
-    const map = L.map('map').setView([20, 0], 2);
+    // Initialize Map - Centered on Australasia [-25, 135]
+    const initialZoom = isMobile ? 3 : 4;
+    const map = L.map('map', {
+      closePopupOnClick: false // Prevents popups from closing on background click
+    }).setView([-25, 135], initialZoom);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap, © CARTO',
@@ -189,7 +201,8 @@
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
-      spiderfyDistanceMultiplier: 2.5, // Spreads out 75px photos generously
+      spiderfyDistanceMultiplier: isMobile ? 2.8 : 2.2, // Generous spacing for mobile touch
+      maxClusterRadius: isMobile ? 38 : 55, // Tighter clusters on mobile reveal far more distinct locations
       
       // Cluster Icon Generator
       iconCreateFunction: function(cluster) {
@@ -203,16 +216,10 @@
       }
     });
 
-    // Auto-Spiderfy function: Automatically fans out overlapping photos when zoomed in
-    function autoFanOutClusters() {
-      if (map.getZoom() >= 6) {
-        markers.eachLayer(function(layer) {
-          if (layer.__parent && typeof layer.__parent.spiderfy === 'function' && !layer.__parent._spiderfied) {
-            layer.__parent.spiderfy();
-          }
-        });
-      }
-    }
+    // RELIABLE SPIDERFY: Clicking ANY cluster badge triggers the wheel of images every time
+    markers.on('clusterclick', function(a) {
+      a.layer.spiderfy();
+    });
 
     let heatLayer = null;
 
@@ -236,7 +243,7 @@
             const lng = parseFloat(lngVal);
             const imgUrl = formatImgUrl(imgRaw);
 
-            // 1. Heatmap point
+            // 1. Heatmap Point
             heatPoints.push([lat, lng, 0.9]);
 
             // 2. Custom 75px x 75px Single Photo Icon
@@ -251,7 +258,7 @@
               iconAnchor: [37.5, 37.5]
             });
 
-            // 3. Popup Card
+            // 3. Popup Card (PERSISTENT & NON-FLASHING)
             const popupHTML = `
               <div class="photo-card-large">
                 ${title ? `<h3>${title}</h3>` : ''}
@@ -260,7 +267,15 @@
               </div>
             `;
 
-            const marker = L.marker([lat, lng], { icon: photoIcon, imgUrl: imgUrl }).bindPopup(popupHTML);
+            const marker = L.marker([lat, lng], { icon: photoIcon, imgUrl: imgUrl });
+            
+            // Bind popup with explicit persistence options
+            marker.bindPopup(popupHTML, {
+              autoPan: true,
+              closeOnClick: false,
+              autoClose: false
+            });
+
             markers.addLayer(marker);
             count++;
           }
@@ -271,8 +286,8 @@
 
         // Heatmap Layer
         heatLayer = L.heatLayer(heatPoints, {
-          radius: 30,
-          blur: 18,
+          radius: isMobile ? 22 : 30,
+          blur: 16,
           maxZoom: 6,
           gradient: { 0.4: 'blue', 0.65: 'yellow', 1: 'red' }
         }).addTo(map);
@@ -280,11 +295,10 @@
         // Add Markers Layer
         map.addLayer(markers);
 
-        // Auto-fan out photo clusters when zooming or moving
-        map.on('zoomend moveend', function() {
+        // Dynamic Zoom Control: Heatmap active when zoomed out (< 6), hides when zoomed in (>= 6)
+        map.on('zoomend', function() {
           if (map.getZoom() >= 6) {
             if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
-            autoFanOutClusters();
           } else {
             if (!map.hasLayer(heatLayer)) map.addLayer(heatLayer);
           }
