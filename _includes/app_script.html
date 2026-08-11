@@ -1,4 +1,3 @@
-
 <script>
   const EXHIBITS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
   const GRAMOPHONE_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=606568772';
@@ -1399,15 +1398,17 @@
         card.className = 'bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 p-2.5 rounded-2xl cursor-pointer hover:border-blue-500 transition flex flex-col justify-between group shadow-sm';
         card.innerHTML = `
           <div>
-            <div class="text-[10px] font-black text-slate-500 dark:text-slate-400 group-hover:text-blue-500 transition truncate">${e.short}</div>
-            <div class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate">${e.full.split('(')[1]?.replace(')', '') || ''}</div>
-            <div class="text-sm font-black text-blue-600 dark:text-blue-400 mt-1">${count} <span class="text-[10px] font-normal text-slate-400">items</span></div>
+            <div class="text-xs font-black text-slate-500 dark:text-slate-400 group-hover:text-blue-500 transition truncate">${e.short}</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">${e.full.split('(')[1]?.replace(')', '') || ''}</div>
+            <div class="flex items-center justify-between mt-1">
+              <div class="text-base font-black text-blue-600 dark:text-blue-400">${count} <span class="text-[10px] font-normal text-slate-400">items</span></div>
+              <div class="text-xs font-bold text-slate-500 dark:text-slate-400">${pct}%</div>
+            </div>
           </div>
           <div class="mt-2">
             <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
               <div class="bg-blue-600 h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
             </div>
-            <div class="text-[9px] font-bold text-slate-400 dark:text-slate-400 mt-1 text-right">${pct}%</div>
           </div>
         `;
         card.addEventListener('click', () => {
@@ -1483,7 +1484,7 @@
         });
       }
 
-      // Vertical Graph with Subcategories on Y-axis, stacked by Categories (including totals)
+      // Vertical Graph with Subcategories on Y-axis, stacked by Categories (showing ALL subcategories without skipping)
       const categoriesArray = Array.from(allCategoriesSet);
       const subcatsArray = Array.from(allSubcatsSet);
 
@@ -1526,7 +1527,7 @@
             },
             scales: {
               x: { stacked: true, grace: '10%', grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter', size: 10 } } },
-              y: { stacked: true, grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } }
+              y: { stacked: true, grid: { display: false }, ticks: { autoSkip: false, color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } }
             }
           }
         });
@@ -1546,11 +1547,21 @@
     if (scaleText) scaleText.textContent = 'Calculating Dimensions...';
     update3DSkyboxUI();
 
-    function hideSpinner() { if (spinner) { spinner.style.opacity = '0'; setTimeout(() => { spinner.style.display = 'none'; }, 300); } }
-    function showSpinner() { if (spinner) { spinner.style.display = 'flex'; spinner.style.opacity = '1'; } }
+    function hideSpinner() { 
+      if (spinner) { 
+        spinner.style.opacity = '0'; 
+        setTimeout(() => { spinner.style.display = 'none'; }, 300); 
+      } 
+    }
+    
+    function showSpinner() { 
+      if (spinner) { 
+        spinner.style.display = 'flex'; 
+        spinner.style.opacity = '1'; 
+      } 
+    }
 
-    const handleLoad = () => {
-      hideSpinner();
+    function updateDimensions() {
       try {
         const dims = viewer.getDimensions();
         if (dims && dims.x != null) {
@@ -1562,21 +1573,27 @@
       } catch (e) {
         if (scaleText) scaleText.textContent = 'Scale Reference Available';
       }
+    }
+
+    function handleLoad() {
+      hideSpinner();
+      updateDimensions();
       viewer.removeEventListener('load', handleLoad);
       viewer.removeEventListener('error', handleError);
-    };
+    }
 
-    const handleError = () => {
+    function handleError() {
       hideSpinner();
       showToast('Failed to load 3D model file', '⚠️');
       viewer.removeEventListener('load', handleLoad);
       viewer.removeEventListener('error', handleError);
-    };
+    }
+
+    modal.classList.remove('hidden');
 
     if (viewer.src === url && viewer.loaded) {
       hideSpinner();
-      handleLoad();
-      modal.classList.remove('hidden');
+      updateDimensions();
       return;
     }
 
@@ -1585,7 +1602,6 @@
     viewer.addEventListener('error', handleError);
     setTimeout(() => { if (viewer.loaded || (spinner && spinner.style.display !== 'none')) hideSpinner(); }, 1500);
     viewer.src = url;
-    modal.classList.remove('hidden');
   }
 
   function close3DLightbox() {
