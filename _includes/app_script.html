@@ -39,23 +39,41 @@
   ];
 
   function getEraByYear(yearNum) {
-    if (!yearNum || isNaN(yearNum)) return null;
+    if (yearNum === null || yearNum === undefined || isNaN(yearNum)) return null;
     return TIMELINE_ERAS.find(e => yearNum >= e.min && yearNum <= e.max) || null;
   }
 
   function getEraByRow(row) {
+    if (!row) return null;
     const ageStr = getVal(row, colIdx.age);
     const yearStr = getVal(row, colIdx.year);
-    const combined = `${ageStr} ${yearStr} ${row.join(' ')}`;
-    const match = combined.match(/\b([1-9][0-9]{3})\b/);
+
+    const match = `${ageStr} ${yearStr}`.match(/\b([1-9][0-9]{3})\b/);
     if (match) {
       const year = parseInt(match[1], 10);
       const era = getEraByYear(year);
       if (era) return era;
     }
-    const lower = ageStr.toLowerCase();
-    if (lower.includes('pre')) return TIMELINE_ERAS[0];
-    if (lower.includes('post')) return TIMELINE_ERAS[5];
+
+    const rowMatch = row.join(' ').match(/\b([1-9][0-9]{3})\b/);
+    if (rowMatch) {
+      const year = parseInt(rowMatch[1], 10);
+      const era = getEraByYear(year);
+      if (era) return era;
+    }
+
+    const lowerAge = ageStr.toLowerCase();
+    if (lowerAge.includes('prehistor') || lowerAge.includes('bc') || lowerAge.includes('b.c.') || lowerAge.includes('ancient')) return TIMELINE_ERAS[0];
+    if (lowerAge.includes('victorian') || lowerAge.includes('industrial') || lowerAge.includes('18th') || lowerAge.includes('19th')) return TIMELINE_ERAS[1];
+    if (lowerAge.includes('ww1') || lowerAge.includes('wwi') || lowerAge.includes('world war i') || lowerAge.includes('world war 1')) return TIMELINE_ERAS[2];
+    if (lowerAge.includes('interwar') || lowerAge.includes('depression') || lowerAge.includes('inter-war')) return TIMELINE_ERAS[3];
+    if (lowerAge.includes('ww2') || lowerAge.includes('wwii') || lowerAge.includes('world war ii') || lowerAge.includes('world war 2')) return TIMELINE_ERAS[4];
+    if (lowerAge.includes('post war') || lowerAge.includes('cold war') || lowerAge.includes('post-war')) return TIMELINE_ERAS[5];
+    if (lowerAge.includes('modern') || lowerAge.includes('21st') || lowerAge.includes('millennium')) return TIMELINE_ERAS[6];
+
+    if (lowerAge.includes('pre')) return TIMELINE_ERAS[0];
+    if (lowerAge.includes('post')) return TIMELINE_ERAS[5];
+
     return null;
   }
 
@@ -296,13 +314,13 @@
   function getAgeBadgeStyle(ageStr) {
     if (!ageStr) return 'bg-slate-900/80 text-white font-extrabold';
     const lower = ageStr.toLowerCase().trim();
-    if (lower.includes('pre')) return 'bg-sky-500/90 text-white border border-sky-300/40 shadow-sm font-extrabold';
-    if (lower.includes('post')) return 'bg-amber-500/90 text-slate-950 border border-amber-300/40 shadow-sm font-extrabold';
-    const num = parseInt(lower.replace(/[^0-9]/g, ''), 10);
-    if (!isNaN(num)) {
-      if (num < 1950) return 'bg-sky-500/90 text-white border border-sky-300/40 shadow-sm font-extrabold';
-      if (num >= 1950) return 'bg-amber-500/90 text-slate-950 border border-amber-300/40 shadow-sm font-extrabold';
-    }
+    if (lower.includes('prehistory')) return 'bg-purple-600/90 text-white border border-purple-400/40 shadow-sm font-extrabold';
+    if (lower.includes('victorian')) return 'bg-amber-600/90 text-white border border-amber-400/40 shadow-sm font-extrabold';
+    if (lower.includes('wwi')) return 'bg-red-600/90 text-white border border-red-400/40 shadow-sm font-extrabold';
+    if (lower.includes('interwar')) return 'bg-emerald-600/90 text-white border border-emerald-400/40 shadow-sm font-extrabold';
+    if (lower.includes('wwii')) return 'bg-rose-700/90 text-white border border-rose-400/40 shadow-sm font-extrabold';
+    if (lower.includes('post war') || lower.includes('post')) return 'bg-sky-600/90 text-white border border-sky-400/40 shadow-sm font-extrabold';
+    if (lower.includes('modern')) return 'bg-indigo-600/90 text-white border border-indigo-400/40 shadow-sm font-extrabold';
     return 'bg-slate-900/90 text-white border border-slate-700 font-extrabold';
   }
 
@@ -782,7 +800,7 @@
         return rawExhibitsRows.filter((row, originalIndex) => {
           const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
           const rowEra = getEraByRow(row);
-          const ageMatch = excludeField === 'age' || !ageVal || (rowEra && rowEra.short === ageVal) || getVal(row, colIdx.age) === ageVal;
+          const ageMatch = excludeField === 'age' || !ageVal || (rowEra && (rowEra.short === ageVal || rowEra.full === ageVal)) || getVal(row, colIdx.age) === ageVal;
           const typeMatch = excludeField === 'type' || !typeVal || getVal(row, colIdx.type).toLowerCase().includes(typeVal.toLowerCase());
           const catMatch = excludeField === 'category' || !catVal || getVal(row, colIdx.category).toLowerCase().includes(catVal.toLowerCase());
           const subCatMatch = excludeField === 'subcategory' || !subCatVal || getVal(row, colIdx.subcategory) === subCatVal;
@@ -807,8 +825,8 @@
         TIMELINE_ERAS.forEach(e => {
           const opt = document.createElement('option');
           opt.value = e.short;
-          opt.textContent = `${e.short} (${eraCounts[e.short] || 0})`;
-          if (e.short === currAge) opt.selected = true;
+          opt.textContent = `${e.full} (${eraCounts[e.short] || 0})`;
+          if (e.short === currAge || e.full === currAge) opt.selected = true;
           ageSelect.appendChild(opt);
         });
       }
@@ -951,7 +969,7 @@
       currentFilteredRows = rawExhibitsRows.map((row, index) => ({ row, originalIndex: index })).filter(({ row, originalIndex }) => {
         const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
         const rowEra = getEraByRow(row);
-        const ageMatch = !ageVal || (rowEra && rowEra.short === ageVal) || getVal(row, colIdx.age) === ageVal;
+        const ageMatch = !ageVal || (rowEra && (rowEra.short === ageVal || rowEra.full === ageVal)) || getVal(row, colIdx.age) === ageVal;
         const typeMatch = !typeVal || getVal(row, colIdx.type).toLowerCase().includes(typeVal.toLowerCase());
         const catMatch = !catVal || getVal(row, colIdx.category).toLowerCase().includes(catVal.toLowerCase());
         const subCatMatch = !subCatVal || getVal(row, colIdx.subcategory) === subCatVal;
@@ -1151,7 +1169,7 @@
 
       const totalSlots = slots.length;
       const isFav = favs.includes(originalIndex);
-      const ageBadgeClass = getAgeBadgeStyle(age);
+      const ageBadgeClass = getAgeBadgeStyle(eraDisplay);
       const theme = getCategoryTheme(category || type || subcategory);
 
       const card = document.createElement('div');
@@ -1164,7 +1182,6 @@
         const slotNum = sIdx + 1;
         const isHidden = slotNum > 1 ? 'hidden' : 'flex';
         if (s.type === '3d') {
-          // Relocated 3D Interactive Tag to bottom-2.5 left-2.5 so it never overlaps the Age badge
           mediaItemsHTML += `
             <div class="card-media-item ${isHidden} w-full h-full items-center justify-center relative pointer-events-none" data-slot-idx="${slotNum}">
               <model-viewer src="${s.url}" loading="lazy" auto-rotate rotation-per-second="20deg" interaction-prompt="none" shadow-intensity="0.4" style="width: 100%; height: 100%; display: block; --poster-color: transparent;" class="w-full h-full"></model-viewer>
@@ -1193,7 +1210,6 @@
             <button onclick="switchCardImage(${originalIndex}, 1, event)" title="Next Media" aria-label="Next Media" class="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-black rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-md shadow-md transition hover:scale-110 z-10">❯</button>
             <span id="card-badge-${originalIndex}" class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none z-10 shadow">1 / ${totalSlots}</span>
           ` : ''}
-          <!-- 20% Thinner Age Badge -->
           ${eraDisplay ? `<span class="absolute top-3 left-3 ${ageBadgeClass} backdrop-blur-sm px-2.5 py-0.5 rounded-full text-xs shadow-md pointer-events-none z-10">${eraDisplay}</span>` : ''}
         </div>
         
@@ -1353,14 +1369,21 @@
       itemsSumQty += itemQty;
 
       const era = getEraByRow(row);
-      if (era) eraCounts[era.short] += itemQty;
+      if (era) eraCounts[era.short] = (eraCounts[era.short] || 0) + itemQty;
 
-      const ageVal = getVal(row, colIdx.age).toLowerCase();
-      if (ageVal.includes('pre')) colPreCount += itemQty;
-      else if (ageVal.includes('post')) colPostCount += itemQty;
-      else {
-        const ageNum = parseInt(ageVal.replace(/[^0-9]/g, ''), 10);
-        if (!isNaN(ageNum)) { if (ageNum < 1950) colPreCount += itemQty; else colPostCount += itemQty; }
+      const ageVal = getVal(row, colIdx.age);
+      const ageNumMatch = (ageVal || '').match(/\b([1-9][0-9]{3})\b/);
+      if (ageNumMatch) {
+        const year = parseInt(ageNumMatch[1], 10);
+        if (year < 1950) colPreCount += itemQty;
+        else colPostCount += itemQty;
+      } else if (era) {
+        if (era.max < 1950) colPreCount += itemQty;
+        else colPostCount += itemQty;
+      } else {
+        const lower = ageVal.toLowerCase();
+        if (lower.includes('pre')) colPreCount += itemQty;
+        else if (lower.includes('post')) colPostCount += itemQty;
       }
 
       let yearNum = null;
@@ -1401,17 +1424,18 @@
         const count = eraCounts[e.short] || 0;
         const pct = itemsSumQty > 0 ? Math.round((count / itemsSumQty) * 100) : 0;
         const card = document.createElement('div');
-        card.className = 'bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 p-2.5 rounded-2xl cursor-pointer hover:border-blue-500 transition flex flex-col justify-between group';
+        card.className = 'bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 p-2.5 rounded-2xl cursor-pointer hover:border-blue-500 transition flex flex-col justify-between group shadow-sm';
         card.innerHTML = `
           <div>
-            <div class="text-[10px] font-black text-slate-400 dark:text-slate-400 group-hover:text-blue-500 transition">${e.short}</div>
-            <div class="text-sm font-black text-slate-900 dark:text-white mt-0.5">${count}</div>
+            <div class="text-[10px] font-black text-slate-500 dark:text-slate-400 group-hover:text-blue-500 transition truncate">${e.short}</div>
+            <div class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate">${e.full.split('(')[1]?.replace(')', '') || ''}</div>
+            <div class="text-sm font-black text-slate-900 dark:text-white mt-1">${count} <span class="text-[10px] font-normal text-slate-400">items</span></div>
           </div>
           <div class="mt-2">
             <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-              <div class="bg-blue-600 h-full rounded-full" style="width: ${pct}%"></div>
+              <div class="bg-blue-600 h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
             </div>
-            <div class="text-[9px] font-bold text-slate-400 mt-1 text-right">${pct}%</div>
+            <div class="text-[9px] font-bold text-slate-400 dark:text-slate-400 mt-1 text-right">${pct}%</div>
           </div>
         `;
         card.addEventListener('click', () => {
@@ -1433,8 +1457,9 @@
     const postElem = document.getElementById('statPost1950');
     if (totalAgeItems > 0) {
       const prePct = Math.round((colPreCount / totalAgeItems) * 100);
+      const postPct = 100 - prePct;
       if (preElem) preElem.textContent = `Pre 1950: ${prePct}% (${colPreCount})`;
-      if (postElem) postElem.textContent = `Post 1950: ${100 - prePct}% (${colPostCount})`;
+      if (postElem) postElem.textContent = `Post 1950: ${postPct}% (${colPostCount})`;
     } else {
       if (preElem) preElem.textContent = 'Pre 1950: 62%';
       if (postElem) postElem.textContent = 'Post 1950: 38%';
@@ -1589,7 +1614,7 @@
       const d3d = get3DUrlForItem(row);
       const { img1, img2 } = getImagesForItem(row);
       const isHot = isItemHot(row);
-      const ageBadgeClass = getAgeBadgeStyle(age);
+      const ageBadgeClass = getAgeBadgeStyle(eraDisplay);
       const cleanedDetails = cleanDetailsForModal(details);
       const theme = getCategoryTheme(category || type || subcategory);
 
@@ -1807,7 +1832,6 @@
     const toggleControlsBtn = document.getElementById('toggleControlsBtn');
     if (toggleControlsBtn) toggleControlsBtn.addEventListener('click', () => toggleCollapsibleControls());
 
-    // Automatic tab switching for 3D and Hot buttons if triggered on stats or gramophone
     document.getElementById('btn3DOnly').addEventListener('click', () => {
       if (currentTab !== 'exhibits') setTab('exhibits');
       only3DActive = !only3DActive;
