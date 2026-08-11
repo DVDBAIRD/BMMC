@@ -9,21 +9,6 @@
     </div>
   </div>
 
-  <!-- Historical Era Timeline Banner -->
-  <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm backdrop-blur-sm">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-      <div>
-        <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-          <span>⏳</span> Historical Era Timeline Breakdown
-        </h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">7-Era chronological distribution with live artifact counts and percentage meters</p>
-      </div>
-    </div>
-    <div id="timelineEraGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
-      <!-- Dynamically populated via JS -->
-    </div>
-  </div>
-
   <!-- Interactive 2D Map -->
   <div id="statMapCard" class="bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/30 border border-indigo-500/30 relative overflow-hidden backdrop-blur-md flex flex-col gap-4">
     <div class="flex items-center justify-between flex-wrap gap-2">
@@ -35,7 +20,7 @@
     </div>
   </div>
 
-  <!-- KPI Cards -->
+  <!-- Primary KPI Cards Grid -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-blue-500/50 transition">
       <div class="w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500 absolute top-0 left-0"></div>
@@ -44,7 +29,7 @@
           <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Total Items</span>
           <span class="p-1.5 bg-blue-50 dark:bg-blue-950/80 text-blue-600 rounded-xl text-base border border-blue-100 dark:border-blue-900/60">🏛️</span>
         </div>
-        <div class="text-2xl font-black text-slate-900 dark:text-white" id="statTotalItems">1,193</div>
+        <div class="text-2xl font-black text-blue-600 dark:text-blue-400" id="statTotalItems">1,193</div>
       </div>
     </div>
 
@@ -55,11 +40,11 @@
           <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Date Span</span>
           <span class="p-1.5 bg-amber-50 dark:bg-amber-950/80 text-amber-600 rounded-xl text-base border border-amber-100 dark:border-amber-900/60">⏳</span>
         </div>
-        <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white" id="statDateRange">--</div>
+        <div class="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400" id="statDateRange">--</div>
       </div>
     </div>
 
-    <!-- Pre / Post 1950 KPI Card (Dual Clear Metrics) -->
+    <!-- Pre / Post 1950 Dual Metrics Card with Colored Results Text -->
     <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-purple-500/50 transition">
       <div class="w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500 absolute top-0 left-0"></div>
       <div>
@@ -68,8 +53,8 @@
           <span class="p-1.5 bg-purple-50 dark:bg-purple-950/80 text-purple-600 rounded-xl text-base border border-purple-100 dark:border-purple-900/60">📜</span>
         </div>
         <div class="space-y-0.5 mt-1">
-          <div class="text-sm font-black text-slate-900 dark:text-white" id="statPre1950">Pre 1950: --</div>
-          <div class="text-sm font-black text-slate-900 dark:text-white" id="statPost1950">Post 1950: --</div>
+          <div class="text-sm font-black text-slate-900 dark:text-white" id="statPre1950">Pre 1950: <span class="text-purple-600 dark:text-purple-400">--</span></div>
+          <div class="text-sm font-black text-slate-900 dark:text-white" id="statPost1950">Post 1950: <span class="text-pink-600 dark:text-pink-400">--</span></div>
         </div>
       </div>
     </div>
@@ -87,6 +72,21 @@
           <span id="statNoLinks" class="text-xs text-slate-400 italic">No links recorded</span>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Historical Era Timeline Banner (Positioned Below KPIs & Before Graphs) -->
+  <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm backdrop-blur-sm">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+      <div>
+        <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+          <span>⏳</span> Historical Era Timeline Breakdown
+        </h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400">7-Era chronological distribution based on Column Y release dates</p>
+      </div>
+    </div>
+    <div id="timelineEraGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+      <!-- Dynamically populated via JS -->
     </div>
   </div>
 
@@ -113,13 +113,13 @@
     </div>
   </div>
 
-  <!-- Subcategories Stacked by Categories Chart -->
+  <!-- Vertical Subcategories Breakdown Stacked by Categories Chart -->
   <div class="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm backdrop-blur-sm">
     <div class="mb-4">
       <h3 class="text-base font-bold text-slate-900 dark:text-white">Subcategories Breakdown Stacked by Categories</h3>
-      <p class="text-xs text-slate-500 dark:text-slate-400">Distribution of subcategories grouped into primary categories</p>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Vertical bar view: Subcategories along Y-axis, stacked by primary categories (includes total counts)</p>
     </div>
-    <div class="chart-container relative h-[420px] w-full">
+    <div class="chart-container relative h-[480px] w-full">
       <canvas id="chartSubcatCategory"></canvas>
     </div>
   </div>

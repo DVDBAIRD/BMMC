@@ -1,3 +1,4 @@
+
 <script>
   const EXHIBITS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
   const GRAMOPHONE_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=606568772';
@@ -29,8 +30,8 @@
   const SUBCAT_PALETTE = ['#0284c7', '#059669', '#d97706', '#7c3aed', '#db2777', '#2563eb', '#0891b2', '#ca8a04', '#e11d48', '#4f46e5'];
 
   const TIMELINE_ERAS = [
-    { key: 'Prehistory', short: 'Prehistory', full: 'Prehistory / BC (Up to 1700)', min: -9999, max: 1700 },
-    { key: 'Victorian', short: 'Victorian', full: 'Victorian & Industrial (1700–1913)', min: 1701, max: 1913 },
+    { key: 'Prehistory', short: 'Prehistory', full: 'Prehistory / BC (Up to 1699)', min: -9999, max: 1699 },
+    { key: 'Victorian', short: 'Victorian', full: 'Victorian & Industrial (1700–1913)', min: 1700, max: 1913 },
     { key: 'WWI', short: 'WWI', full: 'World War I (1914–1918)', min: 1914, max: 1918 },
     { key: 'Interwar', short: 'Interwar', full: 'Interwar / Depression (1919–1938)', min: 1919, max: 1938 },
     { key: 'WWII', short: 'WWII', full: 'World War II (1939–1945)', min: 1939, max: 1945 },
@@ -43,37 +44,16 @@
     return TIMELINE_ERAS.find(e => yearNum >= e.min && yearNum <= e.max) || null;
   }
 
+  // Strictly extracts year ONLY from Column Y ("Year")
   function getEraByRow(row) {
     if (!row) return null;
-    const ageStr = getVal(row, colIdx.age);
     const yearStr = getVal(row, colIdx.year);
-
-    const match = `${ageStr} ${yearStr}`.match(/\b([1-9][0-9]{3})\b/);
+    if (!yearStr) return null;
+    const match = yearStr.match(/-?\d+/);
     if (match) {
-      const year = parseInt(match[1], 10);
-      const era = getEraByYear(year);
-      if (era) return era;
+      const year = parseInt(match[0], 10);
+      return getEraByYear(year);
     }
-
-    const rowMatch = row.join(' ').match(/\b([1-9][0-9]{3})\b/);
-    if (rowMatch) {
-      const year = parseInt(rowMatch[1], 10);
-      const era = getEraByYear(year);
-      if (era) return era;
-    }
-
-    const lowerAge = ageStr.toLowerCase();
-    if (lowerAge.includes('prehistor') || lowerAge.includes('bc') || lowerAge.includes('b.c.') || lowerAge.includes('ancient')) return TIMELINE_ERAS[0];
-    if (lowerAge.includes('victorian') || lowerAge.includes('industrial') || lowerAge.includes('18th') || lowerAge.includes('19th')) return TIMELINE_ERAS[1];
-    if (lowerAge.includes('ww1') || lowerAge.includes('wwi') || lowerAge.includes('world war i') || lowerAge.includes('world war 1')) return TIMELINE_ERAS[2];
-    if (lowerAge.includes('interwar') || lowerAge.includes('depression') || lowerAge.includes('inter-war')) return TIMELINE_ERAS[3];
-    if (lowerAge.includes('ww2') || lowerAge.includes('wwii') || lowerAge.includes('world war ii') || lowerAge.includes('world war 2')) return TIMELINE_ERAS[4];
-    if (lowerAge.includes('post war') || lowerAge.includes('cold war') || lowerAge.includes('post-war')) return TIMELINE_ERAS[5];
-    if (lowerAge.includes('modern') || lowerAge.includes('21st') || lowerAge.includes('millennium')) return TIMELINE_ERAS[6];
-
-    if (lowerAge.includes('pre')) return TIMELINE_ERAS[0];
-    if (lowerAge.includes('post')) return TIMELINE_ERAS[5];
-
     return null;
   }
 
@@ -800,7 +780,7 @@
         return rawExhibitsRows.filter((row, originalIndex) => {
           const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
           const rowEra = getEraByRow(row);
-          const ageMatch = excludeField === 'age' || !ageVal || (rowEra && (rowEra.short === ageVal || rowEra.full === ageVal)) || getVal(row, colIdx.age) === ageVal;
+          const ageMatch = excludeField === 'age' || !ageVal || (rowEra && (rowEra.short === ageVal || rowEra.full === ageVal)) || getVal(row, colIdx.year) === ageVal;
           const typeMatch = excludeField === 'type' || !typeVal || getVal(row, colIdx.type).toLowerCase().includes(typeVal.toLowerCase());
           const catMatch = excludeField === 'category' || !catVal || getVal(row, colIdx.category).toLowerCase().includes(catVal.toLowerCase());
           const subCatMatch = excludeField === 'subcategory' || !subCatVal || getVal(row, colIdx.subcategory) === subCatVal;
@@ -825,7 +805,7 @@
         TIMELINE_ERAS.forEach(e => {
           const opt = document.createElement('option');
           opt.value = e.short;
-          opt.textContent = `${e.full} (${eraCounts[e.short] || 0})`;
+          opt.textContent = `${e.full} - (${eraCounts[e.short] || 0})`;
           if (e.short === currAge || e.full === currAge) opt.selected = true;
           ageSelect.appendChild(opt);
         });
@@ -969,7 +949,7 @@
       currentFilteredRows = rawExhibitsRows.map((row, index) => ({ row, originalIndex: index })).filter(({ row, originalIndex }) => {
         const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
         const rowEra = getEraByRow(row);
-        const ageMatch = !ageVal || (rowEra && (rowEra.short === ageVal || rowEra.full === ageVal)) || getVal(row, colIdx.age) === ageVal;
+        const ageMatch = !ageVal || (rowEra && (rowEra.short === ageVal || rowEra.full === ageVal)) || getVal(row, colIdx.year) === ageVal;
         const typeMatch = !typeVal || getVal(row, colIdx.type).toLowerCase().includes(typeVal.toLowerCase());
         const catMatch = !catVal || getVal(row, colIdx.category).toLowerCase().includes(catVal.toLowerCase());
         const subCatMatch = !subCatVal || getVal(row, colIdx.subcategory) === subCatVal;
@@ -984,9 +964,9 @@
       } else if (sortBy === 'title-desc') {
         currentFilteredRows.sort((a, b) => parseTitleAndDetails(getVal(b.row, colIdx.title) || getVal(b.row, colIdx.id)).title.localeCompare(parseTitleAndDetails(getVal(a.row, colIdx.title) || getVal(a.row, colIdx.id)).title));
       } else if (sortBy === 'age-oldest') {
-        currentFilteredRows.sort((a, b) => getVal(a.row, colIdx.age).localeCompare(getVal(b.row, colIdx.age)));
+        currentFilteredRows.sort((a, b) => getVal(a.row, colIdx.year).localeCompare(getVal(b.row, colIdx.year)));
       } else if (sortBy === 'age-newest') {
-        currentFilteredRows.sort((a, b) => getVal(b.row, colIdx.age).localeCompare(getVal(a.row, colIdx.age)));
+        currentFilteredRows.sort((a, b) => getVal(b.row, colIdx.year).localeCompare(getVal(a.row, colIdx.year)));
       }
 
       renderExhibitsGrid();
@@ -1371,24 +1351,16 @@
       const era = getEraByRow(row);
       if (era) eraCounts[era.short] = (eraCounts[era.short] || 0) + itemQty;
 
-      const ageVal = getVal(row, colIdx.age);
-      const ageNumMatch = (ageVal || '').match(/\b([1-9][0-9]{3})\b/);
-      if (ageNumMatch) {
-        const year = parseInt(ageNumMatch[1], 10);
+      const yearStr = getVal(row, colIdx.year);
+      const yearMatch = (yearStr || '').match(/-?\d+/);
+      if (yearMatch) {
+        const year = parseInt(yearMatch[0], 10);
         if (year < 1950) colPreCount += itemQty;
         else colPostCount += itemQty;
-      } else if (era) {
-        if (era.max < 1950) colPreCount += itemQty;
-        else colPostCount += itemQty;
-      } else {
-        const lower = ageVal.toLowerCase();
-        if (lower.includes('pre')) colPreCount += itemQty;
-        else if (lower.includes('post')) colPostCount += itemQty;
       }
 
       let yearNum = null;
-      const yearMatch = (getVal(row, colIdx.year) || getVal(row, colIdx.age) || row.join(' ')).match(/\b([1-9][0-9]{3})\b/);
-      if (yearMatch) yearNum = parseInt(yearMatch[1], 10);
+      if (yearMatch) yearNum = parseInt(yearMatch[0], 10);
       if (yearNum) validYears.push(yearNum);
 
       if (yearNum && yearNum >= 1800) {
@@ -1429,7 +1401,7 @@
           <div>
             <div class="text-[10px] font-black text-slate-500 dark:text-slate-400 group-hover:text-blue-500 transition truncate">${e.short}</div>
             <div class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate">${e.full.split('(')[1]?.replace(')', '') || ''}</div>
-            <div class="text-sm font-black text-slate-900 dark:text-white mt-1">${count} <span class="text-[10px] font-normal text-slate-400">items</span></div>
+            <div class="text-sm font-black text-blue-600 dark:text-blue-400 mt-1">${count} <span class="text-[10px] font-normal text-slate-400">items</span></div>
           </div>
           <div class="mt-2">
             <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
@@ -1458,11 +1430,11 @@
     if (totalAgeItems > 0) {
       const prePct = Math.round((colPreCount / totalAgeItems) * 100);
       const postPct = 100 - prePct;
-      if (preElem) preElem.textContent = `Pre 1950: ${prePct}% (${colPreCount})`;
-      if (postElem) postElem.textContent = `Post 1950: ${postPct}% (${colPostCount})`;
+      if (preElem) preElem.innerHTML = `Pre 1950: <span class="text-purple-600 dark:text-purple-400 font-black">${prePct}% (${colPreCount})</span>`;
+      if (postElem) postElem.innerHTML = `Post 1950: <span class="text-pink-600 dark:text-pink-400 font-black">${postPct}% (${colPostCount})</span>`;
     } else {
-      if (preElem) preElem.textContent = 'Pre 1950: 62%';
-      if (postElem) postElem.textContent = 'Post 1950: 38%';
+      if (preElem) preElem.innerHTML = 'Pre 1950: <span class="text-purple-600 dark:text-purple-400 font-black">62%</span>';
+      if (postElem) postElem.innerHTML = 'Post 1950: <span class="text-pink-600 dark:text-pink-400 font-black">38%</span>';
     }
 
     if (chartStackedInstance) chartStackedInstance.destroy();
@@ -1511,11 +1483,23 @@
         });
       }
 
+      // Vertical Graph with Subcategories on Y-axis, stacked by Categories (including totals)
       const categoriesArray = Array.from(allCategoriesSet);
       const subcatsArray = Array.from(allSubcatsSet);
-      const subcatDatasets = subcatsArray.map((subcat, idx) => ({
-        label: unescapeHTML(subcat),
-        data: categoriesArray.map(cat => (subcatCatMap[cat] && subcatCatMap[cat][subcat]) || 0),
+
+      const subcatTotals = {};
+      subcatsArray.forEach(subcat => {
+        let sum = 0;
+        categoriesArray.forEach(cat => { sum += (subcatCatMap[cat] && subcatCatMap[cat][subcat]) || 0; });
+        subcatTotals[subcat] = sum;
+      });
+
+      const sortedSubcats = subcatsArray.sort((a, b) => subcatTotals[b] - subcatTotals[a]);
+      const subcatLabelsWithTotals = sortedSubcats.map(subcat => `${unescapeHTML(subcat)} (${subcatTotals[subcat]})`);
+
+      const subcatDatasets = categoriesArray.map((cat, idx) => ({
+        label: unescapeHTML(cat),
+        data: sortedSubcats.map(subcat => (subcatCatMap[cat] && subcatCatMap[cat][subcat]) || 0),
         backgroundColor: SUBCAT_PALETTE[idx % SUBCAT_PALETTE.length],
         borderWidth: 0, borderRadius: 4
       }));
@@ -1524,13 +1508,25 @@
       if (canvasSubcat) {
         chartSubcatCategoryInstance = new Chart(canvasSubcat.getContext('2d'), {
           type: 'bar',
-          data: { labels: categoriesArray, datasets: subcatDatasets },
+          data: { labels: subcatLabelsWithTotals, datasets: subcatDatasets },
           options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { labels: { color: textColor, font: { family: 'Inter', size: 11, weight: '600' } } }, tooltip: { mode: 'index', intersect: false } },
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: textColor, font: { family: 'Inter', size: 11, weight: '600' } } },
+              tooltip: {
+                mode: 'index', intersect: false,
+                callbacks: {
+                  footer: (tooltipItems) => {
+                    let total = 0;
+                    tooltipItems.forEach(i => { total += i.parsed.x; });
+                    return `Total Subcategory Items: ${total}`;
+                  }
+                }
+              }
+            },
             scales: {
-              x: { stacked: true, grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } },
-              y: { stacked: true, grace: '10%', grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter', size: 10 } } }
+              x: { stacked: true, grace: '10%', grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter', size: 10 } } },
+              y: { stacked: true, grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } }
             }
           }
         });
@@ -1543,19 +1539,48 @@
     const titleElem = document.getElementById('lightboxTitle');
     const viewer = document.getElementById('lightboxViewer');
     const spinner = document.getElementById('lightboxSpinner');
+    const scaleText = document.getElementById('lightboxScaleText');
     if (!modal || !viewer || !url) return;
 
     titleElem.textContent = title || 'Interactive 3D Model';
+    if (scaleText) scaleText.textContent = 'Calculating Dimensions...';
     update3DSkyboxUI();
 
     function hideSpinner() { if (spinner) { spinner.style.opacity = '0'; setTimeout(() => { spinner.style.display = 'none'; }, 300); } }
     function showSpinner() { if (spinner) { spinner.style.display = 'flex'; spinner.style.opacity = '1'; } }
 
-    if (viewer.src === url && viewer.loaded) { hideSpinner(); modal.classList.remove('hidden'); return; }
+    const handleLoad = () => {
+      hideSpinner();
+      try {
+        const dims = viewer.getDimensions();
+        if (dims && dims.x != null) {
+          const mmX = Math.round(dims.x * 1000);
+          const mmY = Math.round(dims.y * 1000);
+          const mmZ = Math.round(dims.z * 1000);
+          if (scaleText) scaleText.textContent = `${mmX} × ${mmY} × ${mmZ} mm | Interactive Scale Reference`;
+        }
+      } catch (e) {
+        if (scaleText) scaleText.textContent = 'Scale Reference Available';
+      }
+      viewer.removeEventListener('load', handleLoad);
+      viewer.removeEventListener('error', handleError);
+    };
+
+    const handleError = () => {
+      hideSpinner();
+      showToast('Failed to load 3D model file', '⚠️');
+      viewer.removeEventListener('load', handleLoad);
+      viewer.removeEventListener('error', handleError);
+    };
+
+    if (viewer.src === url && viewer.loaded) {
+      hideSpinner();
+      handleLoad();
+      modal.classList.remove('hidden');
+      return;
+    }
 
     showSpinner();
-    const handleLoad = () => { hideSpinner(); viewer.removeEventListener('load', handleLoad); viewer.removeEventListener('error', handleError); };
-    const handleError = () => { hideSpinner(); showToast('Failed to load 3D model file', '⚠️'); viewer.removeEventListener('load', handleLoad); viewer.removeEventListener('error', handleError); };
     viewer.addEventListener('load', handleLoad);
     viewer.addEventListener('error', handleError);
     setTimeout(() => { if (viewer.loaded || (spinner && spinner.style.display !== 'none')) hideSpinner(); }, 1500);
