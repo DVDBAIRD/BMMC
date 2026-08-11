@@ -249,7 +249,7 @@
       </div>
     </div>
 
-    <!-- Hidden Site Analytics Dashboard Section (Accessible via #analytics or #admin-stats) -->
+    <!-- Hidden Site Analytics Dashboard Section (Accessible via #analytics) -->
     <div id="adminAnalyticsSection" class="hidden space-y-4">
       <div class="flex items-center justify-between bg-white/90 dark:bg-slate-900/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div class="flex items-center gap-2">
@@ -294,7 +294,7 @@
         </div>
       </div>
 
-      <!-- Timeline Era Breakdown Grid (Moved to directly below Map of Item Origin, styled like Category Hubs) -->
+      <!-- Timeline Era Breakdown Grid (Positioned directly below Map of Item Origin, styled like Category Hubs) -->
       <div id="timelineEraSection" class="pt-1 border-t border-slate-200/60 dark:border-slate-800/80">
         <div id="timelineEraGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5"></div>
       </div>
@@ -414,4 +414,39 @@
 
   <!-- Item Detail Pop-up Modal -->
   <div id="detailModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-50 flex items-center justify-center p-3 sm:p-6 hidden transition-opacity" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div 
+    <div class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-3xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-indigo-500/40 relative flex flex-col backdrop-blur-2xl" id="modalContainer">
+      <div class="sticky top-0 z-20 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-indigo-500/20 px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-1.5">
+          <button id="modalPrevBtn" title="Previous Item" aria-label="Previous Item" class="p-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-extrabold transition flex items-center gap-1">
+            <span>←</span> <span class="hidden sm:inline">Prev</span>
+          </button>
+          <span id="modalCounter" class="text-[11px] font-extrabold text-indigo-600 dark:text-indigo-300 px-2"></span>
+          <button id="modalNextBtn" title="Next Item" aria-label="Next Item" class="p-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-extrabold transition flex items-center gap-1">
+            <span class="hidden sm:inline">Next</span> <span>→</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnShareExhibit" title="Copy Link" aria-label="Copy Link" class="p-2 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-extrabold transition">🔗</button>
+          <button id="closeModal" title="Close (Esc)" aria-label="Close modal" class="p-2 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 font-extrabold transition">✕</button>
+        </div>
+      </div>
+      <div id="modalContent" class="px-4 sm:px-8 pt-4 pb-6 sm:pb-8"></div>
+    </div>
+  </div>
+
+  <!-- Standalone 3D Lightbox Modal -->
+  <div id="lightbox3DModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-2xl z-[60] flex items-center justify-center p-3 sm:p-6 hidden transition-opacity" role="dialog" aria-modal="true">
+    <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-3xl max-w-5xl w-full h-[85vh] shadow-2xl border-2 border-indigo-500/50 relative flex flex-col overflow-hidden">
+      <div class="px-5 py-3.5 bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/80 flex items-center justify-between z-10">
+        <div class="flex items-center gap-2 overflow-hidden">
+          <span class="text-xl">👓</span>
+          <h3 id="lightboxTitle" class="text-sm sm:text-base font-extrabold truncate text-slate-900 dark:text-white">Interactive 3D Model</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnToggleLightboxSkybox" onclick="toggleModal3DSkybox(event)" class="text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1 rounded-xl border border-slate-300 dark:border-slate-700 transition flex items-center gap-1">☀️ Light Sky</button>
+          <button id="close3DLightbox" title="Close 3D View" aria-label="Close 3D View" class="p-1.5 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 font-extrabold transition">✕</button>
+        </div>
+      </div>
+
+      <div id="lightbox3DContainer" class="relative w-full h-full flex items-center justify-center bg-slate-950 overflow-hidden transiti
