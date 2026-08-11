@@ -553,7 +553,7 @@ function setTab(tabName) {
   currentTab = tabName;
   stopAudioGuide();
   hideLoadingSpinner();
-  if (tabName !== 'stats' && window.location.hash === '#stats') window.history.replaceState(null, '', window.location.pathname);
+  if (tabName !== 'stats' && tabName !== 'analytics' && window.location.hash === '#stats') window.history.replaceState(null, '', window.location.pathname);
 
   const exhibitsFilterGrid = document.getElementById('exhibitsFilterGrid');
   const gramophoneFilterGrid = document.getElementById('gramophoneFilterGrid');
@@ -561,9 +561,12 @@ function setTab(tabName) {
   const gridPrompt = document.getElementById('gridPrompt');
   const gridSection = document.getElementById('gridSection');
   const statsSection = document.getElementById('statsSection');
+  const adminAnalyticsSection = document.getElementById('adminAnalyticsSection');
   const headerTitle = document.getElementById('headerTitleText');
   const headerIcon = document.getElementById('headerLogoIcon');
   const subhead = document.getElementById('subheadingText');
+
+  if (adminAnalyticsSection) adminAnalyticsSection.classList.add('hidden');
 
   if (tabName === 'exhibits') {
     statsSection.classList.add('hidden'); gridSection.classList.remove('hidden');
@@ -587,9 +590,15 @@ function setTab(tabName) {
     headerTitle.textContent = 'Museum Insights Live'; headerIcon.textContent = 'ℹ️';
     subhead.textContent = 'Explore live analytics, origin distribution, and chronological evolution from the Bonniefields Museum catalog.';
     renderMuseumStatistics();
+  } else if (tabName === 'analytics') {
+    gridPrompt.classList.add('hidden'); gridSection.classList.add('hidden'); statsSection.classList.add('hidden');
+    exhibitsFilterGrid.classList.add('hidden'); gramophoneFilterGrid.classList.add('hidden'); searchSortBar.classList.add('hidden');
+    if (adminAnalyticsSection) adminAnalyticsSection.classList.remove('hidden');
+    headerTitle.textContent = 'Site Traffic Dashboard'; headerIcon.textContent = '📊';
+    subhead.textContent = 'Live visitor statistics, pageviews, and visitor interactions tracked by Umami.';
   }
   updateFavoritesBadge();
-  if (tabName !== 'stats') { updateDynamicDropdowns(); filterCatalog(true); }
+  if (tabName !== 'stats' && tabName !== 'analytics') { updateDynamicDropdowns(); filterCatalog(true); }
 }
 
 function initFuseSearch() {
@@ -669,7 +678,8 @@ async function loadCatalogData() {
 
 function checkUrlHashForExhibit() {
   const hash = window.location.hash;
-  if (hash === '#stats') setTab('stats');
+  if (hash === '#analytics' || hash === '#admin-stats') setTab('analytics');
+  else if (hash === '#stats') setTab('stats');
   else if (hash && hash.startsWith('#exhibit-')) {
     const index = parseInt(hash.replace('#exhibit-', ''), 10);
     if (!isNaN(index) && rawExhibitsRows[index]) { filterCatalog(true); openModalByOriginalIndex(index); }
@@ -684,11 +694,16 @@ function renderCollectionHubs(rows) {
   if (!hubsGrid) return;
   hubsGrid.innerHTML = '';
 
+  const totalExhibitsCount = rows.length;
+
   MAIN_HUB_CATEGORIES.forEach(catName => {
     const baseName = catName.toLowerCase().replace(/s$/, '');
     const matchingRows = rows.filter(r => getVal(r, colIdx.category).toLowerCase().includes(baseName) || getVal(r, colIdx.type).toLowerCase().includes(baseName));
     const count = matchingRows.length;
     if (count === 0) return;
+
+    const pctNum = totalExhibitsCount > 0 ? (count / totalExhibitsCount * 100) : 0;
+    const pctDisplay = pctNum > 0 && pctNum < 1 ? pctNum.toFixed(1) : Math.round(pctNum);
 
     const customImg = HUB_CUSTOM_IMAGES[catName];
     const firstImgRow = matchingRows.find(r => getVal(r, colIdx.img1) !== '');
@@ -701,7 +716,10 @@ function renderCollectionHubs(rows) {
     hubCard.innerHTML = `
       <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5" style="background-color: ${theme.hex}25;">
         <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${catName}" />
-        <span class="absolute top-1.5 right-1.5 text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${theme.hex}; color: ${theme.text};">${count}</span>
+        <div class="absolute top-1.5 right-1.5 flex flex-col items-end gap-0.5 z-10">
+          <span class="text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${theme.hex}; color: ${theme.text};">${count}</span>
+          <span class="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full shadow-md bg-slate-900/80 text-white backdrop-blur-sm">${pctDisplay}%</span>
+        </div>
       </div>
       <div class="p-2.5 flex-1 flex flex-col justify-between">
         <h3 class="font-black text-xs line-clamp-1" style="color: ${theme.hex};">${catName}</h3>
@@ -732,13 +750,20 @@ function renderCollectionHubs(rows) {
   });
 
   const gramTheme = CATEGORY_PALETTE.gramophones;
+  const totalCatalogItems = totalExhibitsCount + rawGramophoneRows.length;
+  const gramPctNum = totalCatalogItems > 0 ? (rawGramophoneRows.length / totalCatalogItems * 100) : 0;
+  const gramPctDisplay = gramPctNum > 0 && gramPctNum < 1 ? gramPctNum.toFixed(1) : Math.round(gramPctNum);
+
   const gramophoneHubCard = document.createElement('div');
   gramophoneHubCard.className = 'bg-white dark:bg-slate-900 rounded-2xl border-2 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col group relative';
   gramophoneHubCard.style.borderColor = gramTheme.hex;
   gramophoneHubCard.innerHTML = `
     <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5 text-3xl" style="background-color: ${gramTheme.hex}25;">
       🎵
-      <span class="absolute top-1.5 right-1.5 text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${gramTheme.hex}; color: ${gramTheme.text};">${rawGramophoneRows.length}</span>
+      <div class="absolute top-1.5 right-1.5 flex flex-col items-end gap-0.5 z-10">
+        <span class="text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${gramTheme.hex}; color: ${gramTheme.text};">${rawGramophoneRows.length}</span>
+        <span class="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full shadow-md bg-slate-900/80 text-white backdrop-blur-sm">${gramPctDisplay}%</span>
+      </div>
     </div>
     <div class="p-2.5 flex-1 flex flex-col justify-between">
       <h3 class="font-black text-xs line-clamp-1" style="color: ${gramTheme.hex};">Gramophones</h3>
@@ -1387,27 +1412,42 @@ function renderMuseumStatistics() {
     }
   });
 
+  // Populate Timeline Era Grid (Styled like Category Hubs, 7 Eras + 1 Items of Interest)
   const timelineEraGrid = document.getElementById('timelineEraGrid');
   if (timelineEraGrid) {
+    timelineEraGrid.className = "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5";
     timelineEraGrid.innerHTML = '';
-    TIMELINE_ERAS.forEach(e => {
-      const count = eraCounts[e.short] || 0;
-      const pct = itemsSumQty > 0 ? Math.round((count / itemsSumQty) * 100) : 0;
+
+    const totalMuseumItems = rawExhibitsRows.length;
+    const eraColors = ['#7c3aed', '#d97706', '#dc2626', '#059669', '#e11d48', '#0284c7', '#4f46e5'];
+
+    TIMELINE_ERAS.forEach((e, idx) => {
+      const eraRows = rawExhibitsRows.filter(r => {
+        const era = getEraByRow(r);
+        return era && era.short === e.short;
+      });
+      const count = eraRows.length;
+      const pctNum = totalMuseumItems > 0 ? (count / totalMuseumItems * 100) : 0;
+      const pctDisplay = pctNum > 0 && pctNum < 1 ? pctNum.toFixed(1) : Math.round(pctNum);
+
+      const firstImgRow = eraRows.find(r => getVal(r, colIdx.img1) !== '');
+      const previewImg = formatImageUrl(firstImgRow ? getVal(firstImgRow, colIdx.img1) : '') || NO_IMAGE_SVG;
+      const hexColor = eraColors[idx % eraColors.length];
+
       const card = document.createElement('div');
-      card.className = 'bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 p-2.5 rounded-2xl cursor-pointer hover:border-blue-500 transition flex flex-col justify-between group shadow-sm';
+      card.className = 'bg-white dark:bg-slate-900 rounded-2xl border-2 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col group relative';
+      card.style.borderColor = hexColor;
       card.innerHTML = `
-        <div>
-          <div class="text-xs font-black text-slate-500 dark:text-slate-400 group-hover:text-blue-500 transition truncate">${e.short}</div>
-          <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">${e.full.split('(')[1]?.replace(')', '') || ''}</div>
-          <div class="flex items-center justify-between mt-1">
-            <div class="text-base font-black text-blue-600 dark:text-blue-400">${count} <span class="text-[10px] font-normal text-slate-400">items</span></div>
-            <div class="text-xs font-bold text-slate-500 dark:text-slate-400">${pct}%</div>
+        <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5" style="background-color: ${hexColor}25;">
+          <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${e.short}" />
+          <div class="absolute top-1.5 right-1.5 flex flex-col items-end gap-0.5 z-10">
+            <span class="text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${hexColor}; color: #ffffff;">${count}</span>
+            <span class="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full shadow-md bg-slate-900/80 text-white backdrop-blur-sm">${pctDisplay}%</span>
           </div>
         </div>
-        <div class="mt-2">
-          <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-            <div class="bg-blue-600 h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
-          </div>
+        <div class="p-2.5 flex-1 flex flex-col justify-between">
+          <h3 class="font-black text-xs line-clamp-1" style="color: ${hexColor};">${e.short}</h3>
+          <span class="text-[10px] font-extrabold mt-1 flex items-center gap-0.5" style="color: ${hexColor};">Explore →</span>
         </div>
       `;
       card.addEventListener('click', () => {
@@ -1418,6 +1458,40 @@ function renderMuseumStatistics() {
       });
       timelineEraGrid.appendChild(card);
     });
+
+    // 8th Button: Items of Interest (Hot Items)
+    const hotRows = rawExhibitsRows.filter(r => isItemHot(r));
+    const hotCount = hotRows.length;
+    const hotPctNum = totalMuseumItems > 0 ? (hotCount / totalMuseumItems * 100) : 0;
+    const hotPctDisplay = hotPctNum > 0 && hotPctNum < 1 ? hotPctNum.toFixed(1) : Math.round(hotPctNum);
+    const firstHotImgRow = hotRows.find(r => getVal(r, colIdx.img1) !== '');
+    const hotPreviewImg = formatImageUrl(firstHotImgRow ? getVal(firstHotImgRow, colIdx.img1) : '') || NO_IMAGE_SVG;
+    const hotColor = '#D97706';
+
+    const hotCard = document.createElement('div');
+    hotCard.className = 'bg-white dark:bg-slate-900 rounded-2xl border-2 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col group relative';
+    hotCard.style.borderColor = hotColor;
+    hotCard.innerHTML = `
+      <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5" style="background-color: ${hotColor}25;">
+        <img src="${hotPreviewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="Items of Interest" />
+        <div class="absolute top-1.5 right-1.5 flex flex-col items-end gap-0.5 z-10">
+          <span class="text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${hotColor}; color: #ffffff;">${hotCount}</span>
+          <span class="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full shadow-md bg-slate-900/80 text-white backdrop-blur-sm">${hotPctDisplay}%</span>
+        </div>
+      </div>
+      <div class="p-2.5 flex-1 flex flex-col justify-between">
+        <h3 class="font-black text-xs line-clamp-1" style="color: ${hotColor};">🔥 Items of Interest</h3>
+        <span class="text-[10px] font-extrabold mt-1 flex items-center gap-0.5" style="color: ${hotColor};">Explore →</span>
+      </div>
+    `;
+    hotCard.addEventListener('click', () => {
+      setTab('exhibits');
+      hotOnlyActive = true;
+      const btnHot = document.getElementById('btnHotOnly');
+      if (btnHot) btnHot.classList.add('ring-2');
+      updateDynamicDropdowns(); filterCatalog(true); scrollToGrid();
+    });
+    timelineEraGrid.appendChild(hotCard);
   }
 
   document.getElementById('statTotalItems').textContent = itemsSumQty > 0 ? itemsSumQty.toLocaleString() : '1,193';
@@ -1483,7 +1557,7 @@ function renderMuseumStatistics() {
       });
     }
 
-    // Vertical Graph with Subcategories on Y-axis, stacked by Categories (showing ALL subcategories without skipping)
+    // Vertical Graph with Subcategories on Y-axis, stacked by Categories
     const categoriesArray = Array.from(allCategoriesSet);
     const subcatsArray = Array.from(allSubcatsSet);
 
@@ -1580,10 +1654,8 @@ function open3DLightbox(rawUrl, rawTitle) {
     }
   }
 
-  // Unhide modal immediately so canvas has layout size in DOM
   modal.classList.remove('hidden');
 
-  // If viewer already has this exact src
   if (viewer.src === url || viewer.getAttribute('src') === url) {
     hideSpinner();
     if (viewer.loaded) {
@@ -1779,7 +1851,6 @@ function openModal(row, originalIndex) {
     if (btnMain) btnMain.onclick = () => googleItemSearch(displayTitle, category, details);
     populateVoiceDropdown();
 
-    // Dynamically calculate dimensions for pop-up modal 3D viewer
     const modalViewer = document.getElementById('modal3DViewer');
     const modalScaleText = document.getElementById('modal3DScaleText');
     if (modalViewer) {
@@ -1903,7 +1974,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnSurprise').addEventListener('click', () => {
     const rows = (currentTab === 'gramophone') ? rawGramophoneRows : rawExhibitsRows;
     if (!rows || rows.length === 0) return;
-    if (currentTab === 'stats') setTab('exhibits');
+    if (currentTab === 'stats' || currentTab === 'analytics') setTab('exhibits');
     if (!isGridActive) filterCatalog(true);
     openModalByOriginalIndex(Math.floor(Math.random() * rows.length));
   });
