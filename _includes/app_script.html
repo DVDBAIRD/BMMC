@@ -1703,4 +1703,161 @@
       const label = getVal(row, 3) || 'Unspecified Label';
       const format = unescapeHTML(getVal(row, 4)) || '';
       const released = getVal(row, 6) || '';
-      const colMDetails = getVal(
+      const colMDetails = getVal(row, 12);
+      const discogsUrl = getDiscogsUrl(row);
+      const hasDiscogsRecording = checkIfHasRecording(row);
+      const hasArchiveRecording = getVal(row, 11).toLowerCase().includes('yes');
+      const hasAnyRecording = hasDiscogsRecording || hasArchiveRecording;
+      const archiveUrl = buildArchiveSearchUrl(rawTitle, catalogNum);
+      const ytQuery = encodeURIComponent(`${unescapeHTML(artist)} ${unescapeHTML(rawTitle)}`.replace(/^[AB][\s\.:-]+/gi, '').trim()).replace(/%20/g, '+');
+      const gramTheme = CATEGORY_PALETTE.gramophones;
+
+      modalContainer.style.borderColor = gramTheme.hex; modalContainer.style.borderWidth = '3px';
+      modalContainer.style.backgroundColor = getSolidTint(gramTheme.hex, isDark);
+
+      if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
+        counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
+        prevBtn.disabled = currentModalIndex === 0; nextBtn.disabled = currentModalIndex === currentFilteredRows.length - 1;
+        prevBtn.classList.toggle('opacity-40', currentModalIndex === 0); nextBtn.classList.toggle('opacity-40', currentModalIndex === currentFilteredRows.length - 1);
+      } else { counterElem.textContent = ''; }
+
+      document.getElementById('btnShareExhibit').onclick = () => {
+        navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}#gramophone-${originalIndex}`).then(() => showToast('Record link copied to clipboard!', '🔗'));
+      };
+
+      modalContent.innerHTML = `
+        <div class="flex items-start justify-between gap-4 mb-2">
+          <div><h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${formattedTitleHTML}</h2></div>
+          <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">${isFav ? '❤️ Saved' : '🤍 Save'}</button>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 text-xs mb-4">
+          ${released ? `<span class="bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-400/40 px-3 py-0.5 rounded-full font-black"><strong>Year:</strong> ${released}</span>` : ''}
+          ${label ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 px-3 py-0.5 rounded-full font-medium"><strong>Label:</strong> ${label}</span>` : ''}
+          ${format ? `<span class="bg-blue-500/20 text-blue-900 dark:text-blue-300 border border-blue-400/40 px-3 py-0.5 rounded-full font-medium"><strong>Format:</strong> ${format}</span>` : ''}
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 items-stretch">
+          <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 rounded-2xl p-6 text-center flex flex-col items-center justify-center relative shadow-inner border border-amber-500/30 h-full min-h-[180px]">
+            <div class="w-32 h-32 rounded-full border-4 border-amber-500/30 bg-slate-950 flex items-center justify-center shadow-2xl relative">
+              <div class="w-12 h-12 rounded-full bg-amber-600 border-2 border-amber-300 flex items-center justify-center text-[9px] font-black text-amber-100 text-center p-1 leading-tight">${label}</div>
+            </div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-900/90 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 space-y-2 flex flex-col justify-center">
+            <p><strong>Artist:</strong> <span class="font-bold text-slate-900 dark:text-white">${artist}</span></p>
+            <p><strong>Record Label:</strong> ${label}</p>
+            ${format ? `<p><strong>Format:</strong> ${format}</p>` : ''}
+            <p><strong>Release Year:</strong> ${released || 'Unknown'}</p>
+            ${catalogNum ? `<p><strong>Catalog No.:</strong> <span class="font-mono font-bold text-amber-600 dark:text-amber-300">${catalogNum}</span></p>` : ''}
+          </div>
+        </div>
+
+        ${colMDetails ? `
+          <div class="mb-5">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
+            <div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl shadow-inner">${colMDetails}</div>
+          </div>` : ''}
+
+        <div class="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+          ${discogsUrl ? `
+            <a href="${discogsUrl}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2">
+              <span>${hasDiscogsRecording ? '📀 Discogs Recording ↗' : '📀 Discogs ↗'}</span>
+              ${hasDiscogsRecording ? `<span class="bg-emerald-500 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">🎙️ Recording</span>` : ''}
+            </a>` : ''}
+
+          ${hasArchiveRecording ? `<a href="${archiveUrl}" target="_blank" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2"><span>📻 Archives 78s Recording ↗</span></a>` : ''}
+
+          ${!hasAnyRecording ? `
+            <a href="https://www.youtube.com/results?search_query=${ytQuery}" target="_blank" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-1.5"><span>🎵 Search YouTube ↗</span></a>
+            <a href="${archiveUrl}" target="_blank" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-1.5" title="Search the 78 RPM Collection on Internet Archive"><span>📻 Search Archive 78s ↗</span></a>` : ''}
+        </div>`;
+    }
+
+    document.body.classList.add('overflow-hidden');
+    document.getElementById('detailModal').classList.remove('hidden');
+    document.getElementById('closeModal').focus();
+  }
+
+  function closeModal() {
+    stopAudioGuide();
+    document.body.classList.remove('overflow-hidden');
+    document.getElementById('detailModal').classList.add('hidden');
+    window.history.replaceState(null, '', ' ');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('brandLogoLink').addEventListener('click', (e) => { e.preventDefault(); browseAllExhibits(); });
+    document.getElementById('btnBrowseAllHeader').addEventListener('click', browseAllExhibits);
+    document.getElementById('btnBrowseAllPrompt').addEventListener('click', browseAllExhibits);
+    document.getElementById('btnStatsHeader').addEventListener('click', () => { setTab('stats'); window.location.hash = '#stats'; });
+    document.getElementById('btnSurprise').addEventListener('click', () => {
+      const rows = (currentTab === 'gramophone') ? rawGramophoneRows : rawExhibitsRows;
+      if (!rows || rows.length === 0) return;
+      if (currentTab === 'stats') setTab('exhibits');
+      if (!isGridActive) filterCatalog(true);
+      openModalByOriginalIndex(Math.floor(Math.random() * rows.length));
+    });
+
+    document.getElementById('btnThemeToggle').addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('bMMC_theme', isDark ? 'dark' : 'light');
+      updateThemeUI(isDark);
+    });
+
+    const toggleControlsBtn = document.getElementById('toggleControlsBtn');
+    if (toggleControlsBtn) toggleControlsBtn.addEventListener('click', () => toggleCollapsibleControls());
+
+    // Automatic tab switching for 3D and Hot buttons if triggered on stats or gramophone
+    document.getElementById('btn3DOnly').addEventListener('click', () => {
+      if (currentTab !== 'exhibits') setTab('exhibits');
+      only3DActive = !only3DActive;
+      document.getElementById('btn3DOnly').classList.toggle('ring-2', only3DActive);
+      if (only3DActive) showToast('Showing 3D Models Only', '👓');
+      filterCatalog(true);
+    });
+
+    document.getElementById('btnHotOnly').addEventListener('click', () => {
+      if (currentTab !== 'exhibits') setTab('exhibits');
+      hotOnlyActive = !hotOnlyActive;
+      document.getElementById('btnHotOnly').classList.toggle('ring-2', hotOnlyActive);
+      if (hotOnlyActive) showToast('Showing Hot Items Only', '🔥');
+      filterCatalog(true);
+    });
+
+    document.getElementById('btnFavorites').addEventListener('click', () => {
+      showingFavoritesOnly = !showingFavoritesOnly;
+      updateFavoritesBadge();
+      filterCatalog(true);
+    });
+
+    document.getElementById('floatingJumpBtn').addEventListener('click', () => {
+      toggleCollapsibleControls(false); scrollToGrid();
+    });
+
+    document.getElementById('searchInput').addEventListener('input', () => filterCatalog(true));
+    document.getElementById('clearSearch').addEventListener('click', () => { document.getElementById('searchInput').value = ''; filterCatalog(true); });
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    document.getElementById('detailModal').addEventListener('click', (e) => { if (e.target === document.getElementById('detailModal')) closeModal(); });
+    document.getElementById('close3DLightbox').addEventListener('click', close3DLightbox);
+    document.getElementById('lightbox3DModal').addEventListener('click', (e) => { if (e.target === document.getElementById('lightbox3DModal')) close3DLightbox(); });
+    document.getElementById('enlargeModal').addEventListener('click', (e) => { if (e.target === document.getElementById('enlargeModal')) closeEnlargeModal(); });
+    document.getElementById('modalPrevBtn').addEventListener('click', () => { if (currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1); });
+    document.getElementById('modalNextBtn').addEventListener('click', () => { if (currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1); });
+
+    window.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('detailModal');
+      const lightbox = document.getElementById('lightbox3DModal');
+      const enlargeModal = document.getElementById('enlargeModal');
+      if (e.key === 'Escape') {
+        if (!enlargeModal.classList.contains('hidden')) { closeEnlargeModal(); return; }
+        if (!lightbox.classList.contains('hidden')) { close3DLightbox(); return; }
+        if (!modal.classList.contains('hidden')) { closeModal(); return; }
+      }
+      if (modal.classList.contains('hidden')) return;
+      if (e.key === 'ArrowLeft' && currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1);
+      if (e.key === 'ArrowRight' && currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1);
+    });
+
+    loadCatalogData();
+  });
+</script>
