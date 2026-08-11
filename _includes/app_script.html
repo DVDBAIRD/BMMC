@@ -26,6 +26,39 @@
     gramophones: { hex: '#D99B43', text: '#0F172A', name: 'Gramophones' }
   };
 
+  const SUBCAT_PALETTE = ['#0284c7', '#059669', '#d97706', '#7c3aed', '#db2777', '#2563eb', '#0891b2', '#ca8a04', '#e11d48', '#4f46e5'];
+
+  const TIMELINE_ERAS = [
+    { key: 'Prehistory', short: 'Prehistory', full: 'Prehistory / BC (Up to 1700)', min: -9999, max: 1700 },
+    { key: 'Victorian', short: 'Victorian', full: 'Victorian & Industrial (1700–1913)', min: 1701, max: 1913 },
+    { key: 'WWI', short: 'WWI', full: 'World War I (1914–1918)', min: 1914, max: 1918 },
+    { key: 'Interwar', short: 'Interwar', full: 'Interwar / Depression (1919–1938)', min: 1919, max: 1938 },
+    { key: 'WWII', short: 'WWII', full: 'World War II (1939–1945)', min: 1939, max: 1945 },
+    { key: 'Post War', short: 'Post War', full: 'Post & Cold War (1946–1999)', min: 1946, max: 1999 },
+    { key: 'Modern', short: 'Modern', full: 'Millennium & Modern (2000–Present)', min: 2000, max: 9999 }
+  ];
+
+  function getEraByYear(yearNum) {
+    if (!yearNum || isNaN(yearNum)) return null;
+    return TIMELINE_ERAS.find(e => yearNum >= e.min && yearNum <= e.max) || null;
+  }
+
+  function getEraByRow(row) {
+    const ageStr = getVal(row, colIdx.age);
+    const yearStr = getVal(row, colIdx.year);
+    const combined = `${ageStr} ${yearStr} ${row.join(' ')}`;
+    const match = combined.match(/\b([1-9][0-9]{3})\b/);
+    if (match) {
+      const year = parseInt(match[1], 10);
+      const era = getEraByYear(year);
+      if (era) return era;
+    }
+    const lower = ageStr.toLowerCase();
+    if (lower.includes('pre')) return TIMELINE_ERAS[0];
+    if (lower.includes('post')) return TIMELINE_ERAS[5];
+    return null;
+  }
+
   function getCategoryTheme(str) {
     if (!str) return CATEGORY_PALETTE.general;
     const s = String(str).toLowerCase().trim();
@@ -43,11 +76,11 @@
     if (!label) return '';
     const theme = getCategoryTheme(label);
     if (kind === 'category') {
-      return `<span class="px-2.5 py-0.5 rounded-full font-black text-[11px] shadow-sm inline-block tracking-wide" style="background-color: ${theme.hex}; color: ${theme.text};">${label}</span>`;
+      return `<span class="px-2 py-0.5 rounded-full font-black text-[10px] shadow-sm inline-block tracking-wide" style="background-color: ${theme.hex}; color: ${theme.text};">${label}</span>`;
     } else if (kind === 'type' || kind === 'Type') {
-      return `<span class="px-2.5 py-0.5 rounded-full font-extrabold text-[11px] shadow-sm inline-block tracking-wide border" style="background-color: ${theme.hex}18; color: ${theme.hex}; border-color: ${theme.hex}80;">${kind === 'Type' ? 'Type: ' : ''}${label}</span>`;
+      return `<span class="px-2 py-0.5 rounded-full font-extrabold text-[10px] shadow-sm inline-block tracking-wide border" style="background-color: ${theme.hex}18; color: ${theme.hex}; border-color: ${theme.hex}80;">${kind === 'Type' ? 'Type: ' : ''}${label}</span>`;
     } else {
-      return `<span class="px-2.5 py-0.5 rounded-full font-extrabold text-[11px] shadow-sm inline-block tracking-wide border" style="background-color: ${theme.hex}25; color: ${theme.hex}; border-color: ${theme.hex}aa;">${kind === 'Subcategory' ? 'Subcategory: ' : ''}${label}</span>`;
+      return `<span class="px-2 py-0.5 rounded-full font-extrabold text-[10px] shadow-sm inline-block tracking-wide border" style="background-color: ${theme.hex}25; color: ${theme.hex}; border-color: ${theme.hex}aa;">${kind === 'Subcategory' ? 'Subcategory: ' : ''}${label}</span>`;
     }
   }
 
@@ -83,6 +116,7 @@
   let colIdx = { id: 0, ref: 1, title: 2, notes: 4, itemNoM: 12, age: 13, type: 14, category: 15, subcategory: 16, d3d: 17, doc: 18, web: 19, img1: 20, img2: 21, qty: 22, made: 23, year: 24, hot: 25 };
   let chartStackedInstance = null;
   let chartLocationsInstance = null;
+  let chartSubcatCategoryInstance = null;
   let fuseExhibits = null;
   let fuseGramophone = null;
 
@@ -173,21 +207,14 @@
     if (cached && cacheTime && (Date.now() - Number(cacheTime) < CACHE_TTL_MS)) {
       try { return JSON.parse(cached); } catch (e) {}
     }
-    return new Promise((resolve, reject) => {
-      Papa.parse(url, {
-        download: true,
-        header: false,
-        skipEmptyLines: true,
-        complete: (results) => {
-          try {
-            sessionStorage.setItem(cacheKey, JSON.stringify(results.data));
-            sessionStorage.setItem(`${cacheKey}_time`, Date.now());
-          } catch (e) {}
-          resolve(results.data);
-        },
-        error: (err) => reject(err)
-      });
-    });
+    const res = await fetch(url);
+    const text = await res.text();
+    const parsed = Papa.parse(text, { header: false, skipEmptyLines: true });
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify(parsed.data));
+      sessionStorage.setItem(`${cacheKey}_time`, Date.now());
+    } catch (e) {}
+    return parsed.data;
   }
 
   function parseDiscogsVal(raw) {
@@ -589,42 +616,39 @@
   async function loadCatalogData() {
     initTheme();
     try {
-      const [exhibitsRes, gramophoneRes] = await Promise.allSettled([
+      const [exhibitsData, gramophoneData] = await Promise.all([
         fetchCSVWithCache(EXHIBITS_CSV_URL, 'bMMC_cached_exhibits'),
         fetchCSVWithCache(GRAMOPHONE_CSV_URL, 'bMMC_cached_gramophone')
       ]);
 
-      if (exhibitsRes.status === 'fulfilled' && exhibitsRes.value) {
-        const exhibitsData = exhibitsRes.value;
-        if (exhibitsData && exhibitsData.length > 0) {
-          exhibitsData[0].forEach((cell, idx) => {
-            const c = String(cell).toLowerCase().trim();
-            if (c === 'no' || c === 'id') colIdx.id = idx;
-            if (c === 'ref') colIdx.ref = idx;
-            if (c === 'title' || c === 'content' || c === 'item') colIdx.title = idx;
-            if (c === 'notes' || c.includes('note')) colIdx.notes = idx;
-            if (c === '#' || c === 'item no') colIdx.itemNoM = idx;
-            if (c === 'age') colIdx.age = idx;
-            if (c === 'type') colIdx.type = idx;
-            if (c === 'category') colIdx.category = idx;
-            if (c === 'subcategory' || c.includes('sub category')) colIdx.subcategory = idx;
-            if (c === '3d model' || c.includes('3d')) colIdx.d3d = idx;
-            if (c === 'ddoc' || (c.includes('doc') && !c.includes('banner'))) colIdx.doc = idx;
-            if (c === 'dweb' || (c.includes('web') && !c.includes('banner'))) colIdx.web = idx;
-            if (c === 'image 1' || c === 'img1' || (c.includes('image') && !c.includes('2'))) colIdx.img1 = idx;
-            if (c === 'image 2' || c === 'img2') colIdx.img2 = idx;
-            if (c === 'qty' || c === 'quantity' || c.includes('count')) colIdx.qty = idx;
-            if (c === 'made' || c === 'origin' || c.includes('location')) colIdx.made = idx;
-            if (c === 'year' || c === 'date') colIdx.year = idx;
-            if (c === 'hot') colIdx.hot = idx;
-          });
-        }
+      if (exhibitsData && exhibitsData.length > 0) {
+        exhibitsData[0].forEach((cell, idx) => {
+          const c = String(cell).toLowerCase().trim();
+          if (c === 'no' || c === 'id') colIdx.id = idx;
+          if (c === 'ref') colIdx.ref = idx;
+          if (c === 'title' || c === 'content' || c === 'item') colIdx.title = idx;
+          if (c === 'notes' || c.includes('note')) colIdx.notes = idx;
+          if (c === '#' || c === 'item no') colIdx.itemNoM = idx;
+          if (c === 'age') colIdx.age = idx;
+          if (c === 'type') colIdx.type = idx;
+          if (c === 'category') colIdx.category = idx;
+          if (c === 'subcategory' || c.includes('sub category')) colIdx.subcategory = idx;
+          if (c === '3d model' || c.includes('3d')) colIdx.d3d = idx;
+          if (c === 'ddoc' || (c.includes('doc') && !c.includes('banner'))) colIdx.doc = idx;
+          if (c === 'dweb' || (c.includes('web') && !c.includes('banner'))) colIdx.web = idx;
+          if (c === 'image 1' || c === 'img1' || (c.includes('image') && !c.includes('2'))) colIdx.img1 = idx;
+          if (c === 'image 2' || c === 'img2') colIdx.img2 = idx;
+          if (c === 'qty' || c === 'quantity' || c.includes('count')) colIdx.qty = idx;
+          if (c === 'made' || c === 'origin' || c.includes('location')) colIdx.made = idx;
+          if (c === 'year' || c === 'date') colIdx.year = idx;
+          if (c === 'hot') colIdx.hot = idx;
+        });
         rawExhibitsRows = exhibitsData.slice(1);
         populateInitialDropdowns();
       }
 
-      if (gramophoneRes.status === 'fulfilled' && gramophoneRes.value) {
-        rawGramophoneRows = gramophoneRes.value.filter(r => {
+      if (gramophoneData && gramophoneData.length > 0) {
+        rawGramophoneRows = gramophoneData.filter(r => {
           const c0 = getVal(r, 0).toLowerCase();
           const c1 = getVal(r, 1).toLowerCase();
           return r.length >= 2 && !c0.includes('gramophone catalog') && !c0.includes('catalog#') && !c1.includes('artist');
@@ -757,7 +781,8 @@
       function getExhibitRowsExcluding(excludeField) {
         return rawExhibitsRows.filter((row, originalIndex) => {
           const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
-          const ageMatch = excludeField === 'age' || !ageVal || getVal(row, colIdx.age) === ageVal;
+          const rowEra = getEraByRow(row);
+          const ageMatch = excludeField === 'age' || !ageVal || (rowEra && rowEra.short === ageVal) || getVal(row, colIdx.age) === ageVal;
           const typeMatch = excludeField === 'type' || !typeVal || getVal(row, colIdx.type).toLowerCase().includes(typeVal.toLowerCase());
           const catMatch = excludeField === 'category' || !catVal || getVal(row, colIdx.category).toLowerCase().includes(catVal.toLowerCase());
           const subCatMatch = excludeField === 'subcategory' || !subCatVal || getVal(row, colIdx.subcategory) === subCatVal;
@@ -768,7 +793,26 @@
         });
       }
 
-      updateSelectOptions('filterAge', getExhibitRowsExcluding('age').map(r => getVal(r, colIdx.age)));
+      const ageSelect = document.getElementById('filterAge');
+      if (ageSelect) {
+        const rowsForAge = getExhibitRowsExcluding('age');
+        const eraCounts = {};
+        TIMELINE_ERAS.forEach(e => eraCounts[e.short] = 0);
+        rowsForAge.forEach(r => {
+          const era = getEraByRow(r);
+          if (era) eraCounts[era.short] = (eraCounts[era.short] || 0) + 1;
+        });
+        const currAge = ageSelect.value;
+        ageSelect.innerHTML = '<option value="">All Eras / Ages</option>';
+        TIMELINE_ERAS.forEach(e => {
+          const opt = document.createElement('option');
+          opt.value = e.short;
+          opt.textContent = `${e.short} (${eraCounts[e.short] || 0})`;
+          if (e.short === currAge) opt.selected = true;
+          ageSelect.appendChild(opt);
+        });
+      }
+
       updateSelectOptions('filterType', getExhibitRowsExcluding('type').map(r => getVal(r, colIdx.type)));
       updateSelectOptions('filterCategory', getExhibitRowsExcluding('category').map(r => getVal(r, colIdx.category)));
       updateSelectOptions('filterSubcategory', getExhibitRowsExcluding('subcategory').map(r => getVal(r, colIdx.subcategory)));
@@ -838,7 +882,7 @@
       const catVal = document.getElementById('filterCategory').value;
       const subCatVal = document.getElementById('filterSubcategory').value;
       if (searchVal) filters.push({ label: `Search: "${searchVal}"`, clear: () => { document.getElementById('searchInput').value = ''; } });
-      if (ageVal) filters.push({ label: `Age: ${unescapeHTML(ageVal)}`, clear: () => { document.getElementById('filterAge').value = ''; } });
+      if (ageVal) filters.push({ label: `Era / Age: ${unescapeHTML(ageVal)}`, clear: () => { document.getElementById('filterAge').value = ''; } });
       if (typeVal) filters.push({ label: `Type: ${unescapeHTML(typeVal)}`, clear: () => { document.getElementById('filterType').value = ''; } });
       if (catVal) filters.push({ label: `Category: ${unescapeHTML(catVal)}`, clear: () => { document.getElementById('filterCategory').value = ''; } });
       if (subCatVal) filters.push({ label: `Subcategory: ${unescapeHTML(subCatVal)}`, clear: () => { document.getElementById('filterSubcategory').value = ''; } });
@@ -906,7 +950,8 @@
 
       currentFilteredRows = rawExhibitsRows.map((row, index) => ({ row, originalIndex: index })).filter(({ row, originalIndex }) => {
         const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
-        const ageMatch = !ageVal || getVal(row, colIdx.age) === ageVal;
+        const rowEra = getEraByRow(row);
+        const ageMatch = !ageVal || (rowEra && rowEra.short === ageVal) || getVal(row, colIdx.age) === ageVal;
         const typeMatch = !typeVal || getVal(row, colIdx.type).toLowerCase().includes(typeVal.toLowerCase());
         const catMatch = !catVal || getVal(row, colIdx.category).toLowerCase().includes(catVal.toLowerCase());
         const subCatMatch = !subCatVal || getVal(row, colIdx.subcategory) === subCatVal;
@@ -1081,6 +1126,9 @@
 
       const notes = getVal(row, colIdx.notes);
       const age = getVal(row, colIdx.age);
+      const era = getEraByRow(row);
+      const eraDisplay = era ? era.short : age;
+
       const type = getVal(row, colIdx.type);
       const category = getVal(row, colIdx.category);
       const subcategory = getVal(row, colIdx.subcategory);
@@ -1116,10 +1164,11 @@
         const slotNum = sIdx + 1;
         const isHidden = slotNum > 1 ? 'hidden' : 'flex';
         if (s.type === '3d') {
+          // Relocated 3D Interactive Tag to bottom-2.5 left-2.5 so it never overlaps the Age badge
           mediaItemsHTML += `
             <div class="card-media-item ${isHidden} w-full h-full items-center justify-center relative pointer-events-none" data-slot-idx="${slotNum}">
               <model-viewer src="${s.url}" loading="lazy" auto-rotate rotation-per-second="20deg" interaction-prompt="none" shadow-intensity="0.4" style="width: 100%; height: 100%; display: block; --poster-color: transparent;" class="w-full h-full"></model-viewer>
-              <span class="absolute top-2 left-2 bg-purple-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-full shadow border border-purple-400/40">3D Interactive</span>
+              <span class="absolute bottom-2.5 left-2.5 bg-purple-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-full shadow border border-purple-400/40 z-10">3D Interactive</span>
             </div>`;
         } else {
           mediaItemsHTML += `
@@ -1144,7 +1193,8 @@
             <button onclick="switchCardImage(${originalIndex}, 1, event)" title="Next Media" aria-label="Next Media" class="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-black rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-md shadow-md transition hover:scale-110 z-10">❯</button>
             <span id="card-badge-${originalIndex}" class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none z-10 shadow">1 / ${totalSlots}</span>
           ` : ''}
-          ${age ? `<span class="absolute top-3 left-3 ${ageBadgeClass} backdrop-blur-sm px-3.5 py-1.5 rounded-full text-xs sm:text-sm shadow-md pointer-events-none">${age}</span>` : ''}
+          <!-- 20% Thinner Age Badge -->
+          ${eraDisplay ? `<span class="absolute top-3 left-3 ${ageBadgeClass} backdrop-blur-sm px-2.5 py-0.5 rounded-full text-xs shadow-md pointer-events-none z-10">${eraDisplay}</span>` : ''}
         </div>
         
         <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
@@ -1272,6 +1322,10 @@
 
     let itemsSumQty = 0, validYears = [], colPreCount = 0, colPostCount = 0;
     const locationCounts = {}, dateTypeMap = {}, allTypesSet = new Set();
+    const subcatCatMap = {}, allSubcatsSet = new Set(), allCategoriesSet = new Set();
+    const eraCounts = {};
+    TIMELINE_ERAS.forEach(e => eraCounts[e.short] = 0);
+
     const targetRow2 = rawExhibitsRows[0];
 
     if (targetRow2) {
@@ -1298,6 +1352,9 @@
       const itemQty = (!isNaN(qtyNum) && qtyNum > 0) ? qtyNum : 1;
       itemsSumQty += itemQty;
 
+      const era = getEraByRow(row);
+      if (era) eraCounts[era.short] += itemQty;
+
       const ageVal = getVal(row, colIdx.age).toLowerCase();
       if (ageVal.includes('pre')) colPreCount += itemQty;
       else if (ageVal.includes('post')) colPostCount += itemQty;
@@ -1321,6 +1378,15 @@
         }
       }
 
+      const rawCat = getVal(row, colIdx.category);
+      const rawSubcat = getVal(row, colIdx.subcategory);
+      if (rawCat && rawSubcat) {
+        allCategoriesSet.add(rawCat);
+        allSubcatsSet.add(rawSubcat);
+        if (!subcatCatMap[rawCat]) subcatCatMap[rawCat] = {};
+        subcatCatMap[rawCat][rawSubcat] = (subcatCatMap[rawCat][rawSubcat] || 0) + itemQty;
+      }
+
       let rawLoc = getVal(row, colIdx.made);
       if (rawLoc) {
         const country = normalizeCountry(rawLoc);
@@ -1328,17 +1394,55 @@
       }
     });
 
+    const timelineEraGrid = document.getElementById('timelineEraGrid');
+    if (timelineEraGrid) {
+      timelineEraGrid.innerHTML = '';
+      TIMELINE_ERAS.forEach(e => {
+        const count = eraCounts[e.short] || 0;
+        const pct = itemsSumQty > 0 ? Math.round((count / itemsSumQty) * 100) : 0;
+        const card = document.createElement('div');
+        card.className = 'bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 p-2.5 rounded-2xl cursor-pointer hover:border-blue-500 transition flex flex-col justify-between group';
+        card.innerHTML = `
+          <div>
+            <div class="text-[10px] font-black text-slate-400 dark:text-slate-400 group-hover:text-blue-500 transition">${e.short}</div>
+            <div class="text-sm font-black text-slate-900 dark:text-white mt-0.5">${count}</div>
+          </div>
+          <div class="mt-2">
+            <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-blue-600 h-full rounded-full" style="width: ${pct}%"></div>
+            </div>
+            <div class="text-[9px] font-bold text-slate-400 mt-1 text-right">${pct}%</div>
+          </div>
+        `;
+        card.addEventListener('click', () => {
+          setTab('exhibits');
+          const ageSel = document.getElementById('filterAge');
+          if (ageSel) ageSel.value = e.short;
+          updateDynamicDropdowns(); filterCatalog(true); scrollToGrid();
+        });
+        timelineEraGrid.appendChild(card);
+      });
+    }
+
     document.getElementById('statTotalItems').textContent = itemsSumQty > 0 ? itemsSumQty.toLocaleString() : '1,193';
     if (validYears.length > 0) document.getElementById('statDateRange').textContent = `${Math.min(...validYears)} – ${Math.max(...validYears)}`;
     else document.getElementById('statDateRange').textContent = 'N/A';
 
     const totalAgeItems = colPreCount + colPostCount;
-    const prePostElem = document.getElementById('statPrePost1950');
-    if (totalAgeItems > 0 && prePostElem) prePostElem.textContent = `${Math.round((colPreCount / totalAgeItems) * 100)}% / ${100 - Math.round((colPreCount / totalAgeItems) * 100)}%`;
-    else if (prePostElem) prePostElem.textContent = '62% / 38%';
+    const preElem = document.getElementById('statPre1950');
+    const postElem = document.getElementById('statPost1950');
+    if (totalAgeItems > 0) {
+      const prePct = Math.round((colPreCount / totalAgeItems) * 100);
+      if (preElem) preElem.textContent = `Pre 1950: ${prePct}% (${colPreCount})`;
+      if (postElem) postElem.textContent = `Post 1950: ${100 - prePct}% (${colPostCount})`;
+    } else {
+      if (preElem) preElem.textContent = 'Pre 1950: 62%';
+      if (postElem) postElem.textContent = 'Post 1950: 38%';
+    }
 
     if (chartStackedInstance) chartStackedInstance.destroy();
     if (chartLocationsInstance) chartLocationsInstance.destroy();
+    if (chartSubcatCategoryInstance) chartSubcatCategoryInstance.destroy();
 
     setTimeout(() => {
       const periodsSorted = Object.keys(dateTypeMap).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
@@ -1350,34 +1454,11 @@
         borderWidth: 0, borderRadius: 4
       }));
 
-      const stackedTotalPlugin = {
-        id: 'stackedTotalLabels',
-        afterDatasetsDraw(chart) {
-          const { ctx } = chart;
-          for (let index = 0; index < chart.data.labels.length; index++) {
-            let total = 0, maxBarX = 0, barY = 0;
-            for (let d = 0; d < chart.data.datasets.length; d++) {
-              total += chart.data.datasets[d].data[index] || 0;
-              const meta = chart.getDatasetMeta(d);
-              if (meta && meta.data[index]) {
-                if (meta.data[index].x > maxBarX) maxBarX = meta.data[index].x;
-                barY = meta.data[index].y;
-              }
-            }
-            if (total > 0 && maxBarX > 0) {
-              ctx.save(); ctx.fillStyle = textColor; ctx.font = 'bold 11px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-              ctx.fillText(total.toLocaleString(), maxBarX + 6, barY); ctx.restore();
-            }
-          }
-        }
-      };
-
       const canvasStacked = document.getElementById('chartStackedDateType');
       if (canvasStacked) {
         chartStackedInstance = new Chart(canvasStacked.getContext('2d'), {
           type: 'bar',
           data: { labels: periodsSorted, datasets: stackedDatasets },
-          plugins: [stackedTotalPlugin],
           options: {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
             plugins: { legend: { labels: { color: textColor, font: { family: 'Inter', size: 11, weight: '600' } } }, tooltip: { mode: 'index', intersect: false } },
@@ -1389,34 +1470,42 @@
         });
       }
 
-      const barTopDataLabelsPlugin = {
-        id: 'barTopDataLabels',
-        afterDatasetsDraw(chart) {
-          const { ctx } = chart;
-          chart.data.datasets.forEach((dataset, i) => {
-            chart.getDatasetMeta(i).data.forEach((bar, index) => {
-              const dataVal = dataset.data[index];
-              if (dataVal !== null && dataVal !== undefined) {
-                ctx.save(); ctx.fillStyle = textColor; ctx.font = 'bold 11px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-                ctx.fillText(dataVal.toLocaleString(), bar.x, bar.y - 4); ctx.restore();
-              }
-            });
-          });
-        }
-      };
-
       const topLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
       const canvasLoc = document.getElementById('chartLocations');
       if (canvasLoc) {
         chartLocationsInstance = new Chart(canvasLoc.getContext('2d'), {
           type: 'bar',
           data: { labels: topLocations.map(l => unescapeHTML(l[0])), datasets: [{ label: 'Items Preserved', data: topLocations.map(l => l[1]), backgroundColor: '#3182CE', borderRadius: 8 }] },
-          plugins: [barTopDataLabelsPlugin],
           options: {
             responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
             scales: {
               x: { grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } },
               y: { grace: '12%', grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter', size: 10 } } }
+            }
+          }
+        });
+      }
+
+      const categoriesArray = Array.from(allCategoriesSet);
+      const subcatsArray = Array.from(allSubcatsSet);
+      const subcatDatasets = subcatsArray.map((subcat, idx) => ({
+        label: unescapeHTML(subcat),
+        data: categoriesArray.map(cat => (subcatCatMap[cat] && subcatCatMap[cat][subcat]) || 0),
+        backgroundColor: SUBCAT_PALETTE[idx % SUBCAT_PALETTE.length],
+        borderWidth: 0, borderRadius: 4
+      }));
+
+      const canvasSubcat = document.getElementById('chartSubcatCategory');
+      if (canvasSubcat) {
+        chartSubcatCategoryInstance = new Chart(canvasSubcat.getContext('2d'), {
+          type: 'bar',
+          data: { labels: categoriesArray, datasets: subcatDatasets },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: textColor, font: { family: 'Inter', size: 11, weight: '600' } } }, tooltip: { mode: 'index', intersect: false } },
+            scales: {
+              x: { stacked: true, grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } },
+              y: { stacked: true, grace: '10%', grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter', size: 10 } } }
             }
           }
         });
@@ -1489,6 +1578,9 @@
 
       const notes = getVal(row, colIdx.notes);
       const age = getVal(row, colIdx.age);
+      const era = getEraByRow(row);
+      const eraDisplay = era ? era.short : age;
+
       const type = getVal(row, colIdx.type);
       const category = getVal(row, colIdx.category);
       const subcategory = getVal(row, colIdx.subcategory);
@@ -1526,7 +1618,7 @@
             </div>
 
             <div class="flex flex-wrap gap-2 text-xs items-center">
-              ${age ? `<span class="${ageBadgeClass} px-3 py-0.5 rounded-full shadow-sm"><strong>Age:</strong> ${age}</span>` : ''}
+              ${eraDisplay ? `<span class="${ageBadgeClass} px-2.5 py-0.5 rounded-full shadow-sm"><strong>Era:</strong> ${eraDisplay}</span>` : ''}
               ${category ? createCategoryBadge(category, 'category') : ''}
               ${type ? createCategoryBadge(type, 'type') : ''}
               ${subcategory ? createCategoryBadge(subcategory, 'subcategory') : ''}
@@ -1611,158 +1703,4 @@
       const label = getVal(row, 3) || 'Unspecified Label';
       const format = unescapeHTML(getVal(row, 4)) || '';
       const released = getVal(row, 6) || '';
-      const colMDetails = getVal(row, 12);
-      const discogsUrl = getDiscogsUrl(row);
-      const hasDiscogsRecording = checkIfHasRecording(row);
-      const hasArchiveRecording = getVal(row, 11).toLowerCase().includes('yes');
-      const hasAnyRecording = hasDiscogsRecording || hasArchiveRecording;
-      const archiveUrl = buildArchiveSearchUrl(rawTitle, catalogNum);
-      const ytQuery = encodeURIComponent(`${unescapeHTML(artist)} ${unescapeHTML(rawTitle)}`.replace(/^[AB][\s\.:-]+/gi, '').trim()).replace(/%20/g, '+');
-      const gramTheme = CATEGORY_PALETTE.gramophones;
-
-      modalContainer.style.borderColor = gramTheme.hex; modalContainer.style.borderWidth = '3px';
-      modalContainer.style.backgroundColor = getSolidTint(gramTheme.hex, isDark);
-
-      if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
-        counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
-        prevBtn.disabled = currentModalIndex === 0; nextBtn.disabled = currentModalIndex === currentFilteredRows.length - 1;
-        prevBtn.classList.toggle('opacity-40', currentModalIndex === 0); nextBtn.classList.toggle('opacity-40', currentModalIndex === currentFilteredRows.length - 1);
-      } else { counterElem.textContent = ''; }
-
-      document.getElementById('btnShareExhibit').onclick = () => {
-        navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}#gramophone-${originalIndex}`).then(() => showToast('Record link copied to clipboard!', '🔗'));
-      };
-
-      modalContent.innerHTML = `
-        <div class="flex items-start justify-between gap-4 mb-2">
-          <div><h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${formattedTitleHTML}</h2></div>
-          <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">${isFav ? '❤️ Saved' : '🤍 Save'}</button>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2 text-xs mb-4">
-          ${released ? `<span class="bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-400/40 px-3 py-0.5 rounded-full font-black"><strong>Year:</strong> ${released}</span>` : ''}
-          ${label ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 px-3 py-0.5 rounded-full font-medium"><strong>Label:</strong> ${label}</span>` : ''}
-          ${format ? `<span class="bg-blue-500/20 text-blue-900 dark:text-blue-300 border border-blue-400/40 px-3 py-0.5 rounded-full font-medium"><strong>Format:</strong> ${format}</span>` : ''}
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 items-stretch">
-          <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 rounded-2xl p-6 text-center flex flex-col items-center justify-center relative shadow-inner border border-amber-500/30 h-full min-h-[180px]">
-            <div class="w-32 h-32 rounded-full border-4 border-amber-500/30 bg-slate-950 flex items-center justify-center shadow-2xl relative">
-              <div class="w-12 h-12 rounded-full bg-amber-600 border-2 border-amber-300 flex items-center justify-center text-[9px] font-black text-amber-100 text-center p-1 leading-tight">${label}</div>
-            </div>
-          </div>
-          <div class="bg-slate-50 dark:bg-slate-900/90 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 space-y-2 flex flex-col justify-center">
-            <p><strong>Artist:</strong> <span class="font-bold text-slate-900 dark:text-white">${artist}</span></p>
-            <p><strong>Record Label:</strong> ${label}</p>
-            ${format ? `<p><strong>Format:</strong> ${format}</p>` : ''}
-            <p><strong>Release Year:</strong> ${released || 'Unknown'}</p>
-            ${catalogNum ? `<p><strong>Catalog No.:</strong> <span class="font-mono font-bold text-amber-600 dark:text-amber-300">${catalogNum}</span></p>` : ''}
-          </div>
-        </div>
-
-        ${colMDetails ? `
-          <div class="mb-5">
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
-            <div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl shadow-inner">${colMDetails}</div>
-          </div>` : ''}
-
-        <div class="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
-          ${discogsUrl ? `
-            <a href="${discogsUrl}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2">
-              <span>${hasDiscogsRecording ? '📀 Discogs Recording ↗' : '📀 Discogs ↗'}</span>
-              ${hasDiscogsRecording ? `<span class="bg-emerald-500 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">🎙️ Recording</span>` : ''}
-            </a>` : ''}
-
-          ${hasArchiveRecording ? `<a href="${archiveUrl}" target="_blank" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2"><span>📻 Archives 78s Recording ↗</span></a>` : ''}
-
-          ${!hasAnyRecording ? `
-            <a href="https://www.youtube.com/results?search_query=${ytQuery}" target="_blank" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-1.5"><span>🎵 Search YouTube ↗</span></a>
-            <a href="${archiveUrl}" target="_blank" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-1.5" title="Search the 78 RPM Collection on Internet Archive"><span>📻 Search Archive 78s ↗</span></a>` : ''}
-        </div>`;
-    }
-
-    document.body.classList.add('overflow-hidden');
-    document.getElementById('detailModal').classList.remove('hidden');
-    document.getElementById('closeModal').focus();
-  }
-
-  function closeModal() {
-    stopAudioGuide();
-    document.body.classList.remove('overflow-hidden');
-    document.getElementById('detailModal').classList.add('hidden');
-    window.history.replaceState(null, '', ' ');
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('brandLogoLink').addEventListener('click', (e) => { e.preventDefault(); browseAllExhibits(); });
-    document.getElementById('btnBrowseAllHeader').addEventListener('click', browseAllExhibits);
-    document.getElementById('btnBrowseAllPrompt').addEventListener('click', browseAllExhibits);
-    document.getElementById('btnStatsHeader').addEventListener('click', () => { setTab('stats'); window.location.hash = '#stats'; });
-    document.getElementById('btnSurprise').addEventListener('click', () => {
-      const rows = (currentTab === 'gramophone') ? rawGramophoneRows : rawExhibitsRows;
-      if (!rows || rows.length === 0) return;
-      if (currentTab === 'stats') setTab('exhibits');
-      if (!isGridActive) filterCatalog(true);
-      openModalByOriginalIndex(Math.floor(Math.random() * rows.length));
-    });
-
-    document.getElementById('btnThemeToggle').addEventListener('click', () => {
-      const isDark = document.documentElement.classList.toggle('dark');
-      localStorage.setItem('bMMC_theme', isDark ? 'dark' : 'light');
-      updateThemeUI(isDark);
-    });
-
-    const toggleControlsBtn = document.getElementById('toggleControlsBtn');
-    if (toggleControlsBtn) toggleControlsBtn.addEventListener('click', () => toggleCollapsibleControls());
-
-    document.getElementById('btn3DOnly').addEventListener('click', () => {
-      only3DActive = !only3DActive;
-      document.getElementById('btn3DOnly').classList.toggle('ring-2', only3DActive);
-      if (only3DActive) showToast('Showing 3D Models Only', '👓');
-      filterCatalog(true);
-    });
-
-    document.getElementById('btnHotOnly').addEventListener('click', () => {
-      hotOnlyActive = !hotOnlyActive;
-      document.getElementById('btnHotOnly').classList.toggle('ring-2', hotOnlyActive);
-      if (hotOnlyActive) showToast('Showing Hot Items Only', '🔥');
-      filterCatalog(true);
-    });
-
-    document.getElementById('btnFavorites').addEventListener('click', () => {
-      showingFavoritesOnly = !showingFavoritesOnly;
-      updateFavoritesBadge();
-      filterCatalog(true);
-    });
-
-    document.getElementById('floatingJumpBtn').addEventListener('click', () => {
-      toggleCollapsibleControls(false); scrollToGrid();
-    });
-
-    document.getElementById('searchInput').addEventListener('input', () => filterCatalog(true));
-    document.getElementById('clearSearch').addEventListener('click', () => { document.getElementById('searchInput').value = ''; filterCatalog(true); });
-    document.getElementById('closeModal').addEventListener('click', closeModal);
-    document.getElementById('detailModal').addEventListener('click', (e) => { if (e.target === document.getElementById('detailModal')) closeModal(); });
-    document.getElementById('close3DLightbox').addEventListener('click', close3DLightbox);
-    document.getElementById('lightbox3DModal').addEventListener('click', (e) => { if (e.target === document.getElementById('lightbox3DModal')) close3DLightbox(); });
-    document.getElementById('enlargeModal').addEventListener('click', (e) => { if (e.target === document.getElementById('enlargeModal')) closeEnlargeModal(); });
-    document.getElementById('modalPrevBtn').addEventListener('click', () => { if (currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1); });
-    document.getElementById('modalNextBtn').addEventListener('click', () => { if (currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1); });
-
-    window.addEventListener('keydown', (e) => {
-      const modal = document.getElementById('detailModal');
-      const lightbox = document.getElementById('lightbox3DModal');
-      const enlargeModal = document.getElementById('enlargeModal');
-      if (e.key === 'Escape') {
-        if (!enlargeModal.classList.contains('hidden')) { closeEnlargeModal(); return; }
-        if (!lightbox.classList.contains('hidden')) { close3DLightbox(); return; }
-        if (!modal.classList.contains('hidden')) { closeModal(); return; }
-      }
-      if (modal.classList.contains('hidden')) return;
-      if (e.key === 'ArrowLeft' && currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1);
-      if (e.key === 'ArrowRight' && currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1);
-    });
-
-    loadCatalogData();
-  });
-</script>
+      const colMDetails = getVal(
