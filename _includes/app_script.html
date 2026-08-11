@@ -26,25 +26,6 @@
     gramophones: { hex: '#D99B43', text: '#0F172A', name: 'Gramophones' }
   };
 
-  const glbBlobCache = new Map();
-
-  async function getCached3DUrl(url) {
-    if (!url) return '';
-    if (glbBlobCache.has(url)) return glbBlobCache.get(url);
-    try {
-      const response = await fetch(url, { mode: 'cors' });
-      if (response.ok) {
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        glbBlobCache.set(url, blobUrl);
-        return blobUrl;
-      }
-    } catch (err) {
-      console.warn('3D model caching fallback to raw URL:', err);
-    }
-    return url;
-  }
-
   function getCategoryTheme(str) {
     if (!str) return CATEGORY_PALETTE.general;
     const s = String(str).toLowerCase().trim();
@@ -639,7 +620,6 @@
           });
         }
         rawExhibitsRows = exhibitsData.slice(1);
-        rawExhibitsRows.forEach(row => { const d3d = get3DUrlForItem(row); if (d3d) getCached3DUrl(d3d); });
         populateInitialDropdowns();
       }
 
@@ -1072,7 +1052,7 @@
     if (badgeElem) badgeElem.textContent = `${currentSlot} / ${totalSlots}`;
   }
 
-  async function renderExhibitsGrid() {
+  function renderExhibitsGrid() {
     const grid = document.getElementById('grid');
     const itemCount = document.getElementById('itemCount');
     const favs = getFavorites();
@@ -1106,8 +1086,7 @@
       const subcategory = getVal(row, colIdx.subcategory);
       const ddoc = getVal(row, colIdx.doc);
       const dweb = getVal(row, colIdx.web);
-      const raw3D = get3DUrlForItem(row);
-      const d3d = raw3D ? await getCached3DUrl(raw3D) : '';
+      const d3d = get3DUrlForItem(row);
       const { img1, img2 } = getImagesForItem(row);
       const isHot = isItemHot(row);
 
@@ -1445,7 +1424,7 @@
     }, 50);
   }
 
-  async function open3DLightbox(url, title) {
+  function open3DLightbox(url, title) {
     const modal = document.getElementById('lightbox3DModal');
     const titleElem = document.getElementById('lightboxTitle');
     const viewer = document.getElementById('lightboxViewer');
@@ -1458,20 +1437,15 @@
     function hideSpinner() { if (spinner) { spinner.style.opacity = '0'; setTimeout(() => { spinner.style.display = 'none'; }, 300); } }
     function showSpinner() { if (spinner) { spinner.style.display = 'flex'; spinner.style.opacity = '1'; } }
 
-    const cachedUrl = await getCached3DUrl(url);
-    if (viewer.src === cachedUrl && viewer.loaded) { hideSpinner(); modal.classList.remove('hidden'); return; }
+    if (viewer.src === url && viewer.loaded) { hideSpinner(); modal.classList.remove('hidden'); return; }
 
-    if (viewer.src !== cachedUrl) {
-      showSpinner();
-      const handleLoad = () => { hideSpinner(); viewer.removeEventListener('load', handleLoad); viewer.removeEventListener('error', handleError); };
-      const handleError = () => { hideSpinner(); showToast('Failed to load 3D model file', '⚠️'); viewer.removeEventListener('load', handleLoad); viewer.removeEventListener('error', handleError); };
-      viewer.addEventListener('load', handleLoad);
-      viewer.addEventListener('error', handleError);
-      setTimeout(() => { if (viewer.loaded || (spinner && spinner.style.display !== 'none')) hideSpinner(); }, 1200);
-      viewer.src = cachedUrl;
-    } else {
-      if (viewer.loaded) hideSpinner(); else setTimeout(hideSpinner, 400);
-    }
+    showSpinner();
+    const handleLoad = () => { hideSpinner(); viewer.removeEventListener('load', handleLoad); viewer.removeEventListener('error', handleError); };
+    const handleError = () => { hideSpinner(); showToast('Failed to load 3D model file', '⚠️'); viewer.removeEventListener('load', handleLoad); viewer.removeEventListener('error', handleError); };
+    viewer.addEventListener('load', handleLoad);
+    viewer.addEventListener('error', handleError);
+    setTimeout(() => { if (viewer.loaded || (spinner && spinner.style.display !== 'none')) hideSpinner(); }, 1500);
+    viewer.src = url;
     modal.classList.remove('hidden');
   }
 
@@ -1496,7 +1470,7 @@
     openModal(row, originalIndex);
   }
 
-  async function openModal(row, originalIndex) {
+  function openModal(row, originalIndex) {
     stopAudioGuide();
     const modalContainer = document.getElementById('modalContainer');
     const modalContent = document.getElementById('modalContent');
@@ -1520,8 +1494,7 @@
       const subcategory = getVal(row, colIdx.subcategory);
       const ddoc = getVal(row, colIdx.doc);
       const dweb = getVal(row, colIdx.web);
-      const raw3D = get3DUrlForItem(row);
-      const d3d = raw3D ? await getCached3DUrl(raw3D) : '';
+      const d3d = get3DUrlForItem(row);
       const { img1, img2 } = getImagesForItem(row);
       const isHot = isItemHot(row);
       const ageBadgeClass = getAgeBadgeStyle(age);
