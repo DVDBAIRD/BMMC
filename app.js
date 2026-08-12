@@ -23,7 +23,8 @@ const TIMELINE_CUSTOM_IMAGES = {
   "Post War": "https://lh3.googleusercontent.com/d/1BLA99VbyIAhyBgcAjOl-VLUHv9Tpy1bE=s200",
   "Modern": "https://lh3.googleusercontent.com/d/1Eez4R63VdHFSWnVNBqaWiBH_2SrhNrnF=s200",
   "Items of interest": "https://lh3.googleusercontent.com/d/1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf=s200",
-  "Items of Interest": "https://lh3.googleusercontent.com/d/1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf=s200"
+  "Items of Interest": "https://lh3.googleusercontent.com/d/1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf=s200",
+  "Itmes of Interest": "https://lh3.googleusercontent.com/d/1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf=s200"
 };
 
 const CATEGORY_PALETTE = {
@@ -1191,7 +1192,7 @@ function renderExhibitsGrid() {
 
     let slots = [];
     if (d3d) {
-      slots.push({ type: '3d', url: d3d, poster: thumbImg1 || NO_IMAGE_SVG });
+      slots.push({ type: '3d', url: d3d });
       if (img1) slots.push({ type: 'img', thumbUrl: thumbImg1, fullUrl: fullImg1 });
       if (img2) slots.push({ type: 'img', thumbUrl: thumbImg2, fullUrl: fullImg2 });
     } else {
@@ -1217,7 +1218,7 @@ function renderExhibitsGrid() {
       if (s.type === '3d') {
         mediaItemsHTML += `
           <div class="card-media-item ${isHidden} w-full h-full items-center justify-center relative pointer-events-none" data-slot-idx="${slotNum}">
-            <model-viewer src="${s.url}" poster="${s.poster}" reveal="interaction" loading="lazy" auto-rotate rotation-per-second="20deg" interaction-prompt="none" shadow-intensity="0.4" style="width: 100%; height: 100%; display: block; --poster-color: transparent;" class="w-full h-full"></model-viewer>
+            <model-viewer src="${s.url}" loading="lazy" auto-rotate rotation-per-second="20deg" interaction-prompt="none" shadow-intensity="0.4" style="width: 100%; height: 100%; display: block; --poster-color: transparent;" class="w-full h-full"></model-viewer>
             <span class="absolute bottom-2.5 left-2.5 bg-purple-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-full shadow border border-purple-400/40 z-10">3D Interactive</span>
           </div>`;
       } else {
