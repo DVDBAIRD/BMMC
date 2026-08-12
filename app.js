@@ -5,26 +5,25 @@ const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%
 const MAIN_HUB_CATEGORIES = ["War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"];
 
 const HUB_CUSTOM_IMAGES = {
-  "War": "https://drive.google.com/thumbnail?id=1MPsC_RvHj1FoYs9qY1uszeKAD8nJjnCl",
-  "Photography": "https://drive.google.com/thumbnail?id=1wG9HuJovMcF0FV_rucdU2D9Bo0-XBBdm",
-  "Survey": "https://drive.google.com/thumbnail?id=1ynhpt7nlIWCEaE-VGQ0xqvT8LPR4YEU2",
-  "General": "https://drive.google.com/thumbnail?id=1yYyeT3Gdf0CFJCdAUBHhr0oYNxmKlxv5",
-  "Documentation": "https://drive.google.com/thumbnail?id=1VHPNsMSdCsWTL3bjOJ1haOSwV0_1hOgx",
-  "Household": "https://drive.google.com/thumbnail?id=1YpCxkPq6yCiVK-lNBDHC4qbI-ypmuGJ-",
-  "Collections": "https://drive.google.com/thumbnail?id=1cJOXAc-8l8J9R1NXt9P-wKbtxHcAjlvC"
+  "War": "https://lh3.googleusercontent.com/d/1MPsC_RvHj1FoYs9qY1uszeKAD8nJjnCl=s200",
+  "Photography": "https://lh3.googleusercontent.com/d/1wG9HuJovMcF0FV_rucdU2D9Bo0-XBBdm=s200",
+  "Survey": "https://lh3.googleusercontent.com/d/1ynhpt7nlIWCEaE-VGQ0xqvT8LPR4YEU2=s200",
+  "General": "https://lh3.googleusercontent.com/d/1yYyeT3Gdf0CFJCdAUBHhr0oYNxmKlxv5=s200",
+  "Documentation": "https://lh3.googleusercontent.com/d/1VHPNsMSdCsWTL3bjOJ1haOSwV0_1hOgx=s200",
+  "Household": "https://lh3.googleusercontent.com/d/1YpCxkPq6yCiVK-lNBDHC4qbI-ypmuGJ-=s200",
+  "Collections": "https://lh3.googleusercontent.com/d/1cJOXAc-8l8J9R1NXt9P-wKbtxHcAjlvC=s200"
 };
 
 const TIMELINE_CUSTOM_IMAGES = {
-  "Prehistory": "https://drive.google.com/thumbnail?id=1P2FMOTE6v8UeOowUc6OTq-B6OpmqnXMm",
-  "Victorian": "https://drive.google.com/thumbnail?id=1yzhHrM_yEJFpFrQgCSpWTNo1PIrfX65C",
-  "WWI": "https://drive.google.com/thumbnail?id=1MPsC_RvHj1FoYs9qY1uszeKAD8nJjnCl",
-  "Interwar": "https://drive.google.com/thumbnail?id=1cswXC3Ia74sbjpUpGTRuPr6yGIAk1Ec2",
-  "WWII": "https://drive.google.com/thumbnail?id=1EoNqpgXzJoT6g8xsl2hPp9CBloibQEB0",
-  "Post War": "https://drive.google.com/thumbnail?id=1BLA99VbyIAhyBgcAjOl-VLUHv9Tpy1bE",
-  "Modern": "https://drive.google.com/thumbnail?id=1Eez4R63VdHFSWnVNBqaWiBH_2SrhNrnF",
-  "Items of interest": "https://drive.google.com/thumbnail?id=1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf",
-  "Itmes of Interest": "https://drive.google.com/thumbnail?id=1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf",
-  "Hot": "https://drive.google.com/thumbnail?id=1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf"
+  "Prehistory": "https://lh3.googleusercontent.com/d/1P2FMOTE6v8UeOowUc6OTq-B6OpmqnXMm=s200",
+  "Victorian": "https://lh3.googleusercontent.com/d/1yzhHrM_yEJFpFrQgCSpWTNo1PIrfX65C=s200",
+  "WWI": "https://lh3.googleusercontent.com/d/1MPsC_RvHj1FoYs9qY1uszeKAD8nJjnCl=s200",
+  "Interwar": "https://lh3.googleusercontent.com/d/1cswXC3Ia74sbjpUpGTRuPr6yGIAk1Ec2=s200",
+  "WWII": "https://lh3.googleusercontent.com/d/1EoNqpgXzJoT6g8xsl2hPp9CBloibQEB0=s200",
+  "Post War": "https://lh3.googleusercontent.com/d/1BLA99VbyIAhyBgcAjOl-VLUHv9Tpy1bE=s200",
+  "Modern": "https://lh3.googleusercontent.com/d/1Eez4R63VdHFSWnVNBqaWiBH_2SrhNrnF=s200",
+  "Items of interest": "https://lh3.googleusercontent.com/d/1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf=s200",
+  "Items of Interest": "https://lh3.googleusercontent.com/d/1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf=s200"
 };
 
 const CATEGORY_PALETTE = {
@@ -430,7 +429,7 @@ function updateFavoritesBadge() {
   }
 }
 
-// Converts any Google Drive image link tolh3.googleusercontent.com/d/FILE_ID=sSIZE format
+// Converts any Google Drive image link to lh3.googleusercontent.com/d/FILE_ID=sSIZE format
 function formatGoogleLh3Url(url, size = 's200') {
   if (!url) return '';
   url = String(url).trim();
@@ -934,7 +933,7 @@ function renderActiveFilterPills() {
     if (catVal) filters.push({ label: `Category: ${unescapeHTML(catVal)}`, clear: () => { document.getElementById('filterCategory').value = ''; } });
     if (subCatVal) filters.push({ label: `Subcategory: ${unescapeHTML(subCatVal)}`, clear: () => { document.getElementById('filterSubcategory').value = ''; } });
     if (only3DActive) filters.push({ label: `3D Only`, clear: () => { document.getElementById('btn3DOnly').click(); } });
-    if (hotOnlyActive) filters.push({ label: `🔥 Items of Interest`, clear: () => { document.getElementById('btnHotOnly').click(); } });
+    if (hotOnlyActive) filters.push({ label: `🔥 Hot Items Only`, clear: () => { document.getElementById('btnHotOnly').click(); } });
   } else if (currentTab === 'gramophone') {
     filters.push({ label: `Archive Mode: Gramophone`, clear: () => browseAllExhibits() });
     const artistVal = document.getElementById('filterArtist').value;
@@ -1235,7 +1234,7 @@ function renderExhibitsGrid() {
       <div id="card-media-box-${originalIndex}" data-total-slots="${totalSlots}" data-current-slot="1" class="h-56 relative overflow-hidden flex items-center justify-center p-2 group/cardimg" style="background-color: ${theme.hex}18;">
         ${mediaItemsHTML}
         <div class="absolute top-3 right-3 flex items-center gap-1.5 z-10" onclick="event.stopPropagation()">
-          ${isHot ? `<span title="Items of Interest" class="w-8 h-8 rounded-full bg-amber-500/90 text-white backdrop-blur-md transition shadow-md flex items-center justify-center text-xs font-bold pointer-events-none">🔥</span>` : ''}
+          ${isHot ? `<span title="Hot Item" class="w-8 h-8 rounded-full bg-amber-500/90 text-white backdrop-blur-md transition shadow-md flex items-center justify-center text-xs font-bold pointer-events-none">🔥</span>` : ''}
           <button onclick="toggleFavorite(${originalIndex}, event)" aria-label="Favorite item" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md transition shadow-md hover:scale-110 flex items-center justify-center text-xs">${isFav ? '❤️' : '🤍'}</button>
           ${notes ? `<button data-grid-audio-idx="${originalIndex}" onclick="speakAudioGuide(${originalIndex}, event)" aria-label="Listen to notes" title="Listen to Museum Notes" class="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 text-blue-600 dark:text-blue-400 backdrop-blur-md transition shadow-md hover:scale-110 flex items-center justify-center text-xs font-bold">🔊</button>` : ''}
         </div>
@@ -1492,41 +1491,47 @@ function renderMuseumStatistics() {
       timelineEraGrid.appendChild(card);
     });
 
-    // 8th Button: Items of interest (Hot Items)
-    const hotRows = rawExhibitsRows.filter(r => isItemHot(r));
-    const hotCount = hotRows.length;
-    const hotPctNum = totalMuseumItems > 0 ? (hotCount / totalMuseumItems * 100) : 0;
-    const hotPctDisplay = hotPctNum > 0 && hotPctNum < 1 ? hotPctNum.toFixed(1) : Math.round(hotPctNum);
-    const hotCustomImg = TIMELINE_CUSTOM_IMAGES["Items of interest"] || TIMELINE_CUSTOM_IMAGES["Itmes of Interest"] || TIMELINE_CUSTOM_IMAGES["Hot"];
-    const firstHotImgRow = hotRows.find(r => getVal(r, colIdx.img1) !== '');
-    const rawHotUrl = hotCustomImg || (firstHotImgRow ? getVal(firstHotImgRow, colIdx.img1) : '');
-    const hotPreviewImg = formatGoogleLh3Url(rawHotUrl, 's200') || NO_IMAGE_SVG;
-    const hotColor = '#D97706';
+    // 8th Button: Items of interest (Filtered strictly by Type: Items of interest)
+    const interestRows = rawExhibitsRows.filter(r => getVal(r, colIdx.type).toLowerCase().includes('item') && getVal(r, colIdx.type).toLowerCase().includes('interest'));
+    const interestCount = interestRows.length;
+    const interestPctNum = totalMuseumItems > 0 ? (interestCount / totalMuseumItems * 100) : 0;
+    const interestPctDisplay = interestPctNum > 0 && interestPctNum < 1 ? interestPctNum.toFixed(1) : Math.round(interestPctNum);
+    const interestCustomImg = TIMELINE_CUSTOM_IMAGES["Items of interest"] || TIMELINE_CUSTOM_IMAGES["Items of Interest"] || TIMELINE_CUSTOM_IMAGES["Itmes of Interest"];
+    const firstInterestImgRow = interestRows.find(r => getVal(r, colIdx.img1) !== '');
+    const rawInterestUrl = interestCustomImg || (firstInterestImgRow ? getVal(firstInterestImgRow, colIdx.img1) : '');
+    const interestPreviewImg = formatGoogleLh3Url(rawInterestUrl, 's200') || NO_IMAGE_SVG;
+    const interestColor = '#D97706';
 
-    const hotCard = document.createElement('div');
-    hotCard.className = 'bg-white dark:bg-slate-900 rounded-2xl border-2 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col group relative';
-    hotCard.style.borderColor = hotColor;
-    hotCard.innerHTML = `
-      <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5" style="background-color: ${hotColor}25;">
-        <img src="${hotPreviewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="Items of interest" />
+    const interestCard = document.createElement('div');
+    interestCard.className = 'bg-white dark:bg-slate-900 rounded-2xl border-2 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col group relative';
+    interestCard.style.borderColor = interestColor;
+    interestCard.innerHTML = `
+      <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5" style="background-color: ${interestColor}25;">
+        <img src="${interestPreviewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="Items of interest" />
         <div class="absolute top-1.5 right-1.5 flex flex-col items-end gap-0.5 z-10">
-          <span class="text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${hotColor}; color: #ffffff;">${hotCount}</span>
-          <span class="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full shadow-md bg-slate-900/80 text-white backdrop-blur-sm">${hotPctDisplay}%</span>
+          <span class="text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${interestColor}; color: #ffffff;">${interestCount}</span>
+          <span class="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full shadow-md bg-slate-900/80 text-white backdrop-blur-sm">${interestPctDisplay}%</span>
         </div>
       </div>
       <div class="p-2.5 flex-1 flex flex-col justify-between">
-        <h3 class="font-black text-xs line-clamp-1" style="color: ${hotColor};">🔥 Items of interest</h3>
-        <span class="text-[10px] font-extrabold mt-1 flex items-center gap-0.5" style="color: ${hotColor};">Explore →</span>
+        <h3 class="font-black text-xs line-clamp-1" style="color: ${interestColor};">Items of interest</h3>
+        <span class="text-[10px] font-extrabold mt-1 flex items-center gap-0.5" style="color: ${interestColor};">Explore →</span>
       </div>
     `;
-    hotCard.addEventListener('click', () => {
+    interestCard.addEventListener('click', () => {
       setTab('exhibits');
-      hotOnlyActive = true;
-      const btnHot = document.getElementById('btnHotOnly');
-      if (btnHot) btnHot.classList.add('ring-2');
+      const typeSelect = document.getElementById('filterType');
+      if (typeSelect) {
+        typeSelect.value = '';
+        for (let opt of typeSelect.options) {
+          if (opt.value.toLowerCase().includes('item') && opt.value.toLowerCase().includes('interest')) {
+            typeSelect.value = opt.value; break;
+          }
+        }
+      }
       updateDynamicDropdowns(); filterCatalog(true); scrollToGrid();
     });
-    timelineEraGrid.appendChild(hotCard);
+    timelineEraGrid.appendChild(interestCard);
   }
 
   document.getElementById('statTotalItems').textContent = itemsSumQty > 0 ? itemsSumQty.toLocaleString() : '1,193';
@@ -1805,7 +1810,7 @@ function openModal(row, originalIndex) {
           <div class="flex items-start justify-between gap-3">
             <h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
             <div class="flex items-center gap-2 shrink-0">
-              ${isHot ? `<span title="Items of Interest" class="text-base sm:text-lg px-2 py-0.5 bg-amber-500/20 rounded-full border border-amber-400/40 leading-none flex items-center justify-center">🔥</span>` : ''}
+              ${isHot ? `<span title="Hot Item" class="text-base sm:text-lg px-2 py-0.5 bg-amber-500/20 rounded-full border border-amber-400/40 leading-none flex items-center justify-center">🔥</span>` : ''}
               <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">${isFav ? '❤️ Saved' : '🤍 Save'}</button>
             </div>
           </div>
@@ -2040,7 +2045,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentTab !== 'exhibits') setTab('exhibits');
     hotOnlyActive = !hotOnlyActive;
     document.getElementById('btnHotOnly').classList.toggle('ring-2', hotOnlyActive);
-    if (hotOnlyActive) showToast('Showing Items of Interest', '🔥');
+    if (hotOnlyActive) showToast('Showing Hot Items Only', '🔥');
     filterCatalog(true);
   });
 
