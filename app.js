@@ -1,7 +1,3 @@
-
-Here is the complete, untruncated **`app.js`** file:
-
-```javascript
 const EXHIBITS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
 const GRAMOPHONE_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=606568772';
 const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
@@ -9,25 +5,26 @@ const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%
 const MAIN_HUB_CATEGORIES = ["War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"];
 
 const HUB_CUSTOM_IMAGES = {
-  "War": "https://drive.google.com/thumbnail?id=1MPsC_RvHj1FoYs9qY1uszeKAD8nJjnCl&sz=s200",
-  "Photography": "https://drive.google.com/thumbnail?id=1wG9HuJovMcF0FV_rucdU2D9Bo0-XBBdm&sz=s200",
-  "Survey": "https://drive.google.com/thumbnail?id=1ynhpt7nlIWCEaE-VGQ0xqvT8LPR4YEU2&sz=s200",
-  "General": "https://drive.google.com/thumbnail?id=1yYyeT3Gdf0CFJCdAUBHhr0oYNxmKlxv5&sz=s200",
-  "Documentation": "https://drive.google.com/thumbnail?id=1VHPNsMSdCsWTL3bjOJ1haOSwV0_1hOgx&sz=s200",
-  "Household": "https://drive.google.com/thumbnail?id=1YpCxkPq6yCiVK-lNBDHC4qbI-ypmuGJ-&sz=s200",
-  "Collections": "https://drive.google.com/thumbnail?id=1cJOXAc-8l8J9R1NXt9P-wKbtxHcAjlvC&sz=s200"
+  "War": "https://drive.google.com/thumbnail?id=1MPsC_RvHj1FoYs9qY1uszeKAD8nJjnCl",
+  "Photography": "https://drive.google.com/thumbnail?id=1wG9HuJovMcF0FV_rucdU2D9Bo0-XBBdm",
+  "Survey": "https://drive.google.com/thumbnail?id=1ynhpt7nlIWCEaE-VGQ0xqvT8LPR4YEU2",
+  "General": "https://drive.google.com/thumbnail?id=1yYyeT3Gdf0CFJCdAUBHhr0oYNxmKlxv5",
+  "Documentation": "https://drive.google.com/thumbnail?id=1VHPNsMSdCsWTL3bjOJ1haOSwV0_1hOgx",
+  "Household": "https://drive.google.com/thumbnail?id=1YpCxkPq6yCiVK-lNBDHC4qbI-ypmuGJ-",
+  "Collections": "https://drive.google.com/thumbnail?id=1cJOXAc-8l8J9R1NXt9P-wKbtxHcAjlvC"
 };
 
 const TIMELINE_CUSTOM_IMAGES = {
-  "Prehistory": "https://drive.google.com/thumbnail?id=1P2FMOTE6v8UeOowUc6OTq-B6OpmqnXMm&sz=s200",
-  "Victorian": "https://drive.google.com/thumbnail?id=1yzhHrM_yEJFpFrQgCSpWTNo1PIrfX65C&sz=s200",
-  "WWI": "https://drive.google.com/thumbnail?id=1MPsC_RvHj1FoYs9qY1uszeKAD8nJjnCl&sz=s200",
-  "Interwar": "https://drive.google.com/thumbnail?id=1cswXC3Ia74sbjpUpGTRuPr6yGIAk1Ec2&sz=s200",
-  "WWII": "https://drive.google.com/thumbnail?id=1EoNqpgXzJoT6g8xsl2hPp9CBloibQEB0&sz=s200",
-  "Post War": "https://drive.google.com/thumbnail?id=1BLA99VbyIAhyBgcAjOl-VLUHv9Tpy1bE&sz=s200",
-  "Modern": "https://drive.google.com/thumbnail?id=1Eez4R63VdHFSWnVNBqaWiBH_2SrhNrnF&sz=s200",
-  "Hot": "https://drive.google.com/thumbnail?id=1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf&sz=s200",
-  "Items of interest": "https://drive.google.com/thumbnail?id=1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf&sz=s200"
+  "Prehistory": "https://drive.google.com/thumbnail?id=1P2FMOTE6v8UeOowUc6OTq-B6OpmqnXMm",
+  "Victorian": "https://drive.google.com/thumbnail?id=1yzhHrM_yEJFpFrQgCSpWTNo1PIrfX65C",
+  "WWI": "https://drive.google.com/thumbnail?id=1MPsC_RvHj1FoYs9qY1uszeKAD8nJjnCl",
+  "Interwar": "https://drive.google.com/thumbnail?id=1cswXC3Ia74sbjpUpGTRuPr6yGIAk1Ec2",
+  "WWII": "https://drive.google.com/thumbnail?id=1EoNqpgXzJoT6g8xsl2hPp9CBloibQEB0",
+  "Post War": "https://drive.google.com/thumbnail?id=1BLA99VbyIAhyBgcAjOl-VLUHv9Tpy1bE",
+  "Modern": "https://drive.google.com/thumbnail?id=1Eez4R63VdHFSWnVNBqaWiBH_2SrhNrnF",
+  "Items of interest": "https://drive.google.com/thumbnail?id=1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf",
+  "Itmes of Interest": "https://drive.google.com/thumbnail?id=1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf",
+  "Hot": "https://drive.google.com/thumbnail?id=1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf"
 };
 
 const CATEGORY_PALETTE = {
@@ -433,20 +430,32 @@ function updateFavoritesBadge() {
   }
 }
 
-function formatImageUrl(url) {
+// Converts any Google Drive image link tolh3.googleusercontent.com/d/FILE_ID=sSIZE format
+function formatGoogleLh3Url(url, size = 's200') {
   if (!url) return '';
   url = String(url).trim();
-  if (url.includes('drive.google.com/thumbnail') || url.includes('docs.google.com/spreadsheets') || url.includes('pubchart')) return url;
+  if (!url) return '';
+  if (url.startsWith('data:image/')) return url;
+
   if (url.includes('dropbox.com')) {
-    url = url.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
-    if (!url.includes('raw=1')) url += (url.includes('?') ? '&raw=1' : '?raw=1');
-    return url;
+    let cleanUrl = url.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
+    if (!cleanUrl.includes('raw=1')) cleanUrl += (cleanUrl.includes('?') ? '&raw=1' : '?raw=1');
+    return cleanUrl;
   }
+
+  const isDrive = url.includes('drive.google.com') || url.includes('lh3.googleusercontent.com') || url.includes('docs.google.com');
+  if (isDrive) {
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || 
+                  url.match(/id=([a-zA-Z0-9_-]+)/) || 
+                  url.match(/googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      const fileId = match[1];
+      const sz = String(size).startsWith('s') ? size : `s${size}`;
+      return `https://lh3.googleusercontent.com/d/${fileId}=${sz}`;
+    }
+  }
+
   if (!url.startsWith('http://') && !url.startsWith('https://')) return '';
-  if (url.includes('drive.google.com')) {
-    const driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-    if (driveMatch && driveMatch[1]) return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
-  }
   return url;
 }
 
@@ -499,14 +508,14 @@ function isItemHot(row) {
 }
 
 function getImagesForItem(row) {
-  let img1 = formatImageUrl(getVal(row, colIdx.img1));
-  let img2 = formatImageUrl(getVal(row, colIdx.img2));
+  let img1 = getVal(row, colIdx.img1);
+  let img2 = getVal(row, colIdx.img2);
   if (!img1 && row) {
     for (let i = 2; i < row.length; i++) {
       const val = getVal(row, i);
       if (val && val.startsWith('http') && (val.includes('drive.google') || val.includes('lh3.google') || val.includes('dropbox') || /\.(jpg|jpeg|png|webp|gif)/i.test(val))) {
-        if (!img1) img1 = formatImageUrl(val);
-        else if (!img2 && val !== img1) { img2 = formatImageUrl(val); break; }
+        if (!img1) img1 = val;
+        else if (!img2 && val !== img1) { img2 = val; break; }
       }
     }
   }
@@ -723,7 +732,8 @@ function renderCollectionHubs(rows) {
 
     const customImg = HUB_CUSTOM_IMAGES[catName];
     const firstImgRow = matchingRows.find(r => getVal(r, colIdx.img1) !== '');
-    const previewImg = customImg ? formatImageUrl(customImg) : (formatImageUrl(firstImgRow ? getVal(firstImgRow, colIdx.img1) : '') || NO_IMAGE_SVG);
+    const rawPreviewUrl = customImg || (firstImgRow ? getVal(firstImgRow, colIdx.img1) : '');
+    const previewImg = formatGoogleLh3Url(rawPreviewUrl, 's200') || NO_IMAGE_SVG;
     const theme = getCategoryTheme(baseName);
 
     const hubCard = document.createElement('div');
@@ -924,7 +934,7 @@ function renderActiveFilterPills() {
     if (catVal) filters.push({ label: `Category: ${unescapeHTML(catVal)}`, clear: () => { document.getElementById('filterCategory').value = ''; } });
     if (subCatVal) filters.push({ label: `Subcategory: ${unescapeHTML(subCatVal)}`, clear: () => { document.getElementById('filterSubcategory').value = ''; } });
     if (only3DActive) filters.push({ label: `3D Only`, clear: () => { document.getElementById('btn3DOnly').click(); } });
-    if (hotOnlyActive) filters.push({ label: `🔥 Hot Items Only`, clear: () => { document.getElementById('btnHotOnly').click(); } });
+    if (hotOnlyActive) filters.push({ label: `🔥 Items of Interest`, clear: () => { document.getElementById('btnHotOnly').click(); } });
   } else if (currentTab === 'gramophone') {
     filters.push({ label: `Archive Mode: Gramophone`, clear: () => browseAllExhibits() });
     const artistVal = document.getElementById('filterArtist').value;
@@ -1175,15 +1185,20 @@ function renderExhibitsGrid() {
     const { img1, img2 } = getImagesForItem(row);
     const isHot = isItemHot(row);
 
+    const thumbImg1 = formatGoogleLh3Url(img1, 's200');
+    const thumbImg2 = formatGoogleLh3Url(img2, 's200');
+    const fullImg1 = formatGoogleLh3Url(img1, 's1000');
+    const fullImg2 = formatGoogleLh3Url(img2, 's1000');
+
     let slots = [];
     if (d3d) {
-      slots.push({ type: '3d', url: d3d });
-      if (img1) slots.push({ type: 'img', url: img1 });
-      if (img2) slots.push({ type: 'img', url: img2 });
+      slots.push({ type: '3d', url: d3d, poster: thumbImg1 || NO_IMAGE_SVG });
+      if (img1) slots.push({ type: 'img', thumbUrl: thumbImg1, fullUrl: fullImg1 });
+      if (img2) slots.push({ type: 'img', thumbUrl: thumbImg2, fullUrl: fullImg2 });
     } else {
-      if (img1) slots.push({ type: 'img', url: img1 });
-      if (img2) slots.push({ type: 'img', url: img2 });
-      if (slots.length === 0) slots.push({ type: 'img', url: NO_IMAGE_SVG });
+      if (img1) slots.push({ type: 'img', thumbUrl: thumbImg1, fullUrl: fullImg1 });
+      if (img2) slots.push({ type: 'img', thumbUrl: thumbImg2, fullUrl: fullImg2 });
+      if (slots.length === 0) slots.push({ type: 'img', thumbUrl: NO_IMAGE_SVG, fullUrl: NO_IMAGE_SVG });
     }
 
     const totalSlots = slots.length;
@@ -1203,14 +1218,14 @@ function renderExhibitsGrid() {
       if (s.type === '3d') {
         mediaItemsHTML += `
           <div class="card-media-item ${isHidden} w-full h-full items-center justify-center relative pointer-events-none" data-slot-idx="${slotNum}">
-            <model-viewer src="${s.url}" poster="${img1 || NO_IMAGE_SVG}" reveal="interaction" loading="lazy" auto-rotate rotation-per-second="20deg" interaction-prompt="none" shadow-intensity="0.4" style="width: 100%; height: 100%; display: block; --poster-color: transparent;" class="w-full h-full"></model-viewer>
+            <model-viewer src="${s.url}" poster="${s.poster}" reveal="interaction" loading="lazy" auto-rotate rotation-per-second="20deg" interaction-prompt="none" shadow-intensity="0.4" style="width: 100%; height: 100%; display: block; --poster-color: transparent;" class="w-full h-full"></model-viewer>
             <span class="absolute bottom-2.5 left-2.5 bg-purple-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-full shadow border border-purple-400/40 z-10">3D Interactive</span>
           </div>`;
       } else {
         mediaItemsHTML += `
           <div class="card-media-item ${isHidden} w-full h-full items-center justify-center relative group/img" data-slot-idx="${slotNum}">
-            <a href="${s.url}" target="_blank" onclick="event.stopPropagation()" title="Open image in new tab" class="w-full h-full flex items-center justify-center">
-              <img src="${s.url}" class="max-w-full max-h-full object-contain group-hover/img:scale-105 transition-transform duration-300 drop-shadow-md" alt="${displayTitle}" loading="lazy" onError="this.src='${NO_IMAGE_SVG}'" />
+            <a href="${s.fullUrl}" target="_blank" onclick="event.stopPropagation()" title="Open full image in new tab" class="w-full h-full flex items-center justify-center">
+              <img src="${s.thumbUrl}" class="max-w-full max-h-full object-contain group-hover/img:scale-105 transition-transform duration-300 drop-shadow-md" alt="${displayTitle}" loading="lazy" onError="this.src='${NO_IMAGE_SVG}'" />
             </a>
           </div>`;
       }
@@ -1220,7 +1235,7 @@ function renderExhibitsGrid() {
       <div id="card-media-box-${originalIndex}" data-total-slots="${totalSlots}" data-current-slot="1" class="h-56 relative overflow-hidden flex items-center justify-center p-2 group/cardimg" style="background-color: ${theme.hex}18;">
         ${mediaItemsHTML}
         <div class="absolute top-3 right-3 flex items-center gap-1.5 z-10" onclick="event.stopPropagation()">
-          ${isHot ? `<span title="Hot Item" class="w-8 h-8 rounded-full bg-amber-500/90 text-white backdrop-blur-md transition shadow-md flex items-center justify-center text-xs font-bold pointer-events-none">🔥</span>` : ''}
+          ${isHot ? `<span title="Items of Interest" class="w-8 h-8 rounded-full bg-amber-500/90 text-white backdrop-blur-md transition shadow-md flex items-center justify-center text-xs font-bold pointer-events-none">🔥</span>` : ''}
           <button onclick="toggleFavorite(${originalIndex}, event)" aria-label="Favorite item" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md transition shadow-md hover:scale-110 flex items-center justify-center text-xs">${isFav ? '❤️' : '🤍'}</button>
           ${notes ? `<button data-grid-audio-idx="${originalIndex}" onclick="speakAudioGuide(${originalIndex}, event)" aria-label="Listen to notes" title="Listen to Museum Notes" class="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 text-blue-600 dark:text-blue-400 backdrop-blur-md transition shadow-md hover:scale-110 flex items-center justify-center text-xs font-bold">🔊</button>` : ''}
         </div>
@@ -1337,7 +1352,7 @@ function openEnlargeModal(url, isInteractive) {
   const body = document.getElementById('enlargeModalBody');
   if (!modal || !body) return;
   if (isInteractive) body.innerHTML = `<iframe src="${url}" class="w-full h-full border-0 bg-white rounded-2xl shadow-2xl" title="Full Scale View"></iframe>`;
-  else body.innerHTML = `<img src="${url}" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" alt="Full Scale Image" />`;
+  else body.innerHTML = `<img src="${formatGoogleLh3Url(url, 's1000')}" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" alt="Full Scale Image" />`;
   modal.classList.remove('hidden'); document.body.classList.add('overflow-hidden');
 }
 
@@ -1448,7 +1463,8 @@ function renderMuseumStatistics() {
 
       const customImg = TIMELINE_CUSTOM_IMAGES[e.key] || TIMELINE_CUSTOM_IMAGES[e.short];
       const firstImgRow = eraRows.find(r => getVal(r, colIdx.img1) !== '');
-      const previewImg = customImg ? formatImageUrl(customImg) : (formatImageUrl(firstImgRow ? getVal(firstImgRow, colIdx.img1) : '') || NO_IMAGE_SVG);
+      const rawPreviewUrl = customImg || (firstImgRow ? getVal(firstImgRow, colIdx.img1) : '');
+      const previewImg = formatGoogleLh3Url(rawPreviewUrl, 's200') || NO_IMAGE_SVG;
       const hexColor = eraColors[idx % eraColors.length];
 
       const card = document.createElement('div');
@@ -1481,9 +1497,10 @@ function renderMuseumStatistics() {
     const hotCount = hotRows.length;
     const hotPctNum = totalMuseumItems > 0 ? (hotCount / totalMuseumItems * 100) : 0;
     const hotPctDisplay = hotPctNum > 0 && hotPctNum < 1 ? hotPctNum.toFixed(1) : Math.round(hotPctNum);
-    const hotCustomImg = TIMELINE_CUSTOM_IMAGES["Items of interest"] || TIMELINE_CUSTOM_IMAGES["Hot"];
+    const hotCustomImg = TIMELINE_CUSTOM_IMAGES["Items of interest"] || TIMELINE_CUSTOM_IMAGES["Itmes of Interest"] || TIMELINE_CUSTOM_IMAGES["Hot"];
     const firstHotImgRow = hotRows.find(r => getVal(r, colIdx.img1) !== '');
-    const hotPreviewImg = hotCustomImg ? formatImageUrl(hotCustomImg) : (formatImageUrl(firstHotImgRow ? getVal(firstHotImgRow, colIdx.img1) : '') || NO_IMAGE_SVG);
+    const rawHotUrl = hotCustomImg || (firstHotImgRow ? getVal(firstHotImgRow, colIdx.img1) : '');
+    const hotPreviewImg = formatGoogleLh3Url(rawHotUrl, 's200') || NO_IMAGE_SVG;
     const hotColor = '#D97706';
 
     const hotCard = document.createElement('div');
@@ -1764,6 +1781,11 @@ function openModal(row, originalIndex) {
     const cleanedDetails = cleanDetailsForModal(details);
     const theme = getCategoryTheme(category || type || subcategory);
 
+    const modalImg1 = formatGoogleLh3Url(img1, 's600');
+    const modalImg2 = formatGoogleLh3Url(img2, 's600');
+    const fullImg1 = formatGoogleLh3Url(img1, 's1000');
+    const fullImg2 = formatGoogleLh3Url(img2, 's1000');
+
     modalContainer.style.borderColor = theme.hex; modalContainer.style.borderWidth = '3px';
     modalContainer.style.backgroundColor = getSolidTint(theme.hex, isDark);
 
@@ -1783,7 +1805,7 @@ function openModal(row, originalIndex) {
           <div class="flex items-start justify-between gap-3">
             <h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
             <div class="flex items-center gap-2 shrink-0">
-              ${isHot ? `<span title="Hot Item" class="text-base sm:text-lg px-2 py-0.5 bg-amber-500/20 rounded-full border border-amber-400/40 leading-none flex items-center justify-center">🔥</span>` : ''}
+              ${isHot ? `<span title="Items of Interest" class="text-base sm:text-lg px-2 py-0.5 bg-amber-500/20 rounded-full border border-amber-400/40 leading-none flex items-center justify-center">🔥</span>` : ''}
               <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">${isFav ? '❤️ Saved' : '🤍 Save'}</button>
             </div>
           </div>
@@ -1847,8 +1869,8 @@ function openModal(row, originalIndex) {
             ${img1 ? `
               <div class="w-full">
                 <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${d3d ? 'Second Media (Image 1)' : 'Primary Image'}</p>
-                <a href="${img1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
-                  <img src="${img1}" class="w-full ${!img2 ? 'max-h-[520px] min-h-[220px]' : 'h-52 sm:h-56'} object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                <a href="${fullImg1 || modalImg1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
+                  <img src="${modalImg1}" class="w-full ${!img2 ? 'max-h-[520px] min-h-[220px]' : 'h-52 sm:h-56'} object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
                   <span class="absolute bottom-2.5 right-2.5 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow pointer-events-none">Full Image ↗</span>
                 </a>
               </div>` : ''}
@@ -1856,8 +1878,8 @@ function openModal(row, originalIndex) {
             ${img2 ? `
               <div class="w-full">
                 <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${d3d ? 'Third Media (Image 2)' : 'Secondary Image'}</p>
-                <a href="${img2}" target="_blank" title="Click to view image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
-                  <img src="${img2}" class="w-full h-52 sm:h-56 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                <a href="${fullImg2 || modalImg2}" target="_blank" title="Click to view image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
+                  <img src="${modalImg2}" class="w-full h-52 sm:h-56 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
                   <span class="absolute bottom-2.5 right-2.5 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow pointer-events-none">Full Image ↗</span>
                 </a>
               </div>` : ''}
@@ -2018,7 +2040,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentTab !== 'exhibits') setTab('exhibits');
     hotOnlyActive = !hotOnlyActive;
     document.getElementById('btnHotOnly').classList.toggle('ring-2', hotOnlyActive);
-    if (hotOnlyActive) showToast('Showing Hot Items Only', '🔥');
+    if (hotOnlyActive) showToast('Showing Items of Interest', '🔥');
     filterCatalog(true);
   });
 
