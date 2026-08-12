@@ -1,3 +1,7 @@
+
+Here is the complete, untruncated **`app.js`** file:
+
+```javascript
 const EXHIBITS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
 const GRAMOPHONE_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=606568772';
 const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
@@ -12,6 +16,18 @@ const HUB_CUSTOM_IMAGES = {
   "Documentation": "https://drive.google.com/thumbnail?id=1VHPNsMSdCsWTL3bjOJ1haOSwV0_1hOgx&sz=s200",
   "Household": "https://drive.google.com/thumbnail?id=1YpCxkPq6yCiVK-lNBDHC4qbI-ypmuGJ-&sz=s200",
   "Collections": "https://drive.google.com/thumbnail?id=1cJOXAc-8l8J9R1NXt9P-wKbtxHcAjlvC&sz=s200"
+};
+
+const TIMELINE_CUSTOM_IMAGES = {
+  "Prehistory": "https://drive.google.com/thumbnail?id=1P2FMOTE6v8UeOowUc6OTq-B6OpmqnXMm&sz=s200",
+  "Victorian": "https://drive.google.com/thumbnail?id=1yzhHrM_yEJFpFrQgCSpWTNo1PIrfX65C&sz=s200",
+  "WWI": "https://drive.google.com/thumbnail?id=1MPsC_RvHj1FoYs9qY1uszeKAD8nJjnCl&sz=s200",
+  "Interwar": "https://drive.google.com/thumbnail?id=1cswXC3Ia74sbjpUpGTRuPr6yGIAk1Ec2&sz=s200",
+  "WWII": "https://drive.google.com/thumbnail?id=1EoNqpgXzJoT6g8xsl2hPp9CBloibQEB0&sz=s200",
+  "Post War": "https://drive.google.com/thumbnail?id=1BLA99VbyIAhyBgcAjOl-VLUHv9Tpy1bE&sz=s200",
+  "Modern": "https://drive.google.com/thumbnail?id=1Eez4R63VdHFSWnVNBqaWiBH_2SrhNrnF&sz=s200",
+  "Hot": "https://drive.google.com/thumbnail?id=1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf&sz=s200",
+  "Items of interest": "https://drive.google.com/thumbnail?id=1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf&sz=s200"
 };
 
 const CATEGORY_PALETTE = {
@@ -1187,7 +1203,7 @@ function renderExhibitsGrid() {
       if (s.type === '3d') {
         mediaItemsHTML += `
           <div class="card-media-item ${isHidden} w-full h-full items-center justify-center relative pointer-events-none" data-slot-idx="${slotNum}">
-            <model-viewer src="${s.url}" loading="lazy" auto-rotate rotation-per-second="20deg" interaction-prompt="none" shadow-intensity="0.4" style="width: 100%; height: 100%; display: block; --poster-color: transparent;" class="w-full h-full"></model-viewer>
+            <model-viewer src="${s.url}" poster="${img1 || NO_IMAGE_SVG}" reveal="interaction" loading="lazy" auto-rotate rotation-per-second="20deg" interaction-prompt="none" shadow-intensity="0.4" style="width: 100%; height: 100%; display: block; --poster-color: transparent;" class="w-full h-full"></model-viewer>
             <span class="absolute bottom-2.5 left-2.5 bg-purple-600/90 text-white backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded-full shadow border border-purple-400/40 z-10">3D Interactive</span>
           </div>`;
       } else {
@@ -1412,7 +1428,7 @@ function renderMuseumStatistics() {
     }
   });
 
-  // Populate Timeline Era Grid (Styled like Category Hubs, 7 Eras + 1 Items of Interest)
+  // Populate Timeline Era Grid (Styled like Category Hubs, 7 Eras + 1 Items of interest)
   const timelineEraGrid = document.getElementById('timelineEraGrid');
   if (timelineEraGrid) {
     timelineEraGrid.className = "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5";
@@ -1430,8 +1446,9 @@ function renderMuseumStatistics() {
       const pctNum = totalMuseumItems > 0 ? (count / totalMuseumItems * 100) : 0;
       const pctDisplay = pctNum > 0 && pctNum < 1 ? pctNum.toFixed(1) : Math.round(pctNum);
 
+      const customImg = TIMELINE_CUSTOM_IMAGES[e.key] || TIMELINE_CUSTOM_IMAGES[e.short];
       const firstImgRow = eraRows.find(r => getVal(r, colIdx.img1) !== '');
-      const previewImg = formatImageUrl(firstImgRow ? getVal(firstImgRow, colIdx.img1) : '') || NO_IMAGE_SVG;
+      const previewImg = customImg ? formatImageUrl(customImg) : (formatImageUrl(firstImgRow ? getVal(firstImgRow, colIdx.img1) : '') || NO_IMAGE_SVG);
       const hexColor = eraColors[idx % eraColors.length];
 
       const card = document.createElement('div');
@@ -1459,13 +1476,14 @@ function renderMuseumStatistics() {
       timelineEraGrid.appendChild(card);
     });
 
-    // 8th Button: Items of Interest (Hot Items)
+    // 8th Button: Items of interest (Hot Items)
     const hotRows = rawExhibitsRows.filter(r => isItemHot(r));
     const hotCount = hotRows.length;
     const hotPctNum = totalMuseumItems > 0 ? (hotCount / totalMuseumItems * 100) : 0;
     const hotPctDisplay = hotPctNum > 0 && hotPctNum < 1 ? hotPctNum.toFixed(1) : Math.round(hotPctNum);
+    const hotCustomImg = TIMELINE_CUSTOM_IMAGES["Items of interest"] || TIMELINE_CUSTOM_IMAGES["Hot"];
     const firstHotImgRow = hotRows.find(r => getVal(r, colIdx.img1) !== '');
-    const hotPreviewImg = formatImageUrl(firstHotImgRow ? getVal(firstHotImgRow, colIdx.img1) : '') || NO_IMAGE_SVG;
+    const hotPreviewImg = hotCustomImg ? formatImageUrl(hotCustomImg) : (formatImageUrl(firstHotImgRow ? getVal(firstHotImgRow, colIdx.img1) : '') || NO_IMAGE_SVG);
     const hotColor = '#D97706';
 
     const hotCard = document.createElement('div');
@@ -1473,14 +1491,14 @@ function renderMuseumStatistics() {
     hotCard.style.borderColor = hotColor;
     hotCard.innerHTML = `
       <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5" style="background-color: ${hotColor}25;">
-        <img src="${hotPreviewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="Items of Interest" />
+        <img src="${hotPreviewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="Items of interest" />
         <div class="absolute top-1.5 right-1.5 flex flex-col items-end gap-0.5 z-10">
           <span class="text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${hotColor}; color: #ffffff;">${hotCount}</span>
           <span class="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full shadow-md bg-slate-900/80 text-white backdrop-blur-sm">${hotPctDisplay}%</span>
         </div>
       </div>
       <div class="p-2.5 flex-1 flex flex-col justify-between">
-        <h3 class="font-black text-xs line-clamp-1" style="color: ${hotColor};">🔥 Items of Interest</h3>
+        <h3 class="font-black text-xs line-clamp-1" style="color: ${hotColor};">🔥 Items of interest</h3>
         <span class="text-[10px] font-extrabold mt-1 flex items-center gap-0.5" style="color: ${hotColor};">Explore →</span>
       </div>
     `;

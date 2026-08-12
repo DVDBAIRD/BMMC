@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
   <title>BMMC Showcase — Museum & Gramophone Archive</title>
 
+  <!-- Preconnect for Image CDN Performance -->
+  <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin>
+  <link rel="preconnect" href="https://drive.google.com" crossorigin>
+
   <!-- Inline Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>">
 
@@ -294,7 +298,7 @@
         </div>
       </div>
 
-      <!-- Timeline Era Breakdown Grid (Positioned directly below Map of Item Origin, styled like Category Hubs) -->
+      <!-- Timeline Era Breakdown Grid -->
       <div id="timelineEraSection" class="pt-1 border-t border-slate-200/60 dark:border-slate-800/80">
         <div id="timelineEraGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5"></div>
       </div>
@@ -449,4 +453,19 @@
         </div>
       </div>
 
-      <div id="lightbox3DContainer" class="relative w-full h-full flex items-center justify-center bg-slate-950 overflow-hidden transiti
+      <div id="lightbox3DContainer" class="relative w-full h-full flex items-center justify-center bg-slate-950 overflow-hidden transition-colors duration-300">
+        <div id="lightboxSpinner" class="absolute z-10 flex flex-col items-center justify-center gap-3 transition-opacity duration-300">
+          <div class="spinner-3d"></div>
+          <span class="text-xs font-bold text-slate-300">Loading 3D Model...</span>
+        </div>
+        <model-viewer id="lightboxViewer" camera-controls auto-rotate shadow-intensity="1.2" exposure="1.1" style="width: 100%; height: 100%; display: block;" class="w-full h-full"></model-viewer>
+        <span id="lightboxScaleBadge" class="absolute bottom-4 right-4 bg-slate-900/85 text-white backdrop-blur-md text-xs font-bold px-3 py-1.5 rounded-xl z-10 shadow border border-slate-700/60 pointer-events-none flex items-center gap-2">
+          <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+          <span id="lightboxScaleText">Scale Reference Available</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
