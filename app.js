@@ -22,8 +22,6 @@ const TIMELINE_CUSTOM_IMAGES = {
   "WWII": "https://lh3.googleusercontent.com/d/1EoNqpgXzJoT6g8xsl2hPp9CBloibQEB0=s200",
   "Post War": "https://lh3.googleusercontent.com/d/1BLA99VbyIAhyBgcAjOl-VLUHv9Tpy1bE=s200",
   "Modern": "https://lh3.googleusercontent.com/d/1Eez4R63VdHFSWnVNBqaWiBH_2SrhNrnF=s200",
-  "Items of interest": "https://lh3.googleusercontent.com/d/1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf=s200",
-  "Items of Interest": "https://lh3.googleusercontent.com/d/1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf=s200",
   "Itmes of Interest": "https://lh3.googleusercontent.com/d/1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf=s200"
 };
 
@@ -105,7 +103,7 @@ function getSolidTint(hex, isDark) {
   }
 }
 
-const CACHE_TTL_MS = 60 * 60 * 1000;
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 let currentTab = 'exhibits';
 let rawExhibitsRows = [];
 let rawGramophoneRows = [];
@@ -119,6 +117,7 @@ let hotOnlyActive = false;
 let showingFavoritesOnly = false;
 let isGridActive = false;
 let is3DSkyboxLight = false;
+let isPoppyMotionActive = false;
 let currentSpeechUtterance = null;
 let availableVoices = [];
 
@@ -211,18 +210,32 @@ function toggleCollapsibleControls(show) {
 }
 
 async function fetchCSVWithCache(url, cacheKey) {
-  const cached = sessionStorage.getItem(cacheKey);
-  const cacheTime = sessionStorage.getItem(`${cacheKey}_time`);
-  if (cached && cacheTime && (Date.now() - Number(cacheTime) < CACHE_TTL_MS)) {
-    try { return JSON.parse(cached); } catch (e) {}
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    const cacheTime = localStorage.getItem(`${cacheKey}_time`);
+    if (cached && cacheTime && (Date.now() - Number(cacheTime) < CACHE_TTL_MS)) {
+      const parsedData = JSON.parse(cached);
+      if (Array.isArray(parsedData) && parsedData.length > 1) {
+        return parsedData;
+      }
+    }
+  } catch (e) {
+    console.warn('localStorage read error:', e);
   }
+
   const res = await fetch(url);
   const text = await res.text();
   const parsed = Papa.parse(text, { header: false, skipEmptyLines: true });
-  try {
-    sessionStorage.setItem(cacheKey, JSON.stringify(parsed.data));
-    sessionStorage.setItem(`${cacheKey}_time`, Date.now());
-  } catch (e) {}
+
+  if (parsed.data && Array.isArray(parsed.data) && parsed.data.length > 1) {
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(parsed.data));
+      localStorage.setItem(`${cacheKey}_time`, Date.now());
+    } catch (e) {
+      console.warn('localStorage write error:', e);
+    }
+  }
+
   return parsed.data;
 }
 
@@ -430,7 +443,6 @@ function updateFavoritesBadge() {
   }
 }
 
-// Converts any Google Drive image link to lh3.googleusercontent.com/d/FILE_ID=sSIZE format
 function formatGoogleLh3Url(url, size = 's200') {
   if (!url) return '';
   url = String(url).trim();
@@ -543,6 +555,32 @@ function toggleModal3DSkybox(event) {
   update3DSkyboxUI();
 }
 
+function togglePoppyMotion() {
+  isPoppyMotionActive = !isPoppyMotionActive;
+  const skyBg = document.getElementById('timeSkyBackground');
+  const btn = document.getElementById('btnTogglePoppyMotion');
+
+  if (skyBg) {
+    if (isPoppyMotionActive) {
+      skyBg.classList.add('poppies-animated');
+    } else {
+      skyBg.classList.remove('poppies-animated');
+    }
+  }
+
+  if (btn) {
+    if (isPoppyMotionActive) {
+      btn.classList.add('ring-2', 'ring-rose-300', 'bg-rose-700');
+      btn.innerHTML = '🌺 Dynamic: On';
+    } else {
+      btn.classList.remove('ring-2', 'ring-rose-300', 'bg-rose-700');
+      btn.innerHTML = '🌺 Dynamic';
+    }
+  }
+
+  showToast(isPoppyMotionActive ? 'Poppy background motion enabled' : 'Poppy background motion paused', '🌺');
+}
+
 function update3DSkyboxUI() {
   const modalBox = document.getElementById('modal3DContainer');
   const lightboxBox = document.getElementById('lightbox3DContainer');
@@ -646,11 +684,10 @@ function initFuseSearch() {
 async function loadCatalogData() {
   initTheme();
   try {
-    const [exhibitsData, gramophoneData] = await Promise.all([
-      fetchCSVWithCache(EXHIBITS_CSV_URL, 'bMMC_cached_exhibits'),
-      fetchCSVWithCache(GRAMOPHONE_CSV_URL, 'bMMC_cached_gramophone')
-    ]);
+    const exhibitsPromise = fetchCSVWithCache(EXHIBITS_CSV_URL, 'bMMC_cached_exhibits');
+    const gramophonePromise = fetchCSVWithCache(GRAMOPHONE_CSV_URL, 'bMMC_cached_gramophone');
 
+    const exhibitsData = await exhibitsPromise;
     if (exhibitsData && exhibitsData.length > 0) {
       exhibitsData[0].forEach((cell, idx) => {
         const c = String(cell).toLowerCase().trim();
@@ -677,6 +714,14 @@ async function loadCatalogData() {
       populateInitialDropdowns();
     }
 
+    renderCollectionHubs(rawExhibitsRows);
+    updateDynamicDropdowns();
+    document.getElementById('gridPrompt')?.classList.remove('hidden');
+    updateFavoritesBadge();
+    checkUrlHashForExhibit();
+    hideLoadingSpinner(); 
+
+    const gramophoneData = await gramophonePromise;
     if (gramophoneData && gramophoneData.length > 0) {
       rawGramophoneRows = gramophoneData.filter(r => {
         const c0 = getVal(r, 0).toLowerCase();
@@ -685,9 +730,8 @@ async function loadCatalogData() {
       });
     }
 
-    initFuseSearch(); renderCollectionHubs(rawExhibitsRows); updateDynamicDropdowns();
-    document.getElementById('gridPrompt').classList.remove('hidden');
-    updateFavoritesBadge(); checkUrlHashForExhibit();
+    initFuseSearch();
+    renderCollectionHubs(rawExhibitsRows);
 
   } catch (err) {
     console.error("Failed to load catalog data:", err);
@@ -695,7 +739,7 @@ async function loadCatalogData() {
       <div class="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-rose-200 dark:border-rose-900">
         <p class="text-rose-600 dark:text-rose-400 font-bold text-base mb-1">Error loading Google Sheet data</p>
         <p class="text-xs text-slate-500 mb-4">Please check your connection or retry fetching the catalog archive.</p>
-        <button onclick="sessionStorage.clear(); location.reload();" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow">🔄 Retry Fetching</button>
+        <button onclick="localStorage.clear(); location.reload();" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow">🔄 Retry Fetching</button>
       </div>
     `;
   } finally { hideLoadingSpinner(); }
@@ -1389,12 +1433,9 @@ function renderMuseumStatistics() {
     const webUrl = getVal(targetRow2, colIdx.web);
     const docElem = document.getElementById('statDocLink');
     const webElem = document.getElementById('statWebLink');
-    const noLinksElem = document.getElementById('statNoLinks');
-    let hasAnyLink = false;
 
-    if (docUrl && (docUrl.startsWith('http') || docUrl.length > 5)) { docElem.href = docUrl.startsWith('http') ? docUrl : `https://${docUrl}`; docElem.classList.remove('hidden'); hasAnyLink = true; }
-    if (webUrl && (webUrl.startsWith('http') || webUrl.length > 5)) { webElem.href = webUrl.startsWith('http') ? webUrl : `https://${webUrl}`; webElem.classList.remove('hidden'); hasAnyLink = true; }
-    if (hasAnyLink && noLinksElem) noLinksElem.classList.add('hidden');
+    if (docUrl && (docUrl.startsWith('http') || docUrl.length > 5)) { docElem.href = docUrl.startsWith('http') ? docUrl : `https://${docUrl}`; docElem.classList.remove('hidden'); }
+    if (webUrl && (webUrl.startsWith('http') || webUrl.length > 5)) { webElem.href = webUrl.startsWith('http') ? webUrl : `https://${webUrl}`; webElem.classList.remove('hidden'); }
   }
 
   rawExhibitsRows.forEach(row => {
@@ -1443,7 +1484,6 @@ function renderMuseumStatistics() {
     }
   });
 
-  // Populate Timeline Era Grid (Styled like Category Hubs, 7 Eras + 1 Items of interest)
   const timelineEraGrid = document.getElementById('timelineEraGrid');
   if (timelineEraGrid) {
     timelineEraGrid.className = "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5";
@@ -1492,7 +1532,6 @@ function renderMuseumStatistics() {
       timelineEraGrid.appendChild(card);
     });
 
-    // 8th Button: Items of interest (Filtered strictly by Type: Items of interest)
     const interestRows = rawExhibitsRows.filter(r => getVal(r, colIdx.type).toLowerCase().includes('item') && getVal(r, colIdx.type).toLowerCase().includes('interest'));
     const interestCount = interestRows.length;
     const interestPctNum = totalMuseumItems > 0 ? (interestCount / totalMuseumItems * 100) : 0;
@@ -1598,7 +1637,6 @@ function renderMuseumStatistics() {
       });
     }
 
-    // Vertical Graph with Subcategories on Y-axis, stacked by Categories
     const categoriesArray = Array.from(allCategoriesSet);
     const subcatsArray = Array.from(allSubcatsSet);
 
