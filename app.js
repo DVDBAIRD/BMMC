@@ -1,5 +1,6 @@
 const EXHIBITS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
 const GRAMOPHONE_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=606568772';
+const GALLERY_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&headers=0&gid=1741478537';
 const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
 
 const MAIN_HUB_CATEGORIES = ["War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"];
@@ -22,6 +23,7 @@ const TIMELINE_CUSTOM_IMAGES = {
   "WWII": "https://lh3.googleusercontent.com/d/1EoNqpgXzJoT6g8xsl2hPp9CBloibQEB0=s200",
   "Post War": "https://lh3.googleusercontent.com/d/1BLA99VbyIAhyBgcAjOl-VLUHv9Tpy1bE=s200",
   "Modern": "https://lh3.googleusercontent.com/d/1Eez4R63VdHFSWnVNBqaWiBH_2SrhNrnF=s200",
+  "Items of interest": "https://lh3.googleusercontent.com/d/1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf=s200",
   "Itmes of Interest": "https://lh3.googleusercontent.com/d/1mNQ9DZlCobUg1C25JwRlJj_hUxCrWDXf=s200"
 };
 
@@ -42,18 +44,24 @@ const TIMELINE_ERAS = [
   { key: 'Prehistory', short: 'Prehistory', full: 'Prehistory / BC (Up to 1699)', min: -9999, max: 1699 },
   { key: 'Victorian', short: 'Victorian', full: 'Victorian & Industrial (1700–1913)', min: 1700, max: 1913 },
   { key: 'WWI', short: 'WWI', full: 'World War I (1914–1918)', min: 1914, max: 1918 },
-  { key: 'Interwar', short: 'Interwar', full: 'Interwar / Depression (1919–1938)', min: 1919, max: 1938 },
+  { key: 'Interwar', short: 'Interwar', full: 'Interwar / 1920s–1930s (1919–1938)', min: 1919, max: 1938 },
   { key: 'WWII', short: 'WWII', full: 'World War II (1939–1945)', min: 1939, max: 1945 },
   { key: 'Post War', short: 'Post War', full: 'Post & Cold War (1946–1999)', min: 1946, max: 1999 },
   { key: 'Modern', short: 'Modern', full: 'Millennium & Modern (2000–Present)', min: 2000, max: 9999 }
 ];
+
+function safeReplaceState(urlStr) {
+  try {
+    window.history.replaceState(null, '', urlStr);
+  } catch (e) {}
+}
 
 function getEraByYear(yearNum) {
   if (yearNum === null || yearNum === undefined || isNaN(yearNum)) return null;
   return TIMELINE_ERAS.find(e => yearNum >= e.min && yearNum <= e.max) || null;
 }
 
-// Strictly extracts year ONLY from Column Y ("Year")
+// Strictly extracts year from Column Y ("Year")
 function getEraByRow(row) {
   if (!row) return null;
   const yearStr = getVal(row, colIdx.year);
@@ -309,6 +317,7 @@ function parseYearForSort(val) {
 
 function showToast(msg, icon = '✨') {
   const toast = document.getElementById('toast');
+  if (!toast) return;
   document.getElementById('toastMsg').textContent = msg;
   document.getElementById('toastIcon').textContent = icon;
   toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-3');
@@ -340,7 +349,7 @@ function updateThemeUI(isDark) {
   const icon = document.getElementById('themeToggleIcon');
   const text = document.getElementById('themeToggleText');
   if (icon && text) { icon.textContent = isDark ? '☀️' : '🌙'; text.textContent = 'Mode'; }
-  if (currentTab === 'stats') renderMuseumStatistics();
+  if (currentTab === 'stats' && rawExhibitsRows.length > 0) renderMuseumStatistics();
   else if (isGridActive) filterCatalog(true);
 }
 
@@ -609,6 +618,17 @@ function browseAllExhibits() {
   only3DActive = false; hotOnlyActive = false; showingFavoritesOnly = false;
   const btn3D = document.getElementById('btn3DOnly'); if (btn3D) btn3D.classList.remove('ring-2', 'ring-purple-300', 'from-purple-700', 'to-indigo-700');
   const btnHot = document.getElementById('btnHotOnly'); if (btnHot) btnHot.classList.remove('ring-2', 'ring-amber-300', 'from-amber-600', 'to-rose-700');
+  
+  // Clear search URL query parameters
+  try {
+    const url = new URL(window.location);
+    url.searchParams.delete('search');
+    url.searchParams.delete('q');
+    url.searchParams.delete('query');
+    url.searchParams.delete('tab');
+    safeReplaceState(url.pathname + (url.search ? url.search : '') + (url.hash ? url.hash : ''));
+  } catch (e) {}
+
   updateFavoritesBadge(); updateDynamicDropdowns(); filterCatalog(true); scrollToGrid();
 }
 
@@ -616,7 +636,9 @@ function setTab(tabName) {
   currentTab = tabName;
   stopAudioGuide();
   hideLoadingSpinner();
-  if (tabName !== 'stats' && tabName !== 'analytics' && window.location.hash === '#stats') window.history.replaceState(null, '', window.location.pathname);
+  if (tabName !== 'stats' && tabName !== 'analytics' && window.location.hash === '#stats') {
+    safeReplaceState(window.location.pathname + window.location.search);
+  }
 
   const exhibitsFilterGrid = document.getElementById('exhibitsFilterGrid');
   const gramophoneFilterGrid = document.getElementById('gramophoneFilterGrid');
@@ -632,33 +654,57 @@ function setTab(tabName) {
   if (adminAnalyticsSection) adminAnalyticsSection.classList.add('hidden');
 
   if (tabName === 'exhibits') {
-    statsSection.classList.add('hidden'); gridSection.classList.remove('hidden');
-    exhibitsFilterGrid.classList.remove('hidden'); gramophoneFilterGrid.classList.add('hidden'); searchSortBar.classList.remove('hidden');
-    headerTitle.textContent = 'BMMC Showcase'; headerIcon.textContent = '🏛️';
-    subhead.textContent = 'Discover historical artifacts, equipment, and memorabilia at the Bonniefields Museum.';
-    document.getElementById('promptIcon').textContent = '🔍';
-    document.getElementById('promptTitle').textContent = 'Ready to Explore Exhibits';
-    document.getElementById('promptDesc').textContent = 'Select a Collection Hub above, search by keyword, or view all items in the BMMC archive.';
+    if (statsSection) statsSection.classList.add('hidden');
+    if (gridSection) gridSection.classList.remove('hidden');
+    if (exhibitsFilterGrid) exhibitsFilterGrid.classList.remove('hidden');
+    if (gramophoneFilterGrid) gramophoneFilterGrid.classList.add('hidden');
+    if (searchSortBar) searchSortBar.classList.remove('hidden');
+    if (headerTitle) headerTitle.textContent = 'BMMC Showcase';
+    if (headerIcon) headerIcon.textContent = '🏛️';
+    if (subhead) subhead.textContent = 'Discover historical artifacts, equipment, and memorabilia at the Bonniefields Museum.';
+    const promptIcon = document.getElementById('promptIcon');
+    const promptTitle = document.getElementById('promptTitle');
+    const promptDesc = document.getElementById('promptDesc');
+    if (promptIcon) promptIcon.textContent = '🔍';
+    if (promptTitle) promptTitle.textContent = 'Ready to Explore Exhibits';
+    if (promptDesc) promptDesc.textContent = 'Select a Collection Hub above, search by keyword, or view all items in the BMMC archive.';
   } else if (tabName === 'gramophone') {
-    statsSection.classList.add('hidden'); gridSection.classList.remove('hidden');
-    gramophoneFilterGrid.classList.remove('hidden'); exhibitsFilterGrid.classList.add('hidden'); searchSortBar.classList.remove('hidden');
-    headerTitle.textContent = 'BMMC Gramophones'; headerIcon.textContent = '🎵';
-    subhead.textContent = 'Gramophone Catalog (1916 – 1953): Shellac, vinyl, and early 20th-century audio recordings preserved in the BMMC music collection.';
-    document.getElementById('promptIcon').textContent = '🎵';
-    document.getElementById('promptTitle').textContent = 'Explore Vintage Audio Records';
-    document.getElementById('promptDesc').textContent = 'Search vintage gramophone recordings by artist, title, record label, or release year (1916 - 1953).';
+    if (statsSection) statsSection.classList.add('hidden');
+    if (gridSection) gridSection.classList.remove('hidden');
+    if (gramophoneFilterGrid) gramophoneFilterGrid.classList.remove('hidden');
+    if (exhibitsFilterGrid) exhibitsFilterGrid.classList.add('hidden');
+    if (searchSortBar) searchSortBar.classList.remove('hidden');
+    if (headerTitle) headerTitle.textContent = 'BMMC Gramophones';
+    if (headerIcon) headerIcon.textContent = '🎵';
+    if (subhead) subhead.textContent = 'Gramophone Catalog (1916 – 1953): Shellac, vinyl, and early 20th-century audio recordings preserved in the BMMC music collection.';
+    const promptIcon = document.getElementById('promptIcon');
+    const promptTitle = document.getElementById('promptTitle');
+    const promptDesc = document.getElementById('promptDesc');
+    if (promptIcon) promptIcon.textContent = '🎵';
+    if (promptTitle) promptTitle.textContent = 'Explore Vintage Audio Records';
+    if (promptDesc) promptDesc.textContent = 'Search vintage gramophone recordings by artist, title, record label, or release year (1916 - 1953).';
   } else if (tabName === 'stats') {
-    gridPrompt.classList.add('hidden'); gridSection.classList.add('hidden');
-    exhibitsFilterGrid.classList.add('hidden'); gramophoneFilterGrid.classList.add('hidden'); searchSortBar.classList.add('hidden'); statsSection.classList.remove('hidden');
-    headerTitle.textContent = 'Museum Insights Live'; headerIcon.textContent = 'ℹ️';
-    subhead.textContent = 'Explore live analytics, origin distribution, and chronological evolution from the Bonniefields Museum catalog.';
+    if (gridPrompt) gridPrompt.classList.add('hidden');
+    if (gridSection) gridSection.classList.add('hidden');
+    if (exhibitsFilterGrid) exhibitsFilterGrid.classList.add('hidden');
+    if (gramophoneFilterGrid) gramophoneFilterGrid.classList.add('hidden');
+    if (searchSortBar) searchSortBar.classList.add('hidden');
+    if (statsSection) statsSection.classList.remove('hidden');
+    if (headerTitle) headerTitle.textContent = 'Museum Insights Live';
+    if (headerIcon) headerIcon.textContent = 'ℹ️';
+    if (subhead) subhead.textContent = 'Explore live analytics, origin distribution, and chronological evolution from the Bonniefields Museum catalog.';
     renderMuseumStatistics();
   } else if (tabName === 'analytics') {
-    gridPrompt.classList.add('hidden'); gridSection.classList.add('hidden'); statsSection.classList.add('hidden');
-    exhibitsFilterGrid.classList.add('hidden'); gramophoneFilterGrid.classList.add('hidden'); searchSortBar.classList.add('hidden');
+    if (gridPrompt) gridPrompt.classList.add('hidden');
+    if (gridSection) gridSection.classList.add('hidden');
+    if (statsSection) statsSection.classList.add('hidden');
+    if (exhibitsFilterGrid) exhibitsFilterGrid.classList.add('hidden');
+    if (gramophoneFilterGrid) gramophoneFilterGrid.classList.add('hidden');
+    if (searchSortBar) searchSortBar.classList.add('hidden');
     if (adminAnalyticsSection) adminAnalyticsSection.classList.remove('hidden');
-    headerTitle.textContent = 'Site Traffic Dashboard'; headerIcon.textContent = '📊';
-    subhead.textContent = 'Live visitor statistics, pageviews, and visitor interactions tracked by Umami.';
+    if (headerTitle) headerTitle.textContent = 'Site Traffic Dashboard';
+    if (headerIcon) headerIcon.textContent = '📊';
+    if (subhead) subhead.textContent = 'Live visitor statistics, pageviews, and visitor interactions tracked by Umami.';
   }
   updateFavoritesBadge();
   if (tabName !== 'stats' && tabName !== 'analytics') { updateDynamicDropdowns(); filterCatalog(true); }
@@ -681,7 +727,36 @@ function initFuseSearch() {
   }
 }
 
+function checkUrlQueryParams() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const searchQuery = params.get('search') || params.get('q') || params.get('query');
+    const tabParam = params.get('tab');
+
+    if (tabParam === 'gramophone') {
+      setTab('gramophone');
+    } else if (tabParam === 'exhibits') {
+      setTab('exhibits');
+    }
+
+    if (searchQuery) {
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) {
+        searchInput.value = searchQuery;
+        updateDynamicDropdowns();
+        filterCatalog(true);
+        scrollToGrid();
+      }
+    }
+  } catch (e) {
+    console.warn('URL search parameter error:', e);
+  }
+}
+
 async function loadCatalogData() {
+  const loadingElem = document.getElementById('loading');
+  if (loadingElem) loadingElem.classList.remove('hidden');
+
   initTheme();
   try {
     const exhibitsPromise = fetchCSVWithCache(EXHIBITS_CSV_URL, 'bMMC_cached_exhibits');
@@ -719,7 +794,6 @@ async function loadCatalogData() {
     document.getElementById('gridPrompt')?.classList.remove('hidden');
     updateFavoritesBadge();
     checkUrlHashForExhibit();
-    hideLoadingSpinner(); 
 
     const gramophoneData = await gramophonePromise;
     if (gramophoneData && gramophoneData.length > 0) {
@@ -733,15 +807,21 @@ async function loadCatalogData() {
     initFuseSearch();
     renderCollectionHubs(rawExhibitsRows);
 
+    // Process URL query parameters (?search=... &tab=...)
+    checkUrlQueryParams();
+
   } catch (err) {
     console.error("Failed to load catalog data:", err);
-    document.getElementById('loading').innerHTML = `
-      <div class="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-rose-200 dark:border-rose-900">
-        <p class="text-rose-600 dark:text-rose-400 font-bold text-base mb-1">Error loading Google Sheet data</p>
-        <p class="text-xs text-slate-500 mb-4">Please check your connection or retry fetching the catalog archive.</p>
-        <button onclick="localStorage.clear(); location.reload();" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow">🔄 Retry Fetching</button>
-      </div>
-    `;
+    if (loadingElem) {
+      loadingElem.classList.remove('hidden');
+      loadingElem.innerHTML = `
+        <div class="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-rose-200 dark:border-rose-900">
+          <p class="text-rose-600 dark:text-rose-400 font-bold text-base mb-1">Error loading Google Sheet data</p>
+          <p class="text-xs text-slate-500 mb-4">Please check your connection or retry fetching the catalog archive.</p>
+          <button onclick="localStorage.clear(); location.reload();" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow">🔄 Retry Fetching</button>
+        </div>
+      `;
+    }
   } finally { hideLoadingSpinner(); }
 }
 
@@ -842,12 +922,12 @@ function renderCollectionHubs(rows) {
   `;
   gramophoneHubCard.addEventListener('click', () => { setTab('gramophone'); scrollToGrid(); });
   hubsGrid.appendChild(gramophoneHubCard);
-  document.getElementById('collectionHubsSection').classList.remove('hidden');
+  document.getElementById('collectionHubsSection')?.classList.remove('hidden');
 }
 
 function populateInitialDropdowns() {
-  document.getElementById('sortBy').addEventListener('change', () => filterCatalog(true));
-  document.getElementById('btnClearAllFilters').addEventListener('click', browseAllExhibits);
+  document.getElementById('sortBy')?.addEventListener('change', () => filterCatalog(true));
+  document.getElementById('btnClearAllFilters')?.addEventListener('click', browseAllExhibits);
   ['filterAge', 'filterType', 'filterCategory', 'filterSubcategory', 'filterArtist', 'filterLabel', 'filterFormat', 'filterYear'].forEach(id => {
     const elem = document.getElementById(id);
     if (elem) elem.addEventListener('change', () => { updateDynamicDropdowns(); filterCatalog(true); scrollToGrid(); });
@@ -923,9 +1003,9 @@ function updateDynamicDropdowns() {
       return rawGramophoneRows.filter((row, originalIndex) => {
         const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
         const artistMatch = excludeField === 'artist' || !artistVal || getVal(row, 1) === artistVal;
-        const labelMatch = excludeField === 'label' || !labelVal || getVal(row, 3) === labelMatch;
-        const formatMatch = excludeField === 'format' || !formatVal || getVal(row, 4) === formatMatch;
-        const yearMatch = excludeField === 'year' || !yearVal || getVal(row, 6) === yearMatch;
+        const labelMatch = excludeField === 'label' || !labelVal || getVal(row, 3) === labelVal;
+        const formatMatch = excludeField === 'format' || !formatVal || getVal(row, 4) === formatVal;
+        const yearMatch = excludeField === 'year' || !yearVal || getVal(row, 6) === yearVal;
         const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
         return searchMatch && artistMatch && labelMatch && formatMatch && yearMatch && matchFav;
       });
@@ -965,14 +1045,14 @@ function renderActiveFilterPills() {
 
   container.innerHTML = '';
   const filters = [];
-  const searchVal = document.getElementById('searchInput').value;
+  const searchVal = document.getElementById('searchInput')?.value || '';
 
   if (currentTab === 'exhibits') {
-    const ageVal = document.getElementById('filterAge').value;
-    const typeVal = document.getElementById('filterType').value;
-    const catVal = document.getElementById('filterCategory').value;
-    const subCatVal = document.getElementById('filterSubcategory').value;
-    if (searchVal) filters.push({ label: `Search: "${searchVal}"`, clear: () => { document.getElementById('searchInput').value = ''; } });
+    const ageVal = document.getElementById('filterAge')?.value || '';
+    const typeVal = document.getElementById('filterType')?.value || '';
+    const catVal = document.getElementById('filterCategory')?.value || '';
+    const subCatVal = document.getElementById('filterSubcategory')?.value || '';
+    if (searchVal) filters.push({ label: `Search: "${searchVal}"`, clear: () => { document.getElementById('clearSearch').click(); } });
     if (ageVal) filters.push({ label: `Era / Age: ${unescapeHTML(ageVal)}`, clear: () => { document.getElementById('filterAge').value = ''; } });
     if (typeVal) filters.push({ label: `Type: ${unescapeHTML(typeVal)}`, clear: () => { document.getElementById('filterType').value = ''; } });
     if (catVal) filters.push({ label: `Category: ${unescapeHTML(catVal)}`, clear: () => { document.getElementById('filterCategory').value = ''; } });
@@ -981,11 +1061,11 @@ function renderActiveFilterPills() {
     if (hotOnlyActive) filters.push({ label: `🔥 Hot Items Only`, clear: () => { document.getElementById('btnHotOnly').click(); } });
   } else if (currentTab === 'gramophone') {
     filters.push({ label: `Archive Mode: Gramophone`, clear: () => browseAllExhibits() });
-    const artistVal = document.getElementById('filterArtist').value;
-    const labelVal = document.getElementById('filterLabel').value;
-    const formatVal = document.getElementById('filterFormat').value;
-    const yearVal = document.getElementById('filterYear').value;
-    if (searchVal) filters.push({ label: `Search: "${searchVal}"`, clear: () => { document.getElementById('searchInput').value = ''; } });
+    const artistVal = document.getElementById('filterArtist')?.value || '';
+    const labelVal = document.getElementById('filterLabel')?.value || '';
+    const formatVal = document.getElementById('filterFormat')?.value || '';
+    const yearVal = document.getElementById('filterYear')?.value || '';
+    if (searchVal) filters.push({ label: `Search: "${searchVal}"`, clear: () => { document.getElementById('clearSearch').click(); } });
     if (artistVal) filters.push({ label: `Artist: ${unescapeHTML(artistVal)}`, clear: () => { document.getElementById('filterArtist').value = ''; } });
     if (labelVal) filters.push({ label: `Label: ${unescapeHTML(labelVal)}`, clear: () => { document.getElementById('filterLabel').value = ''; } });
     if (formatVal) filters.push({ label: `Format: ${unescapeHTML(formatVal)}`, clear: () => { document.getElementById('filterFormat').value = ''; } });
@@ -1009,30 +1089,32 @@ function renderActiveFilterPills() {
 
 function filterCatalog(forceShowGrid = false) {
   hideLoadingSpinner();
-  const searchVal = (document.getElementById('searchInput').value || '').trim();
-  const sortBy = document.getElementById('sortBy').value;
+  const searchVal = (document.getElementById('searchInput')?.value || '').trim();
+  const sortBy = document.getElementById('sortBy')?.value || 'default';
   const favs = getFavorites();
 
-  document.getElementById('clearSearch').classList.toggle('hidden', !searchVal);
+  const clearBtn = document.getElementById('clearSearch');
+  if (clearBtn) clearBtn.classList.toggle('hidden', !searchVal);
   renderActiveFilterPills();
 
   if (currentTab === 'exhibits') {
-    const ageVal = document.getElementById('filterAge').value;
-    const typeVal = document.getElementById('filterType').value;
-    const catVal = document.getElementById('filterCategory').value;
-    const subCatVal = document.getElementById('filterSubcategory').value;
+    const ageVal = document.getElementById('filterAge')?.value || '';
+    const typeVal = document.getElementById('filterType')?.value || '';
+    const catVal = document.getElementById('filterCategory')?.value || '';
+    const subCatVal = document.getElementById('filterSubcategory')?.value || '';
     const isFiltering = searchVal || ageVal || typeVal || catVal || subCatVal || only3DActive || hotOnlyActive || showingFavoritesOnly;
 
     if (isFiltering || forceShowGrid) {
       isGridActive = true;
-      document.getElementById('gridPrompt').classList.add('hidden');
-      document.getElementById('grid').classList.remove('hidden');
-      document.getElementById('floatingJumpBtn').classList.remove('hidden');
+      document.getElementById('gridPrompt')?.classList.add('hidden');
+      document.getElementById('grid')?.classList.remove('hidden');
+      document.getElementById('floatingJumpBtn')?.classList.remove('hidden');
     } else if (!isGridActive) {
-      document.getElementById('gridPrompt').classList.remove('hidden');
-      document.getElementById('grid').classList.add('hidden');
-      document.getElementById('floatingJumpBtn').classList.add('hidden');
-      document.getElementById('itemCount').textContent = '';
+      document.getElementById('gridPrompt')?.classList.remove('hidden');
+      document.getElementById('grid')?.classList.add('hidden');
+      document.getElementById('floatingJumpBtn')?.classList.add('hidden');
+      const countElem = document.getElementById('itemCount');
+      if (countElem) countElem.textContent = '';
       return;
     }
 
@@ -1065,22 +1147,23 @@ function filterCatalog(forceShowGrid = false) {
     renderExhibitsGrid();
 
   } else if (currentTab === 'gramophone') {
-    const artistVal = document.getElementById('filterArtist').value;
-    const labelVal = document.getElementById('filterLabel').value;
-    const formatVal = document.getElementById('filterFormat').value;
-    const yearVal = document.getElementById('filterYear').value;
+    const artistVal = document.getElementById('filterArtist')?.value || '';
+    const labelVal = document.getElementById('filterLabel')?.value || '';
+    const formatVal = document.getElementById('filterFormat')?.value || '';
+    const yearVal = document.getElementById('filterYear')?.value || '';
     const isFiltering = searchVal || artistVal || labelVal || formatVal || yearVal || showingFavoritesOnly;
 
     if (isFiltering || forceShowGrid) {
       isGridActive = true;
-      document.getElementById('gridPrompt').classList.add('hidden');
-      document.getElementById('grid').classList.remove('hidden');
-      document.getElementById('floatingJumpBtn').classList.remove('hidden');
+      document.getElementById('gridPrompt')?.classList.add('hidden');
+      document.getElementById('grid')?.classList.remove('hidden');
+      document.getElementById('floatingJumpBtn')?.classList.remove('hidden');
     } else if (!isGridActive) {
-      document.getElementById('gridPrompt').classList.remove('hidden');
-      document.getElementById('grid').classList.add('hidden');
-      document.getElementById('floatingJumpBtn').classList.add('hidden');
-      document.getElementById('itemCount').textContent = '';
+      document.getElementById('gridPrompt')?.classList.remove('hidden');
+      document.getElementById('grid')?.classList.add('hidden');
+      document.getElementById('floatingJumpBtn')?.classList.add('hidden');
+      const countElem = document.getElementById('itemCount');
+      if (countElem) countElem.textContent = '';
       return;
     }
 
@@ -1090,9 +1173,9 @@ function filterCatalog(forceShowGrid = false) {
     currentFilteredRows = rawGramophoneRows.map((row, index) => ({ row, originalIndex: index })).filter(({ row, originalIndex }) => {
       const searchMatch = !searchVal || (matchedOriginalIndices ? matchedOriginalIndices.has(originalIndex) : row.join(' ').toLowerCase().includes(searchVal.toLowerCase()));
       const artistMatch = !artistVal || getVal(row, 1) === artistVal;
-      const labelMatch = !labelVal || getVal(row, 3) === labelMatch;
-      const formatMatch = !formatVal || getVal(row, 4) === formatMatch;
-      const yearMatch = !yearVal || getVal(row, 6) === yearMatch;
+      const labelMatch = !labelVal || getVal(row, 3) === labelVal;
+      const formatMatch = !formatVal || getVal(row, 4) === formatVal;
+      const yearMatch = !yearVal || getVal(row, 6) === yearVal;
       const matchFav = !showingFavoritesOnly || favs.includes(originalIndex);
       return searchMatch && artistMatch && labelMatch && formatMatch && yearMatch && matchFav;
     });
@@ -1193,6 +1276,7 @@ function renderExhibitsGrid() {
   const itemCount = document.getElementById('itemCount');
   const favs = getFavorites();
   const isDark = document.documentElement.classList.contains('dark');
+  if (!grid) return;
 
   grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6';
   grid.innerHTML = '';
@@ -1303,7 +1387,7 @@ function renderExhibitsGrid() {
         </div>
         <div class="pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2">
           <span class="text-xs font-extrabold flex items-center gap-1 group-hover:translate-x-1 transition-transform" style="color: ${theme.hex};">
-            Details <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            View Details <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
           </span>
           <div class="flex gap-1.5" onclick="event.stopPropagation()">
             ${d3d ? `<button onclick="open3DLightbox('${encodeURIComponent(d3d)}', '${encodeURIComponent(displayTitle)}')" title="Open 3D Lightbox" class="bg-purple-50 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 hover:bg-purple-600 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold border border-purple-200 dark:border-purple-800 transition shadow-sm">👓 3D View</button>` : ''}
@@ -1325,6 +1409,7 @@ function renderGramophoneGrid() {
   const itemCount = document.getElementById('itemCount');
   const favs = getFavorites();
   const isDark = document.documentElement.classList.contains('dark');
+  if (!grid) return;
 
   grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5';
   grid.innerHTML = '';
@@ -1377,7 +1462,7 @@ function renderGramophoneGrid() {
 
       <div class="pt-2.5 border-t border-slate-200/60 dark:border-slate-800/80 flex items-center justify-between gap-2" onclick="event.stopPropagation()">
         <span class="text-xs font-extrabold text-amber-700 dark:text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-          Details <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          View Details <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
         </span>
         <div class="flex items-center gap-1.5 flex-wrap justify-end">
           ${hasDiscogsRecording ? `<a href="${discogsUrl || '#'}" target="_blank" class="bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm transition hover:bg-emerald-600 flex items-center gap-1">🎙️ Discogs Recording</a>` : ''}
@@ -1434,8 +1519,58 @@ function renderMuseumStatistics() {
     const docElem = document.getElementById('statDocLink');
     const webElem = document.getElementById('statWebLink');
 
-    if (docUrl && (docUrl.startsWith('http') || docUrl.length > 5)) { docElem.href = docUrl.startsWith('http') ? docUrl : `https://${docUrl}`; docElem.classList.remove('hidden'); }
-    if (webUrl && (webUrl.startsWith('http') || webUrl.length > 5)) { webElem.href = webUrl.startsWith('http') ? webUrl : `https://${webUrl}`; webElem.classList.remove('hidden'); }
+    if (docElem) {
+      if (docUrl && (docUrl.startsWith('http') || docUrl.length > 5)) { docElem.href = docUrl.startsWith('http') ? docUrl : `https://${docUrl}`; docElem.classList.remove('hidden'); }
+      else { docElem.classList.add('hidden'); }
+    }
+    if (webElem) {
+      if (webUrl && (webUrl.startsWith('http') || webUrl.length > 5)) { webElem.href = webUrl.startsWith('http') ? webUrl : `https://${webUrl}`; webElem.classList.remove('hidden'); }
+      else { webElem.classList.add('hidden'); }
+    }
+
+    const titleDetailsCard = document.getElementById('statTitleDetailsCard');
+    const titleDetailsContent = document.getElementById('statTitleDetailsContent');
+
+    if (titleDetailsCard && titleDetailsContent) {
+      let rawTitleColC = unescapeHTML(getVal(targetRow2, colIdx.title) || getVal(targetRow2, 2) || '');
+      if (rawTitleColC) {
+        let postHashText = rawTitleColC;
+        if (postHashText.includes('#')) {
+          postHashText = postHashText.substring(postHashText.indexOf('#') + 1).trim();
+        }
+
+        postHashText = postHashText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+
+        const firstBreak = postHashText.indexOf('\n');
+        let firstLine = '';
+        let bodyText = '';
+
+        if (firstBreak !== -1) {
+          firstLine = postHashText.substring(0, firstBreak).trim();
+          bodyText = postHashText.substring(firstBreak + 1).trim();
+        } else {
+          firstLine = postHashText;
+        }
+
+        if (firstLine) {
+          let formattedHTML = `<div class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">${escapeHTML(firstLine)}</div>`;
+          
+          if (bodyText) {
+            const paragraphs = bodyText.split(/\n\s*\n/);
+            formattedHTML += paragraphs
+              .map(p => `<p class="text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed font-normal mb-4 last:mb-0 whitespace-pre-line">${escapeHTML(p.trim())}</p>`)
+              .join('');
+          }
+          
+          titleDetailsContent.innerHTML = formattedHTML;
+          titleDetailsCard.classList.remove('hidden');
+        } else {
+          titleDetailsCard.classList.add('hidden');
+        }
+      } else {
+        titleDetailsCard.classList.add('hidden');
+      }
+    }
   }
 
   rawExhibitsRows.forEach(row => {
@@ -1554,7 +1689,7 @@ function renderMuseumStatistics() {
         </div>
       </div>
       <div class="p-2.5 flex-1 flex flex-col justify-between">
-        <h3 class="font-black text-xs line-clamp-1" style="color: ${interestColor};">Items of interest</h3>
+        <h3 class="font-black text-xs line-clamp-1" style="color: ${interestColor};">Items of Interest</h3>
         <span class="text-[10px] font-extrabold mt-1 flex items-center gap-0.5" style="color: ${interestColor};">Explore →</span>
       </div>
     `;
@@ -1574,9 +1709,13 @@ function renderMuseumStatistics() {
     timelineEraGrid.appendChild(interestCard);
   }
 
-  document.getElementById('statTotalItems').textContent = itemsSumQty > 0 ? itemsSumQty.toLocaleString() : '1,193';
-  if (validYears.length > 0) document.getElementById('statDateRange').textContent = `${Math.min(...validYears)} – ${Math.max(...validYears)}`;
-  else document.getElementById('statDateRange').textContent = 'N/A';
+  const statTotal = document.getElementById('statTotalItems');
+  const statDate = document.getElementById('statDateRange');
+  if (statTotal) statTotal.textContent = itemsSumQty > 0 ? itemsSumQty.toLocaleString() : '1,193';
+  if (statDate) {
+    if (validYears.length > 0) statDate.textContent = `${Math.min(...validYears)} – ${Math.max(...validYears)}`;
+    else statDate.textContent = 'N/A';
+  }
 
   const totalAgeItems = colPreCount + colPostCount;
   const preElem = document.getElementById('statPre1950');
@@ -1701,7 +1840,7 @@ function open3DLightbox(rawUrl, rawTitle) {
   try { url = decodeURIComponent(rawUrl); } catch(e) {}
   try { title = decodeURIComponent(rawTitle); } catch(e) {}
 
-  titleElem.textContent = title;
+  if (titleElem) titleElem.textContent = title;
   if (scaleText) scaleText.textContent = 'Calculating Dimensions...';
   update3DSkyboxUI();
 
@@ -1803,7 +1942,7 @@ function openModal(row, originalIndex) {
   const isDark = document.documentElement.classList.contains('dark');
 
   if (currentTab === 'exhibits') {
-    window.history.replaceState(null, '', `#exhibit-${originalIndex}`);
+    safeReplaceState(`${window.location.pathname}${window.location.search}#exhibit-${originalIndex}`);
     const rawContent = getVal(row, colIdx.title) || getVal(row, colIdx.id);
     const { title, details } = parseTitleAndDetails(rawContent);
     const displayTitle = title || `Exhibit Item Details`;
@@ -1830,106 +1969,119 @@ function openModal(row, originalIndex) {
     const fullImg1 = formatGoogleLh3Url(img1, 's1000');
     const fullImg2 = formatGoogleLh3Url(img2, 's1000');
 
-    modalContainer.style.borderColor = theme.hex; modalContainer.style.borderWidth = '3px';
-    modalContainer.style.backgroundColor = getSolidTint(theme.hex, isDark);
+    if (modalContainer) {
+      modalContainer.style.borderColor = theme.hex; modalContainer.style.borderWidth = '3px';
+      modalContainer.style.backgroundColor = getSolidTint(theme.hex, isDark);
+    }
 
     if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
-      counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
-      prevBtn.disabled = currentModalIndex === 0; nextBtn.disabled = currentModalIndex === currentFilteredRows.length - 1;
-      prevBtn.classList.toggle('opacity-40', currentModalIndex === 0); nextBtn.classList.toggle('opacity-40', currentModalIndex === currentFilteredRows.length - 1);
-    } else { counterElem.textContent = ''; }
+      if (counterElem) counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
+      if (prevBtn) {
+        prevBtn.disabled = currentModalIndex === 0;
+        prevBtn.classList.toggle('opacity-40', currentModalIndex === 0);
+      }
+      if (nextBtn) {
+        nextBtn.disabled = currentModalIndex === currentFilteredRows.length - 1;
+        nextBtn.classList.toggle('opacity-40', currentModalIndex === currentFilteredRows.length - 1);
+      }
+    } else { if (counterElem) counterElem.textContent = ''; }
 
-    document.getElementById('btnShareExhibit').onclick = () => {
-      navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}#exhibit-${originalIndex}`).then(() => showToast('Link copied to clipboard!', '🔗'));
-    };
+    const shareBtn = document.getElementById('btnShareExhibit');
+    if (shareBtn) {
+      shareBtn.onclick = () => {
+        navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}${window.location.search}#exhibit-${originalIndex}`).then(() => showToast('Link copied to clipboard!', '🔗'));
+      };
+    }
 
-    modalContent.innerHTML = `
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <div class="flex flex-col space-y-4 order-2 lg:order-1">
-          <div class="flex items-start justify-between gap-3">
-            <h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
-            <div class="flex items-center gap-2 shrink-0">
-              ${isHot ? `<span title="Hot Item" class="text-base sm:text-lg px-2 py-0.5 bg-amber-500/20 rounded-full border border-amber-400/40 leading-none flex items-center justify-center">🔥</span>` : ''}
-              <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">${isFav ? '❤️ Saved' : '🤍 Save'}</button>
+    if (modalContent) {
+      modalContent.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div class="flex flex-col space-y-4 order-2 lg:order-1">
+            <div class="flex items-start justify-between gap-3">
+              <h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${displayTitle}</h2>
+              <div class="flex items-center gap-2 shrink-0">
+                ${isHot ? `<span title="Hot Item" class="text-base sm:text-lg px-2 py-0.5 bg-amber-500/20 rounded-full border border-amber-400/40 leading-none flex items-center justify-center">🔥</span>` : ''}
+                <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">${isFav ? '❤️ Saved' : '🤍 Save'}</button>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2 text-xs items-center">
+              ${eraDisplay ? `<span class="${ageBadgeClass} px-2.5 py-0.5 rounded-full shadow-sm"><strong>Era:</strong> ${eraDisplay}</span>` : ''}
+              ${category ? createCategoryBadge(category, 'category') : ''}
+              ${type ? createCategoryBadge(type, 'type') : ''}
+              ${subcategory ? createCategoryBadge(subcategory, 'subcategory') : ''}
+            </div>
+
+            ${cleanedDetails ? `
+              <div>
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
+                <div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl shadow-inner">${cleanedDetails}</div>
+              </div>` : ''}
+
+            ${notes ? `
+              <div>
+                <div class="flex items-center justify-between gap-2 mb-1.5">
+                  <h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Museum Notes</h4>
+                  <div class="flex items-center gap-1">
+                    <button id="btnAudioGuide" data-row="${originalIndex}" onclick="speakAudioGuide(${originalIndex})" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-black transition shadow">🔊 Listen</button>
+                    <select id="voiceSelect" class="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg p-0.5 font-medium max-w-[100px] truncate outline-none"></select>
+                  </div>
+                </div>
+                <div class="text-sm text-amber-900 dark:text-amber-200 leading-relaxed whitespace-pre-line bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-500/40 p-4 sm:p-5 rounded-2xl shadow-inner">${notes}</div>
+              </div>` : ''}
+
+            <div class="flex flex-wrap items-center gap-2.5 pt-2">
+              <button id="btnGoogleSearchMain" class="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">🔍 Google Item</button>
+            </div>
+
+            <div class="flex flex-wrap gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              ${d3d ? `<button onclick="open3DLightbox('${encodeURIComponent(d3d)}', '${encodeURIComponent(displayTitle)}')" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-purple-500/25 transition">👓 Fullscreen 3D View ↗</button>` : ''}
+              ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition">Documentation ↗</a>` : ''}
+              ${dweb ? `<a href="${dweb}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-blue-500/25 transition">Web Link ↗</a>` : ''}
             </div>
           </div>
 
-          <div class="flex flex-wrap gap-2 text-xs items-center">
-            ${eraDisplay ? `<span class="${ageBadgeClass} px-2.5 py-0.5 rounded-full shadow-sm"><strong>Era:</strong> ${eraDisplay}</span>` : ''}
-            ${category ? createCategoryBadge(category, 'category') : ''}
-            ${type ? createCategoryBadge(type, 'type') : ''}
-            ${subcategory ? createCategoryBadge(subcategory, 'subcategory') : ''}
-          </div>
-
-          ${cleanedDetails ? `
-            <div>
-              <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
-              <div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl shadow-inner">${cleanedDetails}</div>
-            </div>` : ''}
-
-          ${notes ? `
-            <div>
-              <div class="flex items-center justify-between gap-2 mb-1.5">
-                <h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Museum Notes</h4>
-                <div class="flex items-center gap-1">
-                  <button id="btnAudioGuide" data-row="${originalIndex}" onclick="speakAudioGuide(${originalIndex})" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-black transition shadow">🔊 Listen</button>
-                  <select id="voiceSelect" class="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg p-0.5 font-medium max-w-[100px] truncate outline-none"></select>
+          <div class="flex flex-col space-y-4 w-full order-1 lg:order-2">
+            ${d3d ? `
+              <div class="relative group/model w-full">
+                <div class="flex items-center justify-between mb-2">
+                  <p class="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-widest">Interactive 3D Model</p>
+                  <div class="flex items-center gap-2">
+                    <button id="btnToggleModalSkybox" onclick="toggleModal3DSkybox(event)" class="text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-300 bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-md transition border border-slate-300 dark:border-slate-700">${is3DSkyboxLight ? '🌙 Dark Sky' : '☀️ Light Sky'}</button>
+                    <button onclick="open3DLightbox('${encodeURIComponent(d3d)}', '${encodeURIComponent(displayTitle)}')" class="text-[10px] font-bold text-purple-600 dark:text-purple-300 hover:underline">Expand Fullscreen ⤢</button>
+                  </div>
                 </div>
-              </div>
-              <div class="text-sm text-amber-900 dark:text-amber-200 leading-relaxed whitespace-pre-line bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-500/40 p-4 sm:p-5 rounded-2xl shadow-inner">${notes}</div>
-            </div>` : ''}
-
-          <div class="flex flex-wrap items-center gap-2.5 pt-2">
-            <button id="btnGoogleSearchMain" class="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">🔍 Google Item</button>
-          </div>
-
-          <div class="flex flex-wrap gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-            ${d3d ? `<button onclick="open3DLightbox('${encodeURIComponent(d3d)}', '${encodeURIComponent(displayTitle)}')" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-purple-500/25 transition">👓 Fullscreen 3D View ↗</button>` : ''}
-            ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition">Documentation ↗</a>` : ''}
-            ${dweb ? `<a href="${dweb}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-blue-500/25 transition">Web Link ↗</a>` : ''}
-          </div>
-        </div>
-
-        <div class="flex flex-col space-y-4 w-full order-1 lg:order-2">
-          ${d3d ? `
-            <div class="relative group/model w-full">
-              <div class="flex items-center justify-between mb-2">
-                <p class="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-widest">Interactive 3D Model</p>
-                <div class="flex items-center gap-2">
-                  <button id="btnToggleModalSkybox" onclick="toggleModal3DSkybox(event)" class="text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-300 bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-md transition border border-slate-300 dark:border-slate-700">${is3DSkyboxLight ? '🌙 Dark Sky' : '☀️ Light Sky'}</button>
-                  <button onclick="open3DLightbox('${encodeURIComponent(d3d)}', '${encodeURIComponent(displayTitle)}')" class="text-[10px] font-bold text-purple-600 dark:text-purple-300 hover:underline">Expand Fullscreen ⤢</button>
+                <div id="modal3DContainer" class="w-full h-64 sm:h-72 ${is3DSkyboxLight ? 'bg-slate-100' : 'bg-slate-900'} rounded-2xl overflow-hidden shadow-inner border border-indigo-500/30 relative cursor-pointer transition-colors duration-300" onclick="open3DLightbox('${encodeURIComponent(d3d)}', '${encodeURIComponent(displayTitle)}')">
+                  <model-viewer id="modal3DViewer" src="${d3d}" camera-controls auto-rotate shadow-intensity="1.2" exposure="1.1" style="width: 100%; height: 100%; display: block; --poster-color: transparent;" class="w-full h-full"></model-viewer>
+                  <span id="modal3DScaleBadge" class="absolute bottom-2.5 right-2.5 bg-slate-900/85 text-white backdrop-blur-md text-[10px] font-bold px-2.5 py-1 rounded-lg z-10 shadow border border-slate-700/60 pointer-events-none flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                    <span id="modal3DScaleText">Calculating...</span>
+                  </span>
                 </div>
-              </div>
-              <div id="modal3DContainer" class="w-full h-64 sm:h-72 ${is3DSkyboxLight ? 'bg-slate-100' : 'bg-slate-900'} rounded-2xl overflow-hidden shadow-inner border border-indigo-500/30 relative cursor-pointer transition-colors duration-300" onclick="open3DLightbox('${encodeURIComponent(d3d)}', '${encodeURIComponent(displayTitle)}')">
-                <model-viewer id="modal3DViewer" src="${d3d}" camera-controls auto-rotate shadow-intensity="1.2" exposure="1.1" style="width: 100%; height: 100%; display: block; --poster-color: transparent;" class="w-full h-full"></model-viewer>
-                <span id="modal3DScaleBadge" class="absolute bottom-2.5 right-2.5 bg-slate-900/85 text-white backdrop-blur-md text-[10px] font-bold px-2.5 py-1 rounded-lg z-10 shadow border border-slate-700/60 pointer-events-none flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                  <span id="modal3DScaleText">Calculating...</span>
-                </span>
-              </div>
-            </div>` : ''}
-
-          <div class="grid grid-cols-1 gap-4 w-full">
-            ${img1 ? `
-              <div class="w-full">
-                <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${d3d ? 'Second Media (Image 1)' : 'Primary Image'}</p>
-                <a href="${fullImg1 || modalImg1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
-                  <img src="${modalImg1}" class="w-full ${!img2 ? 'max-h-[520px] min-h-[220px]' : 'h-52 sm:h-56'} object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
-                  <span class="absolute bottom-2.5 right-2.5 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow pointer-events-none">Full Image ↗</span>
-                </a>
               </div>` : ''}
 
-            ${img2 ? `
-              <div class="w-full">
-                <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${d3d ? 'Third Media (Image 2)' : 'Secondary Image'}</p>
-                <a href="${fullImg2 || modalImg2}" target="_blank" title="Click to view image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
-                  <img src="${modalImg2}" class="w-full h-52 sm:h-56 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
-                  <span class="absolute bottom-2.5 right-2.5 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow pointer-events-none">Full Image ↗</span>
-                </a>
-              </div>` : ''}
+            <div class="grid grid-cols-1 gap-4 w-full">
+              ${img1 ? `
+                <div class="w-full">
+                  <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${d3d ? 'Second Media (Image 1)' : 'Primary Image'}</p>
+                  <a href="${fullImg1 || modalImg1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
+                    <img src="${modalImg1}" class="w-full ${!img2 ? 'max-h-[520px] min-h-[220px]' : 'h-52 sm:h-56'} object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                    <span class="absolute bottom-2.5 right-2.5 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow pointer-events-none">Full Image ↗</span>
+                  </a>
+                </div>` : ''}
+
+              ${img2 ? `
+                <div class="w-full">
+                  <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${d3d ? 'Third Media (Image 2)' : 'Secondary Image'}</p>
+                  <a href="${fullImg2 || modalImg2}" target="_blank" title="Click to view image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
+                    <img src="${modalImg2}" class="w-full h-52 sm:h-56 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                    <span class="absolute bottom-2.5 right-2.5 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow pointer-events-none">Full Image ↗</span>
+                  </a>
+                </div>` : ''}
+            </div>
           </div>
-        </div>
-      </div>`;
+        </div>`;
+    }
 
     const btnMain = document.getElementById('btnGoogleSearchMain');
     if (btnMain) btnMain.onclick = () => googleItemSearch(displayTitle, category, details);
@@ -1960,7 +2112,7 @@ function openModal(row, originalIndex) {
     }
 
   } else {
-    window.history.replaceState(null, '', `#gramophone-${originalIndex}`);
+    safeReplaceState(`${window.location.pathname}${window.location.search}#gramophone-${originalIndex}`);
     const catalogNum = getVal(row, 0);
     const artist = getVal(row, 1) || 'Unknown Artist';
     const rawTitle = getGramophoneRawTitle(row);
@@ -1977,85 +2129,98 @@ function openModal(row, originalIndex) {
     const ytQuery = encodeURIComponent(`${unescapeHTML(artist)} ${unescapeHTML(rawTitle)}`.replace(/^[AB][\s\.:-]+/gi, '').trim()).replace(/%20/g, '+');
     const gramTheme = CATEGORY_PALETTE.gramophones;
 
-    modalContainer.style.borderColor = gramTheme.hex; modalContainer.style.borderWidth = '3px';
-    modalContainer.style.backgroundColor = getSolidTint(gramTheme.hex, isDark);
+    if (modalContainer) {
+      modalContainer.style.borderColor = gramTheme.hex; modalContainer.style.borderWidth = '3px';
+      modalContainer.style.backgroundColor = getSolidTint(gramTheme.hex, isDark);
+    }
 
     if (currentModalIndex !== -1 && currentFilteredRows.length > 0) {
-      counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
-      prevBtn.disabled = currentModalIndex === 0; nextBtn.disabled = currentModalIndex === currentFilteredRows.length - 1;
-      prevBtn.classList.toggle('opacity-40', currentModalIndex === 0); nextBtn.classList.toggle('opacity-40', currentModalIndex === currentFilteredRows.length - 1);
-    } else { counterElem.textContent = ''; }
+      if (counterElem) counterElem.textContent = `${currentModalIndex + 1} of ${currentFilteredRows.length}`;
+      if (prevBtn) {
+        prevBtn.disabled = currentModalIndex === 0;
+        prevBtn.classList.toggle('opacity-40', currentModalIndex === 0);
+      }
+      if (nextBtn) {
+        nextBtn.disabled = currentModalIndex === currentFilteredRows.length - 1;
+        nextBtn.classList.toggle('opacity-40', currentModalIndex === currentFilteredRows.length - 1);
+      }
+    } else { if (counterElem) counterElem.textContent = ''; }
 
-    document.getElementById('btnShareExhibit').onclick = () => {
-      navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}#gramophone-${originalIndex}`).then(() => showToast('Record link copied to clipboard!', '🔗'));
-    };
+    const shareBtn = document.getElementById('btnShareExhibit');
+    if (shareBtn) {
+      shareBtn.onclick = () => {
+        navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}${window.location.search}#gramophone-${originalIndex}`).then(() => showToast('Record link copied to clipboard!', '🔗'));
+      };
+    }
 
-    modalContent.innerHTML = `
-      <div class="flex items-start justify-between gap-4 mb-2">
-        <div><h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${formattedTitleHTML}</h2></div>
-        <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">${isFav ? '❤️ Saved' : '🤍 Save'}</button>
-      </div>
+    if (modalContent) {
+      modalContent.innerHTML = `
+        <div class="flex items-start justify-between gap-4 mb-2">
+          <div><h2 id="modalTitle" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">${formattedTitleHTML}</h2></div>
+          <button onclick="toggleFavorite(${originalIndex}, event)" class="px-3.5 py-1.5 rounded-full text-xs font-black border transition flex items-center gap-1 shrink-0 ${isFav ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200'}">${isFav ? '❤️ Saved' : '🤍 Save'}</button>
+        </div>
 
-      <div class="flex flex-wrap items-center gap-2 text-xs mb-4">
-        ${released ? `<span class="bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-400/40 px-3 py-0.5 rounded-full font-black"><strong>Year:</strong> ${released}</span>` : ''}
-        ${label ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 px-3 py-0.5 rounded-full font-medium"><strong>Label:</strong> ${label}</span>` : ''}
-        ${format ? `<span class="bg-blue-500/20 text-blue-900 dark:text-blue-300 border border-blue-400/40 px-3 py-0.5 rounded-full font-medium"><strong>Format:</strong> ${format}</span>` : ''}
-      </div>
+        <div class="flex flex-wrap items-center gap-2 text-xs mb-4">
+          ${released ? `<span class="bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-400/40 px-3 py-0.5 rounded-full font-black"><strong>Year:</strong> ${released}</span>` : ''}
+          ${label ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 px-3 py-0.5 rounded-full font-medium"><strong>Label:</strong> ${label}</span>` : ''}
+          ${format ? `<span class="bg-blue-500/20 text-blue-900 dark:text-blue-300 border border-blue-400/40 px-3 py-0.5 rounded-full font-medium"><strong>Format:</strong> ${format}</span>` : ''}
+        </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 items-stretch">
-        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 rounded-2xl p-6 text-center flex flex-col items-center justify-center relative shadow-inner border border-amber-500/30 h-full min-h-[180px]">
-          <div class="w-32 h-32 rounded-full border-4 border-amber-500/30 bg-slate-950 flex items-center justify-center shadow-2xl relative">
-            <div class="w-12 h-12 rounded-full bg-amber-600 border-2 border-amber-300 flex items-center justify-center text-[9px] font-black text-amber-100 text-center p-1 leading-tight">${label}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 items-stretch">
+          <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 rounded-2xl p-6 text-center flex flex-col items-center justify-center relative shadow-inner border border-amber-500/30 h-full min-h-[180px]">
+            <div class="w-32 h-32 rounded-full border-4 border-amber-500/30 bg-slate-950 flex items-center justify-center shadow-2xl relative">
+              <div class="w-12 h-12 rounded-full bg-amber-600 border-2 border-amber-300 flex items-center justify-center text-[9px] font-black text-amber-100 text-center p-1 leading-tight">${label}</div>
+            </div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-900/90 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 space-y-2 flex flex-col justify-center">
+            <p><strong>Artist:</strong> <span class="font-bold text-slate-900 dark:text-white">${artist}</span></p>
+            <p><strong>Record Label:</strong> ${label}</p>
+            ${format ? `<p><strong>Format:</strong> ${format}</p>` : ''}
+            <p><strong>Release Year:</strong> ${released || 'Unknown'}</p>
+            ${catalogNum ? `<p><strong>Catalog No.:</strong> <span class="font-mono font-bold text-amber-600 dark:text-amber-300">${catalogNum}</span></p>` : ''}
           </div>
         </div>
-        <div class="bg-slate-50 dark:bg-slate-900/90 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 space-y-2 flex flex-col justify-center">
-          <p><strong>Artist:</strong> <span class="font-bold text-slate-900 dark:text-white">${artist}</span></p>
-          <p><strong>Record Label:</strong> ${label}</p>
-          ${format ? `<p><strong>Format:</strong> ${format}</p>` : ''}
-          <p><strong>Release Year:</strong> ${released || 'Unknown'}</p>
-          ${catalogNum ? `<p><strong>Catalog No.:</strong> <span class="font-mono font-bold text-amber-600 dark:text-amber-300">${catalogNum}</span></p>` : ''}
-        </div>
-      </div>
 
-      ${colMDetails ? `
-        <div class="mb-5">
-          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
-          <div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl shadow-inner">${colMDetails}</div>
-        </div>` : ''}
+        ${colMDetails ? `
+          <div class="mb-5">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Details</h4>
+            <div class="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl shadow-inner">${colMDetails}</div>
+          </div>` : ''}
 
-      <div class="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
-        ${discogsUrl ? `
-          <a href="${discogsUrl}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2">
-            <span>${hasDiscogsRecording ? '📀 Discogs Recording ↗' : '📀 Discogs ↗'}</span>
-            ${hasDiscogsRecording ? `<span class="bg-emerald-500 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">🎙️ Recording</span>` : ''}
-          </a>` : ''}
+        <div class="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+          ${discogsUrl ? `
+            <a href="${discogsUrl}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2">
+              <span>${hasDiscogsRecording ? '📀 Discogs Recording ↗' : '📀 Discogs ↗'}</span>
+              ${hasDiscogsRecording ? `<span class="bg-emerald-500 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">🎙️ Recording</span>` : ''}
+            </a>` : ''}
 
-        ${hasArchiveRecording ? `<a href="${archiveUrl}" target="_blank" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2"><span>📻 Archives 78s Recording ↗</span></a>` : ''}
+          ${hasArchiveRecording ? `<a href="${archiveUrl}" target="_blank" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2"><span>📻 Archives 78s Recording ↗</span></a>` : ''}
 
-        ${!hasAnyRecording ? `
-          <a href="https://www.youtube.com/results?search_query=${ytQuery}" target="_blank" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-1.5"><span>🎵 Search YouTube ↗</span></a>
-          <a href="${archiveUrl}" target="_blank" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-1.5" title="Search the 78 RPM Collection on Internet Archive"><span>📻 Search Archive 78s ↗</span></a>` : ''}
-      </div>`;
+          ${!hasAnyRecording ? `
+            <a href="https://www.youtube.com/results?search_query=${ytQuery}" target="_blank" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-1.5"><span>🎵 Search YouTube ↗</span></a>
+            <a href="${archiveUrl}" target="_blank" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-1.5" title="Search the 78 RPM Collection on Internet Archive"><span>📻 Search Archive 78s ↗</span></a>` : ''}
+        </div>`;
+    }
   }
 
   document.body.classList.add('overflow-hidden');
-  document.getElementById('detailModal').classList.remove('hidden');
-  document.getElementById('closeModal').focus();
+  document.getElementById('detailModal')?.classList.remove('hidden');
+  document.getElementById('closeModal')?.focus();
 }
 
 function closeModal() {
   stopAudioGuide();
   document.body.classList.remove('overflow-hidden');
-  document.getElementById('detailModal').classList.add('hidden');
-  window.history.replaceState(null, '', ' ');
+  document.getElementById('detailModal')?.classList.add('hidden');
+  safeReplaceState(`${window.location.pathname}${window.location.search}`);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('brandLogoLink').addEventListener('click', (e) => { e.preventDefault(); browseAllExhibits(); });
-  document.getElementById('btnBrowseAllHeader').addEventListener('click', browseAllExhibits);
-  document.getElementById('btnBrowseAllPrompt').addEventListener('click', browseAllExhibits);
-  document.getElementById('btnStatsHeader').addEventListener('click', () => { setTab('stats'); window.location.hash = '#stats'; });
-  document.getElementById('btnSurprise').addEventListener('click', () => {
+  document.getElementById('brandLogoLink')?.addEventListener('click', (e) => { e.preventDefault(); browseAllExhibits(); });
+  document.getElementById('btnBrowseAllHeader')?.addEventListener('click', browseAllExhibits);
+  document.getElementById('btnBrowseAllPrompt')?.addEventListener('click', browseAllExhibits);
+  document.getElementById('btnStatsHeader')?.addEventListener('click', () => { setTab('stats'); window.location.hash = '#stats'; });
+  document.getElementById('btnSurprise')?.addEventListener('click', () => {
     const rows = (currentTab === 'gramophone') ? rawGramophoneRows : rawExhibitsRows;
     if (!rows || rows.length === 0) return;
     if (currentTab === 'stats' || currentTab === 'analytics') setTab('exhibits');
@@ -2063,7 +2228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openModalByOriginalIndex(Math.floor(Math.random() * rows.length));
   });
 
-  document.getElementById('btnThemeToggle').addEventListener('click', () => {
+  document.getElementById('btnThemeToggle')?.addEventListener('click', () => {
     const isDark = document.documentElement.classList.toggle('dark');
     localStorage.setItem('bMMC_theme', isDark ? 'dark' : 'light');
     updateThemeUI(isDark);
@@ -2072,52 +2237,87 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleControlsBtn = document.getElementById('toggleControlsBtn');
   if (toggleControlsBtn) toggleControlsBtn.addEventListener('click', () => toggleCollapsibleControls());
 
-  document.getElementById('btn3DOnly').addEventListener('click', () => {
+  document.getElementById('btn3DOnly')?.addEventListener('click', () => {
     if (currentTab !== 'exhibits') setTab('exhibits');
     only3DActive = !only3DActive;
-    document.getElementById('btn3DOnly').classList.toggle('ring-2', only3DActive);
+    document.getElementById('btn3DOnly')?.classList.toggle('ring-2', only3DActive);
     if (only3DActive) showToast('Showing 3D Models Only', '👓');
     filterCatalog(true);
   });
 
-  document.getElementById('btnHotOnly').addEventListener('click', () => {
+  document.getElementById('btnHotOnly')?.addEventListener('click', () => {
     if (currentTab !== 'exhibits') setTab('exhibits');
     hotOnlyActive = !hotOnlyActive;
-    document.getElementById('btnHotOnly').classList.toggle('ring-2', hotOnlyActive);
+    document.getElementById('btnHotOnly')?.classList.toggle('ring-2', hotOnlyActive);
     if (hotOnlyActive) showToast('Showing Hot Items Only', '🔥');
     filterCatalog(true);
   });
 
-  document.getElementById('btnFavorites').addEventListener('click', () => {
+  document.getElementById('btnFavorites')?.addEventListener('click', () => {
     showingFavoritesOnly = !showingFavoritesOnly;
     updateFavoritesBadge();
     filterCatalog(true);
   });
 
-  document.getElementById('floatingJumpBtn').addEventListener('click', () => {
+  document.getElementById('floatingJumpBtn')?.addEventListener('click', () => {
     toggleCollapsibleControls(false); scrollToGrid();
   });
 
-  document.getElementById('searchInput').addEventListener('input', () => filterCatalog(true));
-  document.getElementById('clearSearch').addEventListener('click', () => { document.getElementById('searchInput').value = ''; filterCatalog(true); });
-  document.getElementById('closeModal').addEventListener('click', closeModal);
-  document.getElementById('detailModal').addEventListener('click', (e) => { if (e.target === document.getElementById('detailModal')) closeModal(); });
-  document.getElementById('close3DLightbox').addEventListener('click', close3DLightbox);
-  document.getElementById('lightbox3DModal').addEventListener('click', (e) => { if (e.target === document.getElementById('lightbox3DModal')) close3DLightbox(); });
-  document.getElementById('enlargeModal').addEventListener('click', (e) => { if (e.target === document.getElementById('enlargeModal')) closeEnlargeModal(); });
-  document.getElementById('modalPrevBtn').addEventListener('click', () => { if (currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1); });
-  document.getElementById('modalNextBtn').addEventListener('click', () => { if (currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1); });
+  // Search Input with URL query synchronization
+  const searchInputElem = document.getElementById('searchInput');
+  if (searchInputElem) {
+    searchInputElem.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      try {
+        const url = new URL(window.location);
+        if (val) {
+          url.searchParams.set('search', val);
+        } else {
+          url.searchParams.delete('search');
+          url.searchParams.delete('q');
+          url.searchParams.delete('query');
+        }
+        safeReplaceState(url.pathname + (url.search ? url.search : '') + (url.hash ? url.hash : ''));
+      } catch (err) {}
+      filterCatalog(true);
+    });
+  }
+
+  // Clear Search button with URL query cleanup
+  const clearSearchBtn = document.getElementById('clearSearch');
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', () => {
+      const searchInp = document.getElementById('searchInput');
+      if (searchInp) searchInp.value = '';
+      try {
+        const url = new URL(window.location);
+        url.searchParams.delete('search');
+        url.searchParams.delete('q');
+        url.searchParams.delete('query');
+        safeReplaceState(url.pathname + (url.search ? url.search : '') + (url.hash ? url.hash : ''));
+      } catch (err) {}
+      filterCatalog(true);
+    });
+  }
+
+  document.getElementById('closeModal')?.addEventListener('click', closeModal);
+  document.getElementById('detailModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('detailModal')) closeModal(); });
+  document.getElementById('close3DLightbox')?.addEventListener('click', close3DLightbox);
+  document.getElementById('lightbox3DModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('lightbox3DModal')) close3DLightbox(); });
+  document.getElementById('enlargeModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('enlargeModal')) closeEnlargeModal(); });
+  document.getElementById('modalPrevBtn')?.addEventListener('click', () => { if (currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1); });
+  document.getElementById('modalNextBtn')?.addEventListener('click', () => { if (currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1); });
 
   window.addEventListener('keydown', (e) => {
     const modal = document.getElementById('detailModal');
     const lightbox = document.getElementById('lightbox3DModal');
     const enlargeModal = document.getElementById('enlargeModal');
     if (e.key === 'Escape') {
-      if (!enlargeModal.classList.contains('hidden')) { closeEnlargeModal(); return; }
-      if (!lightbox.classList.contains('hidden')) { close3DLightbox(); return; }
-      if (!modal.classList.contains('hidden')) { closeModal(); return; }
+      if (enlargeModal && !enlargeModal.classList.contains('hidden')) { closeEnlargeModal(); return; }
+      if (lightbox && !lightbox.classList.contains('hidden')) { close3DLightbox(); return; }
+      if (modal && !modal.classList.contains('hidden')) { closeModal(); return; }
     }
-    if (modal.classList.contains('hidden')) return;
+    if (modal && modal.classList.contains('hidden')) return;
     if (e.key === 'ArrowLeft' && currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1);
     if (e.key === 'ArrowRight' && currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1);
   });
