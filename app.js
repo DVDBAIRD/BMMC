@@ -1,6 +1,19 @@
-const EXHIBITS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=1146027655';
-const GRAMOPHONE_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&gid=606568772';
-const GALLERY_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/gviz/tq?tqx=out:csv&headers=0&gid=1741478537';
+// app.js — BMMC Showcase Application Logic (Secure Dual-Mode: Online & Offline)
+
+// 1. Environment & Data Source Configuration
+const IS_LOCAL_ENV = window.location.protocol === 'file:' || 
+                     window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1';
+
+// Fast direct export endpoints
+const REMOTE_EXHIBITS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/export?format=csv&gid=1146027655';
+const REMOTE_GRAMOPHONE_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/export?format=csv&gid=606568772';
+const REMOTE_GALLERY_CSV_URL = 'https://docs.google.com/spreadsheets/d/1U3V1JIatKpTOyAHEMnscs0mdZ4vDNf4C7eX_fuUbj_s/export?format=csv&gid=1741478537';
+
+const LOCAL_EXHIBITS_CSV_URL = './data/exhibits.csv';
+const LOCAL_GRAMOPHONE_CSV_URL = './data/gramophone.csv';
+const LOCAL_GALLERY_CSV_URL = './data/gallery.csv';
+
 const NO_IMAGE_SVG = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
 
 const MAIN_HUB_CATEGORIES = ["War", "Photography", "Survey", "General", "Documentation", "Household", "Collections"];
@@ -50,10 +63,71 @@ const TIMELINE_ERAS = [
   { key: 'Modern', short: 'Modern', full: 'Millennium & Modern (2000–Present)', min: 2000, max: 9999 }
 ];
 
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+let currentTab = 'exhibits';
+let rawExhibitsRows = [];
+let rawGramophoneRows = [];
+let catalog3DMap = new Map();
+let hotItemSet = new Set();
+let currentFilteredRows = [];
+let currentModalIndex = -1;
+let currentlySpeakingIndex = null;
+let only3DActive = false;
+let hotOnlyActive = false;
+let showingFavoritesOnly = false;
+let isGridActive = false;
+let is3DSkyboxLight = false;
+let isPoppyMotionActive = false;
+let currentSpeechUtterance = null;
+let availableVoices = [];
+
+let colIdx = { id: 0, ref: 1, title: 2, notes: 4, itemNoM: 12, age: 13, type: 14, category: 15, subcategory: 16, d3d: 17, doc: 18, web: 19, img1: 20, img2: 21, qty: 22, made: 23, year: 24, hot: 25 };
+let chartStackedInstance = null;
+let chartLocationsInstance = null;
+let chartSubcatCategoryInstance = null;
+let fuseExhibits = null;
+let fuseGramophone = null;
+
+const CHART_PALETTE = ['#C85A32', '#3B7A57', '#B57C1E', '#3182CE', '#708259', '#20807E', '#4A5568', '#D99B43', '#7c3aed', '#db2777'];
+
+// 2. Security Utilities & URL Sanitizers
+function escapeHTML(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function unescapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'");
+}
+
+function sanitizeUrl(url) {
+  if (!url) return '';
+  const clean = String(url).trim();
+  if (clean.startsWith('./media/') || clean.startsWith('media/') || clean.startsWith('data:image/') || clean.startsWith('index.html') || clean.startsWith('2Dmap.html') || clean.startsWith('gallery.html')) {
+    return clean;
+  }
+  if (/^https?:\/\//i.test(clean)) {
+    return clean;
+  }
+  if (!clean.includes(':')) {
+    return clean.startsWith('./') ? clean : `https://${clean}`;
+  }
+  return '';
+}
+
 function safeReplaceState(urlStr) {
-  try {
-    window.history.replaceState(null, '', urlStr);
-  } catch (e) {}
+  try { window.history.replaceState(null, '', urlStr); } catch (e) {}
 }
 
 function getEraByYear(yearNum) {
@@ -61,7 +135,6 @@ function getEraByYear(yearNum) {
   return TIMELINE_ERAS.find(e => yearNum >= e.min && yearNum <= e.max) || null;
 }
 
-// Strictly extracts year from Column Y ("Year")
 function getEraByRow(row) {
   if (!row) return null;
   const yearStr = getVal(row, colIdx.year);
@@ -90,12 +163,13 @@ function getCategoryTheme(str) {
 function createCategoryBadge(label, kind = 'category') {
   if (!label) return '';
   const theme = getCategoryTheme(label);
+  const safeLabel = escapeHTML(label);
   if (kind === 'category') {
-    return `<span class="px-2 py-0.5 rounded-full font-black text-[10px] shadow-sm inline-block tracking-wide" style="background-color: ${theme.hex}; color: ${theme.text};">${label}</span>`;
+    return `<span class="px-2 py-0.5 rounded-full font-black text-[10px] shadow-sm inline-block tracking-wide" style="background-color: ${theme.hex}; color: ${theme.text};">${safeLabel}</span>`;
   } else if (kind === 'type' || kind === 'Type') {
-    return `<span class="px-2 py-0.5 rounded-full font-extrabold text-[10px] shadow-sm inline-block tracking-wide border" style="background-color: ${theme.hex}18; color: ${theme.hex}; border-color: ${theme.hex}80;">${kind === 'Type' ? 'Type: ' : ''}${label}</span>`;
+    return `<span class="px-2 py-0.5 rounded-full font-extrabold text-[10px] shadow-sm inline-block tracking-wide border" style="background-color: ${theme.hex}18; color: ${theme.hex}; border-color: ${theme.hex}80;">${kind === 'Type' ? 'Type: ' : ''}${safeLabel}</span>`;
   } else {
-    return `<span class="px-2 py-0.5 rounded-full font-extrabold text-[10px] shadow-sm inline-block tracking-wide border" style="background-color: ${theme.hex}25; color: ${theme.hex}; border-color: ${theme.hex}aa;">${kind === 'Subcategory' ? 'Subcategory: ' : ''}${label}</span>`;
+    return `<span class="px-2 py-0.5 rounded-full font-extrabold text-[10px] shadow-sm inline-block tracking-wide border" style="background-color: ${theme.hex}25; color: ${theme.hex}; border-color: ${theme.hex}aa;">${kind === 'Subcategory' ? 'Subcategory: ' : ''}${safeLabel}</span>`;
   }
 }
 
@@ -109,43 +183,6 @@ function getSolidTint(hex, isDark) {
   } else {
     return `rgb(${Math.round(255 * 0.96 + r * 0.04)}, ${Math.round(255 * 0.96 + g * 0.04)}, ${Math.round(255 * 0.96 + b * 0.04)})`;
   }
-}
-
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-let currentTab = 'exhibits';
-let rawExhibitsRows = [];
-let rawGramophoneRows = [];
-let catalog3DMap = new Map();
-let hotItemSet = new Set();
-let currentFilteredRows = [];
-let currentModalIndex = -1;
-let currentlySpeakingIndex = null;
-let only3DActive = false;
-let hotOnlyActive = false;
-let showingFavoritesOnly = false;
-let isGridActive = false;
-let is3DSkyboxLight = false;
-let isPoppyMotionActive = false;
-let currentSpeechUtterance = null;
-let availableVoices = [];
-
-let colIdx = { id: 0, ref: 1, title: 2, notes: 4, itemNoM: 12, age: 13, type: 14, category: 15, subcategory: 16, d3d: 17, doc: 18, web: 19, img1: 20, img2: 21, qty: 22, made: 23, year: 24, hot: 25 };
-let chartStackedInstance = null;
-let chartLocationsInstance = null;
-let chartSubcatCategoryInstance = null;
-let fuseExhibits = null;
-let fuseGramophone = null;
-
-const CHART_PALETTE = ['#C85A32', '#3B7A57', '#B57C1E', '#3182CE', '#708259', '#20807E', '#4A5568', '#D99B43', '#7c3aed', '#db2777'];
-
-function escapeHTML(str) {
-  if (str == null) return '';
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-}
-
-function unescapeHTML(str) {
-  if (!str) return '';
-  return String(str).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#039;/g, "'");
 }
 
 function hideLoadingSpinner() {
@@ -196,7 +233,7 @@ function buildArchiveSearchUrl(rawTitle, catalogNum) {
   const cleanTitle = unescapeHTML(rawTitle || '');
   const cleanCat = unescapeHTML(catalogNum || '');
   const combinedStr = `${cleanTitle} ${cleanCat}`.trim();
-  return `https://archive.org/details/78rpm?tab=collection&query=${encodeURIComponent(combinedStr).replace(/'/g, '%27').replace(/%20/g, '+')}`;
+  return sanitizeUrl(`https://archive.org/details/78rpm?tab=collection&query=${encodeURIComponent(combinedStr).replace(/'/g, '%27').replace(/%20/g, '+')}`);
 }
 
 function toggleCollapsibleControls(show) {
@@ -217,44 +254,78 @@ function toggleCollapsibleControls(show) {
   }
 }
 
-async function fetchCSVWithCache(url, cacheKey) {
+// Dual-Mode CSV Fetcher with TTL Cache and Local / Remote Fallbacks
+async function fetchDualModeCSV(remoteUrl, localUrl, cacheKey) {
+  if (IS_LOCAL_ENV) {
+    try {
+      const localRes = await fetch(localUrl);
+      if (localRes.ok) {
+        const text = await localRes.text();
+        const parsed = Papa.parse(text, { header: false, skipEmptyLines: true });
+        if (parsed.data && parsed.data.length > 1) {
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(parsed.data));
+            localStorage.setItem(`${cacheKey}_raw`, text);
+            localStorage.setItem(`${cacheKey}_time`, Date.now());
+          } catch (e) {}
+          return parsed.data;
+        }
+      }
+    } catch (e) {}
+  }
+
   try {
     const cached = localStorage.getItem(cacheKey);
     const cacheTime = localStorage.getItem(`${cacheKey}_time`);
     if (cached && cacheTime && (Date.now() - Number(cacheTime) < CACHE_TTL_MS)) {
       const parsedData = JSON.parse(cached);
-      if (Array.isArray(parsedData) && parsedData.length > 1) {
-        return parsedData;
+      if (Array.isArray(parsedData) && parsedData.length > 1) return parsedData;
+    }
+  } catch (e) {}
+
+  try {
+    const res = await fetch(remoteUrl);
+    if (res.ok) {
+      const text = await res.text();
+      const parsed = Papa.parse(text, { header: false, skipEmptyLines: true });
+      if (parsed.data && parsed.data.length > 1) {
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(parsed.data));
+          localStorage.setItem(`${cacheKey}_raw`, text);
+          localStorage.setItem(`${cacheKey}_time`, Date.now());
+        } catch (e) {}
+        return parsed.data;
       }
     }
-  } catch (e) {
-    console.warn('localStorage read error:', e);
-  }
+  } catch (e) {}
 
-  const res = await fetch(url);
-  const text = await res.text();
-  const parsed = Papa.parse(text, { header: false, skipEmptyLines: true });
-
-  if (parsed.data && Array.isArray(parsed.data) && parsed.data.length > 1) {
-    try {
-      localStorage.setItem(cacheKey, JSON.stringify(parsed.data));
-      localStorage.setItem(`${cacheKey}_time`, Date.now());
-    } catch (e) {
-      console.warn('localStorage write error:', e);
+  try {
+    const fallbackRes = await fetch(localUrl);
+    if (fallbackRes.ok) {
+      const text = await fallbackRes.text();
+      const parsed = Papa.parse(text, { header: false, skipEmptyLines: true });
+      if (parsed.data && parsed.data.length > 1) {
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(parsed.data));
+          localStorage.setItem(`${cacheKey}_raw`, text);
+          localStorage.setItem(`${cacheKey}_time`, Date.now());
+        } catch (e) {}
+        return parsed.data;
+      }
     }
-  }
+  } catch (e) {}
 
-  return parsed.data;
+  return [];
 }
 
 function parseDiscogsVal(raw) {
   if (!raw) return '';
   let str = String(raw).trim();
   if (!str) return '';
-  if (str.startsWith('http://') || str.startsWith('https://')) return str;
-  if (str.toLowerCase().includes('discogs.com')) return `https://${str.replace(/^https?:\/\//i, '')}`;
+  if (str.startsWith('http://') || str.startsWith('https://')) return sanitizeUrl(str);
+  if (str.toLowerCase().includes('discogs.com')) return sanitizeUrl(`https://${str.replace(/^https?:\/\//i, '')}`);
   const cleanId = str.replace(/[^0-9]/g, '');
-  if (cleanId.length >= 4) return `https://www.discogs.com/release/${cleanId}`;
+  if (cleanId.length >= 4) return sanitizeUrl(`https://www.discogs.com/release/${cleanId}`);
   return '';
 }
 
@@ -393,7 +464,7 @@ function populateVoiceDropdown() {
 
   select.onchange = function() {
     localStorage.setItem('bMMC_selectedVoiceName', this.value);
-    if (window.speechSynthesis.speaking) {
+    if (window.speechSynthesis && window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
       const btnModal = document.getElementById('btnAudioGuide');
       if (btnModal && btnModal.getAttribute('data-row')) speakAudioGuide(parseInt(btnModal.getAttribute('data-row'), 10));
@@ -456,12 +527,18 @@ function formatGoogleLh3Url(url, size = 's200') {
   if (!url) return '';
   url = String(url).trim();
   if (!url) return '';
-  if (url.startsWith('data:image/')) return url;
+
+  if (window.resolveOfflineMedia) {
+    const local = window.resolveOfflineMedia(url);
+    if (local && (local.startsWith('./media/') || local.startsWith('media/'))) return sanitizeUrl(local);
+  }
+
+  if (url.startsWith('data:image/') || url.startsWith('./media/') || url.startsWith('media/')) return sanitizeUrl(url);
 
   if (url.includes('dropbox.com')) {
     let cleanUrl = url.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
     if (!cleanUrl.includes('raw=1')) cleanUrl += (cleanUrl.includes('?') ? '&raw=1' : '?raw=1');
-    return cleanUrl;
+    return sanitizeUrl(cleanUrl);
   }
 
   const isDrive = url.includes('drive.google.com') || url.includes('lh3.googleusercontent.com') || url.includes('docs.google.com');
@@ -472,18 +549,28 @@ function formatGoogleLh3Url(url, size = 's200') {
     if (match && match[1]) {
       const fileId = match[1];
       const sz = String(size).startsWith('s') ? size : `s${size}`;
-      return `https://lh3.googleusercontent.com/d/${fileId}=${sz}`;
+      return sanitizeUrl(`https://lh3.googleusercontent.com/d/${fileId}=${sz}`);
     }
   }
 
-  if (!url.startsWith('http://') && !url.startsWith('https://')) return '';
-  return url;
+  return sanitizeUrl(url);
 }
 
 function extractDirect3DUrl(rawUrl) {
   if (!rawUrl) return '';
   let str = unescapeHTML(rawUrl).trim();
   if (!str) return '';
+
+  if (window.resolveOfflineMedia) {
+    const local = window.resolveOfflineMedia(str);
+    if (local && (local.startsWith('./media/models/') || local.startsWith('media/models/') || /\.glb|\.gltf/i.test(local))) {
+      return sanitizeUrl(local);
+    }
+    if (local && (local.includes('/images/') || local.includes('/docs/') || local.includes('/audio/'))) {
+      return '';
+    }
+  }
+
   if (str.includes('#model=')) str = str.split('#model=').pop();
   else if (str.includes('model=')) str = str.split('model=').pop();
   else if (str.includes('url=')) str = str.split('url=').pop();
@@ -492,24 +579,34 @@ function extractDirect3DUrl(rawUrl) {
     if (lastHttp > 0) str = str.substring(lastHttp);
   }
   str = str.trim();
+
+  if (str.startsWith('./media/models/') || str.startsWith('media/models/')) return sanitizeUrl(str);
   if (!str.startsWith('http://') && !str.startsWith('https://')) return '';
+
   const lower = str.toLowerCase();
   const isGLB = lower.includes('.glb') || lower.includes('.gltf');
-  const isDropbox3D = lower.includes('dropbox.com') || lower.includes('dropboxusercontent.com');
+  const isDropbox3D = (lower.includes('dropbox.com') || lower.includes('dropboxusercontent.com')) && (lower.includes('.glb') || lower.includes('.gltf'));
+  
   if (!isGLB && !isDropbox3D) return '';
+
   if (isDropbox3D) {
     str = str.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
     if (!str.includes('raw=1')) str += (str.includes('?') ? '&raw=1' : '?raw=1');
   }
-  return str;
+  return sanitizeUrl(str);
 }
 
 function get3DUrlForItem(row) {
   if (!row) return '';
   const colRVal = extractDirect3DUrl(getVal(row, colIdx.d3d));
   if (colRVal) return colRVal;
-  const colVVal = extractDirect3DUrl(getVal(row, colIdx.img2));
-  if (colVVal) return colVVal;
+
+  const colVRaw = getVal(row, colIdx.img2);
+  if (/\.glb|\.gltf|#model=/i.test(colVRaw)) {
+    const colVVal = extractDirect3DUrl(colVRaw);
+    if (colVVal) return colVVal;
+  }
+
   const itemNoColM = unescapeHTML(getVal(row, colIdx.itemNoM)).replace(/^#\s*/, '').trim().toLowerCase();
   if (itemNoColM && catalog3DMap.has(itemNoColM)) return catalog3DMap.get(itemNoColM);
   const itemNoColA = unescapeHTML(getVal(row, colIdx.id)).replace(/^#\s*/, '').trim().toLowerCase();
@@ -534,7 +631,7 @@ function getImagesForItem(row) {
   if (!img1 && row) {
     for (let i = 2; i < row.length; i++) {
       const val = getVal(row, i);
-      if (val && val.startsWith('http') && (val.includes('drive.google') || val.includes('lh3.google') || val.includes('dropbox') || /\.(jpg|jpeg|png|webp|gif)/i.test(val))) {
+      if (val && (val.startsWith('http') || val.startsWith('media/') || val.startsWith('./media/')) && (val.includes('drive.google') || val.includes('lh3.google') || val.includes('dropbox') || /\.(jpg|jpeg|png|webp|gif)/i.test(val))) {
         if (!img1) img1 = val;
         else if (!img2 && val !== img1) { img2 = val; break; }
       }
@@ -550,12 +647,24 @@ function parseTitleAndDetails(rawText) {
   return { title: lines[0].replace(/^#\s*/, ''), details: lines.slice(1).map(line => line.replace(/^#\s*/, '')).join('\n') };
 }
 
+function formatDocLink(url) {
+  if (!url) return '';
+  if (window.formatDocUrl) return sanitizeUrl(window.formatDocUrl(url));
+  if (window.resolveOfflineMedia) {
+    const local = window.resolveOfflineMedia(url);
+    if (local && (local.startsWith('./media/') || local.startsWith('media/'))) return sanitizeUrl(local);
+  }
+  const clean = String(url).trim();
+  if (clean.startsWith('http://') || clean.startsWith('https://')) return sanitizeUrl(clean);
+  return sanitizeUrl(`https://${clean}`);
+}
+
 function googleItemSearch(title, category, details) {
   const cleanTitle = unescapeHTML(title);
   const cleanCat = unescapeHTML(category);
   const cleanDetails = unescapeHTML(details || '').replace(/^#\s*/, '').replace(/\s+/g, ' ').trim();
   const query = `${cleanTitle} ${cleanCat || ''} Historical Artifact ${cleanDetails.slice(0, 200)}`.trim();
-  window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+  window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
 }
 
 function toggleModal3DSkybox(event) {
@@ -570,11 +679,8 @@ function togglePoppyMotion() {
   const btn = document.getElementById('btnTogglePoppyMotion');
 
   if (skyBg) {
-    if (isPoppyMotionActive) {
-      skyBg.classList.add('poppies-animated');
-    } else {
-      skyBg.classList.remove('poppies-animated');
-    }
+    if (isPoppyMotionActive) skyBg.classList.add('poppies-animated');
+    else skyBg.classList.remove('poppies-animated');
   }
 
   if (btn) {
@@ -619,7 +725,6 @@ function browseAllExhibits() {
   const btn3D = document.getElementById('btn3DOnly'); if (btn3D) btn3D.classList.remove('ring-2', 'ring-purple-300', 'from-purple-700', 'to-indigo-700');
   const btnHot = document.getElementById('btnHotOnly'); if (btnHot) btnHot.classList.remove('ring-2', 'ring-amber-300', 'from-amber-600', 'to-rose-700');
   
-  // Clear search URL query parameters
   try {
     const url = new URL(window.location);
     url.searchParams.delete('search');
@@ -733,11 +838,8 @@ function checkUrlQueryParams() {
     const searchQuery = params.get('search') || params.get('q') || params.get('query');
     const tabParam = params.get('tab');
 
-    if (tabParam === 'gramophone') {
-      setTab('gramophone');
-    } else if (tabParam === 'exhibits') {
-      setTab('exhibits');
-    }
+    if (tabParam === 'gramophone') setTab('gramophone');
+    else if (tabParam === 'exhibits') setTab('exhibits');
 
     if (searchQuery) {
       const searchInput = document.getElementById('searchInput');
@@ -753,16 +855,18 @@ function checkUrlQueryParams() {
   }
 }
 
+// 3. Fast Parallel Data Loading & Initialization
 async function loadCatalogData() {
   const loadingElem = document.getElementById('loading');
   if (loadingElem) loadingElem.classList.remove('hidden');
 
   initTheme();
   try {
-    const exhibitsPromise = fetchCSVWithCache(EXHIBITS_CSV_URL, 'bMMC_cached_exhibits');
-    const gramophonePromise = fetchCSVWithCache(GRAMOPHONE_CSV_URL, 'bMMC_cached_gramophone');
+    const [exhibitsData, gramophoneData] = await Promise.all([
+      fetchDualModeCSV(REMOTE_EXHIBITS_CSV_URL, LOCAL_EXHIBITS_CSV_URL, 'bMMC_cached_exhibits'),
+      fetchDualModeCSV(REMOTE_GRAMOPHONE_CSV_URL, LOCAL_GRAMOPHONE_CSV_URL, 'bMMC_cached_gramophone')
+    ]);
 
-    const exhibitsData = await exhibitsPromise;
     if (exhibitsData && exhibitsData.length > 0) {
       exhibitsData[0].forEach((cell, idx) => {
         const c = String(cell).toLowerCase().trim();
@@ -789,13 +893,6 @@ async function loadCatalogData() {
       populateInitialDropdowns();
     }
 
-    renderCollectionHubs(rawExhibitsRows);
-    updateDynamicDropdowns();
-    document.getElementById('gridPrompt')?.classList.remove('hidden');
-    updateFavoritesBadge();
-    checkUrlHashForExhibit();
-
-    const gramophoneData = await gramophonePromise;
     if (gramophoneData && gramophoneData.length > 0) {
       rawGramophoneRows = gramophoneData.filter(r => {
         const c0 = getVal(r, 0).toLowerCase();
@@ -804,11 +901,14 @@ async function loadCatalogData() {
       });
     }
 
-    initFuseSearch();
     renderCollectionHubs(rawExhibitsRows);
-
-    // Process URL query parameters (?search=... &tab=...)
+    updateDynamicDropdowns();
+    document.getElementById('gridPrompt')?.classList.remove('hidden');
+    updateFavoritesBadge();
+    checkUrlHashForExhibit();
     checkUrlQueryParams();
+
+    setTimeout(() => initFuseSearch(), 80);
 
   } catch (err) {
     console.error("Failed to load catalog data:", err);
@@ -816,9 +916,9 @@ async function loadCatalogData() {
       loadingElem.classList.remove('hidden');
       loadingElem.innerHTML = `
         <div class="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-rose-200 dark:border-rose-900">
-          <p class="text-rose-600 dark:text-rose-400 font-bold text-base mb-1">Error loading Google Sheet data</p>
-          <p class="text-xs text-slate-500 mb-4">Please check your connection or retry fetching the catalog archive.</p>
-          <button onclick="localStorage.clear(); location.reload();" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow">🔄 Retry Fetching</button>
+          <p class="text-rose-600 dark:text-rose-400 font-bold text-base mb-1">Catalog Archive Offline or Missing</p>
+          <p class="text-xs text-slate-500 mb-4">Please check your network connection or verify local CSV files in ./data/.</p>
+          <button onclick="localStorage.clear(); location.reload();" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow">🔄 Reload Archive</button>
         </div>
       `;
     }
@@ -857,7 +957,7 @@ function renderCollectionHubs(rows) {
     const customImg = HUB_CUSTOM_IMAGES[catName];
     const firstImgRow = matchingRows.find(r => getVal(r, colIdx.img1) !== '');
     const rawPreviewUrl = customImg || (firstImgRow ? getVal(firstImgRow, colIdx.img1) : '');
-    const previewImg = formatGoogleLh3Url(rawPreviewUrl, 's200') || NO_IMAGE_SVG;
+    const previewImg = sanitizeUrl(formatGoogleLh3Url(rawPreviewUrl, 's200')) || NO_IMAGE_SVG;
     const theme = getCategoryTheme(baseName);
 
     const hubCard = document.createElement('div');
@@ -865,14 +965,14 @@ function renderCollectionHubs(rows) {
     hubCard.style.borderColor = theme.hex;
     hubCard.innerHTML = `
       <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5" style="background-color: ${theme.hex}25;">
-        <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${catName}" />
+        <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${escapeHTML(catName)}" loading="lazy" />
         <div class="absolute top-1.5 right-1.5 flex flex-col items-end gap-0.5 z-10">
           <span class="text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${theme.hex}; color: ${theme.text};">${count}</span>
           <span class="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full shadow-md bg-slate-900/80 text-white backdrop-blur-sm">${pctDisplay}%</span>
         </div>
       </div>
       <div class="p-2.5 flex-1 flex flex-col justify-between">
-        <h3 class="font-black text-xs line-clamp-1" style="color: ${theme.hex};">${catName}</h3>
+        <h3 class="font-black text-xs line-clamp-1" style="color: ${theme.hex};">${escapeHTML(catName)}</h3>
         <span class="text-[10px] font-extrabold mt-1 flex items-center gap-0.5" style="color: ${theme.hex};">Explore →</span>
       </div>
     `;
@@ -1078,8 +1178,13 @@ function renderActiveFilterPills() {
     filters.forEach(f => {
       const pill = document.createElement('span');
       pill.className = 'inline-flex items-center gap-1 text-[10px] font-semibold bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80 px-2 py-0.5 rounded-full shadow-sm';
-      pill.innerHTML = `${f.label} <button class="hover:text-red-500 font-bold ml-0.5">✕</button>`;
-      pill.querySelector('button').addEventListener('click', () => { f.clear(); updateDynamicDropdowns(); filterCatalog(true); });
+      const labelText = document.createTextNode(f.label + ' ');
+      const btn = document.createElement('button');
+      btn.className = 'hover:text-red-500 font-bold ml-0.5';
+      btn.textContent = '✕';
+      btn.addEventListener('click', () => { f.clear(); updateDynamicDropdowns(); filterCatalog(true); });
+      pill.appendChild(labelText);
+      pill.appendChild(btn);
       container.appendChild(pill);
     });
   } else {
@@ -1087,6 +1192,7 @@ function renderActiveFilterPills() {
   }
 }
 
+// 4. Grid Filtering & Rendering
 function filterCatalog(forceShowGrid = false) {
   hideLoadingSpinner();
   const searchVal = (document.getElementById('searchInput')?.value || '').trim();
@@ -1307,16 +1413,16 @@ function renderExhibitsGrid() {
     const type = getVal(row, colIdx.type);
     const category = getVal(row, colIdx.category);
     const subcategory = getVal(row, colIdx.subcategory);
-    const ddoc = getVal(row, colIdx.doc);
-    const dweb = getVal(row, colIdx.web);
-    const d3d = get3DUrlForItem(row);
+    const ddoc = sanitizeUrl(formatDocLink(getVal(row, colIdx.doc)));
+    const dweb = sanitizeUrl(getVal(row, colIdx.web));
+    const d3d = sanitizeUrl(get3DUrlForItem(row));
     const { img1, img2 } = getImagesForItem(row);
     const isHot = isItemHot(row);
 
-    const thumbImg1 = formatGoogleLh3Url(img1, 's200');
-    const thumbImg2 = formatGoogleLh3Url(img2, 's200');
-    const fullImg1 = formatGoogleLh3Url(img1, 's1000');
-    const fullImg2 = formatGoogleLh3Url(img2, 's1000');
+    const thumbImg1 = sanitizeUrl(formatGoogleLh3Url(img1, 's200')) || NO_IMAGE_SVG;
+    const thumbImg2 = sanitizeUrl(formatGoogleLh3Url(img2, 's200')) || NO_IMAGE_SVG;
+    const fullImg1 = sanitizeUrl(formatGoogleLh3Url(img1, 's1000')) || NO_IMAGE_SVG;
+    const fullImg2 = sanitizeUrl(formatGoogleLh3Url(img2, 's1000')) || NO_IMAGE_SVG;
 
     let slots = [];
     if (d3d) {
@@ -1352,8 +1458,8 @@ function renderExhibitsGrid() {
       } else {
         mediaItemsHTML += `
           <div class="card-media-item ${isHidden} w-full h-full items-center justify-center relative group/img" data-slot-idx="${slotNum}">
-            <a href="${s.fullUrl}" target="_blank" onclick="event.stopPropagation()" title="Open full image in new tab" class="w-full h-full flex items-center justify-center">
-              <img src="${s.thumbUrl}" class="max-w-full max-h-full object-contain group-hover/img:scale-105 transition-transform duration-300 drop-shadow-md" alt="${displayTitle}" loading="lazy" onError="this.src='${NO_IMAGE_SVG}'" />
+            <a href="${s.fullUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Open full image in new tab" class="w-full h-full flex items-center justify-center">
+              <img src="${s.thumbUrl}" class="max-w-full max-h-full object-contain group-hover/img:scale-105 transition-transform duration-300 drop-shadow-md" alt="${escapeHTML(displayTitle)}" loading="lazy" onError="this.src='${NO_IMAGE_SVG}'" />
             </a>
           </div>`;
       }
@@ -1364,15 +1470,15 @@ function renderExhibitsGrid() {
         ${mediaItemsHTML}
         <div class="absolute top-3 right-3 flex items-center gap-1.5 z-10" onclick="event.stopPropagation()">
           ${isHot ? `<span title="Hot Item" class="w-8 h-8 rounded-full bg-amber-500/90 text-white backdrop-blur-md transition shadow-md flex items-center justify-center text-xs font-bold pointer-events-none">🔥</span>` : ''}
-          <button onclick="toggleFavorite(${originalIndex}, event)" aria-label="Favorite item" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md transition shadow-md hover:scale-110 flex items-center justify-center text-xs">${isFav ? '❤️' : '🤍'}</button>
-          ${notes ? `<button data-grid-audio-idx="${originalIndex}" onclick="speakAudioGuide(${originalIndex}, event)" aria-label="Listen to notes" title="Listen to Museum Notes" class="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 text-blue-600 dark:text-blue-400 backdrop-blur-md transition shadow-md hover:scale-110 flex items-center justify-center text-xs font-bold">🔊</button>` : ''}
+          <button data-fav-btn="${originalIndex}" aria-label="Favorite item" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md transition shadow-md hover:scale-110 flex items-center justify-center text-xs">${isFav ? '❤️' : '🤍'}</button>
+          ${notes ? `<button data-grid-audio-idx="${originalIndex}" aria-label="Listen to notes" title="Listen to Museum Notes" class="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 text-blue-600 dark:text-blue-400 backdrop-blur-md transition shadow-md hover:scale-110 flex items-center justify-center text-xs font-bold">🔊</button>` : ''}
         </div>
         ${totalSlots > 1 ? `
-          <button onclick="switchCardImage(${originalIndex}, -1, event)" title="Previous Media" aria-label="Previous Media" class="absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-black rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-md shadow-md transition hover:scale-110 z-10">❮</button>
-          <button onclick="switchCardImage(${originalIndex}, 1, event)" title="Next Media" aria-label="Next Media" class="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-black rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-md shadow-md transition hover:scale-110 z-10">❯</button>
+          <button data-slot-prev="${originalIndex}" title="Previous Media" aria-label="Previous Media" class="absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-black rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-md shadow-md transition hover:scale-110 z-10">❮</button>
+          <button data-slot-next="${originalIndex}" title="Next Media" aria-label="Next Media" class="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-black rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-md shadow-md transition hover:scale-110 z-10">❯</button>
           <span id="card-badge-${originalIndex}" class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none z-10 shadow">1 / ${totalSlots}</span>
         ` : ''}
-        ${eraDisplay ? `<span class="absolute top-3 left-3 ${ageBadgeClass} backdrop-blur-sm px-2.5 py-0.5 rounded-full text-xs shadow-md pointer-events-none z-10">${eraDisplay}</span>` : ''}
+        ${eraDisplay ? `<span class="absolute top-3 left-3 ${ageBadgeClass} backdrop-blur-sm px-2.5 py-0.5 rounded-full text-xs shadow-md pointer-events-none z-10">${escapeHTML(eraDisplay)}</span>` : ''}
       </div>
       
       <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
@@ -1390,13 +1496,22 @@ function renderExhibitsGrid() {
             View Details <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
           </span>
           <div class="flex gap-1.5" onclick="event.stopPropagation()">
-            ${d3d ? `<button onclick="open3DLightbox('${encodeURIComponent(d3d)}', '${encodeURIComponent(displayTitle)}')" title="Open 3D Lightbox" class="bg-purple-50 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 hover:bg-purple-600 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold border border-purple-200 dark:border-purple-800 transition shadow-sm">👓 3D View</button>` : ''}
-            ${ddoc ? `<a href="${ddoc}" target="_blank" title="Documentation" class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-800 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold transition shadow-sm">Doc</a>` : ''}
-            ${dweb ? `<a href="${dweb}" target="_blank" title="Website" class="bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold border border-blue-200 dark:border-blue-800 transition shadow-sm">Web</a>` : ''}
+            ${d3d ? `<button data-lightbox-3d-url="${encodeURIComponent(d3d)}" data-lightbox-3d-title="${encodeURIComponent(displayTitle)}" title="Open 3D Lightbox" class="btn-3d-lightbox bg-purple-50 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 hover:bg-purple-600 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold border border-purple-200 dark:border-purple-800 transition shadow-sm">👓 3D View</button>` : ''}
+            ${ddoc ? `<a href="${ddoc}" target="_blank" rel="noopener noreferrer" title="Documentation" class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-800 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold transition shadow-sm">Doc</a>` : ''}
+            ${dweb ? `<a href="${dweb}" target="_blank" rel="noopener noreferrer" title="Website" class="bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold border border-blue-200 dark:border-blue-800 transition shadow-sm">Web</a>` : ''}
           </div>
         </div>
       </div>
     `;
+
+    card.querySelector(`[data-fav-btn="${originalIndex}"]`)?.addEventListener('click', (e) => toggleFavorite(originalIndex, e));
+    card.querySelector(`[data-grid-audio-idx="${originalIndex}"]`)?.addEventListener('click', (e) => speakAudioGuide(originalIndex, e));
+    card.querySelector(`[data-slot-prev="${originalIndex}"]`)?.addEventListener('click', (e) => switchCardImage(originalIndex, -1, e));
+    card.querySelector(`[data-slot-next="${originalIndex}"]`)?.addEventListener('click', (e) => switchCardImage(originalIndex, 1, e));
+    card.querySelector('.btn-3d-lightbox')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      open3DLightbox(d3d, displayTitle);
+    });
 
     card.addEventListener('click', () => openModalByFilteredIndex(arrayIndex));
     grid.appendChild(card);
@@ -1434,12 +1549,12 @@ function renderGramophoneGrid() {
     const label = getVal(row, 3);
     const format = unescapeHTML(getVal(row, 4)) || '78 RPM';
     const released = getVal(row, 6);
-    const discogsUrl = getDiscogsUrl(row);
+    const discogsUrl = sanitizeUrl(getDiscogsUrl(row));
     const hasDiscogsRecording = checkIfHasRecording(row);
     const hasArchiveRecording = getVal(row, 11).toLowerCase().includes('yes');
     const isFav = favs.includes(originalIndex);
     const catalogNum = getVal(row, 0);
-    const archiveUrl = buildArchiveSearchUrl(rawTitle, catalogNum);
+    const archiveUrl = sanitizeUrl(buildArchiveSearchUrl(rawTitle, catalogNum));
 
     const card = document.createElement('div');
     card.className = 'rounded-3xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer group relative backdrop-blur-sm';
@@ -1450,13 +1565,13 @@ function renderGramophoneGrid() {
       <div>
         <div class="flex items-center justify-between gap-2 mb-2.5">
           <div class="flex items-center gap-1.5 flex-wrap">
-            ${released ? `<span class="bg-amber-500/90 text-slate-950 font-black px-3 py-1 rounded-xl text-xs shadow-sm">${released}</span>` : '<span class="bg-slate-200 dark:bg-slate-800 text-slate-500 px-3 py-1 rounded-xl text-xs font-bold">19??</span>'}
-            ${label ? `<span class="text-[10px] font-bold bg-amber-100/80 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 px-2.5 py-0.5 rounded-lg border border-amber-300/80 dark:border-amber-800/80">${label}</span>` : ''}
-            ${format ? `<span class="text-[10px] font-bold bg-slate-200/60 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-lg">${format}</span>` : ''}
+            ${released ? `<span class="bg-amber-500/90 text-slate-950 font-black px-3 py-1 rounded-xl text-xs shadow-sm">${escapeHTML(released)}</span>` : '<span class="bg-slate-200 dark:bg-slate-800 text-slate-500 px-3 py-1 rounded-xl text-xs font-bold">19??</span>'}
+            ${label ? `<span class="text-[10px] font-bold bg-amber-100/80 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 px-2.5 py-0.5 rounded-lg border border-amber-300/80 dark:border-amber-800/80">${escapeHTML(label)}</span>` : ''}
+            ${format ? `<span class="text-[10px] font-bold bg-slate-200/60 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-lg">${escapeHTML(format)}</span>` : ''}
           </div>
-          <button onclick="toggleFavorite(${originalIndex}, event)" aria-label="Favorite item" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-xs transition">${isFav ? '❤️' : '🤍'}</button>
+          <button data-fav-btn="${originalIndex}" aria-label="Favorite item" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-xs transition">${isFav ? '❤️' : '🤍'}</button>
         </div>
-        <p class="text-xs font-black text-amber-700 dark:text-amber-400 mb-1 tracking-wide uppercase">${artist}</p>
+        <p class="text-xs font-black text-amber-700 dark:text-amber-400 mb-1 tracking-wide uppercase">${escapeHTML(artist)}</p>
         <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm mb-3 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors leading-tight">${formattedTitleHTML}</h3>
       </div>
 
@@ -1465,12 +1580,14 @@ function renderGramophoneGrid() {
           View Details <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
         </span>
         <div class="flex items-center gap-1.5 flex-wrap justify-end">
-          ${hasDiscogsRecording ? `<a href="${discogsUrl || '#'}" target="_blank" class="bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm transition hover:bg-emerald-600 flex items-center gap-1">🎙️ Discogs Recording</a>` : ''}
-          ${hasArchiveRecording ? `<a href="${archiveUrl}" target="_blank" class="bg-sky-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm transition hover:bg-sky-700 flex items-center gap-1">📻 Archives 78s Recording</a>` : ''}
-          ${discogsUrl && !hasDiscogsRecording ? `<a href="${discogsUrl}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm">📀 Discogs ↗</a>` : ''}
+          ${hasDiscogsRecording ? `<a href="${discogsUrl || '#'}" target="_blank" rel="noopener noreferrer" class="bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm transition hover:bg-emerald-600 flex items-center gap-1">🎙️ Discogs Recording</a>` : ''}
+          ${hasArchiveRecording ? `<a href="${archiveUrl}" target="_blank" rel="noopener noreferrer" class="bg-sky-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm transition hover:bg-sky-700 flex items-center gap-1">📻 Archives 78s Recording</a>` : ''}
+          ${discogsUrl && !hasDiscogsRecording ? `<a href="${discogsUrl}" target="_blank" rel="noopener noreferrer" class="bg-slate-800 hover:bg-black text-white px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm">📀 Discogs ↗</a>` : ''}
         </div>
       </div>
     `;
+
+    card.querySelector(`[data-fav-btn="${originalIndex}"]`)?.addEventListener('click', (e) => toggleFavorite(originalIndex, e));
     card.addEventListener('click', () => openModalByFilteredIndex(arrayIndex));
     grid.appendChild(card);
   });
@@ -1480,8 +1597,14 @@ function openEnlargeModal(url, isInteractive) {
   const modal = document.getElementById('enlargeModal');
   const body = document.getElementById('enlargeModalBody');
   if (!modal || !body) return;
-  if (isInteractive) body.innerHTML = `<iframe src="${url}" class="w-full h-full border-0 bg-white rounded-2xl shadow-2xl" title="Full Scale View"></iframe>`;
-  else body.innerHTML = `<img src="${formatGoogleLh3Url(url, 's1000')}" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" alt="Full Scale Image" />`;
+  const safeUrl = sanitizeUrl(url);
+  if (!safeUrl) return;
+
+  if (isInteractive) {
+    body.innerHTML = `<iframe src="${safeUrl}" class="w-full h-full border-0 bg-white rounded-2xl shadow-2xl" title="Full Scale View"></iframe>`;
+  } else {
+    body.innerHTML = `<img src="${formatGoogleLh3Url(safeUrl, 's1000')}" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" alt="Full Scale Image" />`;
+  }
   modal.classList.remove('hidden'); document.body.classList.add('overflow-hidden');
 }
 
@@ -1493,7 +1616,13 @@ function closeEnlargeModal() {
   document.body.classList.remove('overflow-hidden');
 }
 
+// 5. Museum Statistics & Charts
 function renderMuseumStatistics() {
+  const mapIframe = document.getElementById('statMapIframe');
+  if (mapIframe && !mapIframe.src && mapIframe.dataset.src) {
+    mapIframe.src = sanitizeUrl(mapIframe.dataset.src);
+  }
+
   if (typeof Chart === 'undefined' || !rawExhibitsRows || rawExhibitsRows.length === 0) return;
   const isDark = document.documentElement.classList.contains('dark');
   const textColor = isDark ? '#cbd5e1' : '#334155';
@@ -1514,17 +1643,17 @@ function renderMuseumStatistics() {
     if (introText && introTextElem && introCard) { introTextElem.textContent = introText; introCard.classList.remove('hidden'); }
     else if (introCard) introCard.classList.add('hidden');
 
-    const docUrl = getVal(targetRow2, colIdx.doc);
-    const webUrl = getVal(targetRow2, colIdx.web);
+    const docUrl = sanitizeUrl(formatDocLink(getVal(targetRow2, colIdx.doc)));
+    const webUrl = sanitizeUrl(getVal(targetRow2, colIdx.web));
     const docElem = document.getElementById('statDocLink');
     const webElem = document.getElementById('statWebLink');
 
     if (docElem) {
-      if (docUrl && (docUrl.startsWith('http') || docUrl.length > 5)) { docElem.href = docUrl.startsWith('http') ? docUrl : `https://${docUrl}`; docElem.classList.remove('hidden'); }
+      if (docUrl) { docElem.href = docUrl; docElem.classList.remove('hidden'); }
       else { docElem.classList.add('hidden'); }
     }
     if (webElem) {
-      if (webUrl && (webUrl.startsWith('http') || webUrl.length > 5)) { webElem.href = webUrl.startsWith('http') ? webUrl : `https://${webUrl}`; webElem.classList.remove('hidden'); }
+      if (webUrl && (webUrl.startsWith('http') || webUrl.length > 5)) { webElem.href = webUrl; webElem.classList.remove('hidden'); }
       else { webElem.classList.add('hidden'); }
     }
 
@@ -1639,7 +1768,7 @@ function renderMuseumStatistics() {
       const customImg = TIMELINE_CUSTOM_IMAGES[e.key] || TIMELINE_CUSTOM_IMAGES[e.short];
       const firstImgRow = eraRows.find(r => getVal(r, colIdx.img1) !== '');
       const rawPreviewUrl = customImg || (firstImgRow ? getVal(firstImgRow, colIdx.img1) : '');
-      const previewImg = formatGoogleLh3Url(rawPreviewUrl, 's200') || NO_IMAGE_SVG;
+      const previewImg = sanitizeUrl(formatGoogleLh3Url(rawPreviewUrl, 's200')) || NO_IMAGE_SVG;
       const hexColor = eraColors[idx % eraColors.length];
 
       const card = document.createElement('div');
@@ -1647,14 +1776,14 @@ function renderMuseumStatistics() {
       card.style.borderColor = hexColor;
       card.innerHTML = `
         <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5" style="background-color: ${hexColor}25;">
-          <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${e.short}" />
+          <img src="${previewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="${escapeHTML(e.short)}" loading="lazy" />
           <div class="absolute top-1.5 right-1.5 flex flex-col items-end gap-0.5 z-10">
             <span class="text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${hexColor}; color: #ffffff;">${count}</span>
             <span class="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full shadow-md bg-slate-900/80 text-white backdrop-blur-sm">${pctDisplay}%</span>
           </div>
         </div>
         <div class="p-2.5 flex-1 flex flex-col justify-between">
-          <h3 class="font-black text-xs line-clamp-1" style="color: ${hexColor};">${e.short}</h3>
+          <h3 class="font-black text-xs line-clamp-1" style="color: ${hexColor};">${escapeHTML(e.short)}</h3>
           <span class="text-[10px] font-extrabold mt-1 flex items-center gap-0.5" style="color: ${hexColor};">Explore →</span>
         </div>
       `;
@@ -1674,7 +1803,7 @@ function renderMuseumStatistics() {
     const interestCustomImg = TIMELINE_CUSTOM_IMAGES["Items of interest"] || TIMELINE_CUSTOM_IMAGES["Items of Interest"] || TIMELINE_CUSTOM_IMAGES["Itmes of Interest"];
     const firstInterestImgRow = interestRows.find(r => getVal(r, colIdx.img1) !== '');
     const rawInterestUrl = interestCustomImg || (firstInterestImgRow ? getVal(firstInterestImgRow, colIdx.img1) : '');
-    const interestPreviewImg = formatGoogleLh3Url(rawInterestUrl, 's200') || NO_IMAGE_SVG;
+    const interestPreviewImg = sanitizeUrl(formatGoogleLh3Url(rawInterestUrl, 's200')) || NO_IMAGE_SVG;
     const interestColor = '#D97706';
 
     const interestCard = document.createElement('div');
@@ -1682,7 +1811,7 @@ function renderMuseumStatistics() {
     interestCard.style.borderColor = interestColor;
     interestCard.innerHTML = `
       <div class="h-20 bg-slate-200/90 dark:bg-slate-950 border-b border-slate-300/80 dark:border-slate-800 relative overflow-hidden flex items-center justify-center p-1.5" style="background-color: ${interestColor}25;">
-        <img src="${interestPreviewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="Items of interest" />
+        <img src="${interestPreviewImg}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" onError="this.src='${NO_IMAGE_SVG}'" alt="Items of interest" loading="lazy" />
         <div class="absolute top-1.5 right-1.5 flex flex-col items-end gap-0.5 z-10">
           <span class="text-[9px] font-black px-2 py-0.5 rounded-full shadow-md" style="background-color: ${interestColor}; color: #ffffff;">${interestCount}</span>
           <span class="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full shadow-md bg-slate-900/80 text-white backdrop-blur-sm">${interestPctDisplay}%</span>
@@ -1751,10 +1880,10 @@ function renderMuseumStatistics() {
         data: { labels: periodsSorted, datasets: stackedDatasets },
         options: {
           indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { labels: { color: textColor, font: { family: 'Inter', size: 11, weight: '600' } } }, tooltip: { mode: 'index', intersect: false } },
+          plugins: { legend: { labels: { color: textColor, font: { family: 'Inter, system-ui', size: 11, weight: '600' } } }, tooltip: { mode: 'index', intersect: false } },
           scales: {
-            x: { stacked: true, grace: '10%', grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter', size: 10 } } },
-            y: { stacked: true, grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } }
+            x: { stacked: true, grace: '10%', grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter, system-ui', size: 10 } } },
+            y: { stacked: true, grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter, system-ui', size: 10, weight: '600' } } }
           }
         }
       });
@@ -1769,8 +1898,8 @@ function renderMuseumStatistics() {
         options: {
           responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
           scales: {
-            x: { grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } },
-            y: { grace: '12%', grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter', size: 10 } } }
+            x: { grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter, system-ui', size: 10, weight: '600' } } },
+            y: { grace: '12%', grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter, system-ui', size: 10 } } }
           }
         }
       });
@@ -1804,7 +1933,7 @@ function renderMuseumStatistics() {
         options: {
           indexAxis: 'y', responsive: true, maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: textColor, font: { family: 'Inter', size: 11, weight: '600' } } },
+            legend: { labels: { color: textColor, font: { family: 'Inter, system-ui', size: 11, weight: '600' } } },
             tooltip: {
               mode: 'index', intersect: false,
               callbacks: {
@@ -1817,8 +1946,8 @@ function renderMuseumStatistics() {
             }
           },
           scales: {
-            x: { stacked: true, grace: '10%', grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter', size: 10 } } },
-            y: { stacked: true, grid: { display: false }, ticks: { autoSkip: false, color: textColor, font: { family: 'Inter', size: 10, weight: '600' } } }
+            x: { stacked: true, grace: '10%', grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter, system-ui', size: 10 } } },
+            y: { stacked: true, grid: { display: false }, ticks: { autoSkip: false, color: textColor, font: { family: 'Inter, system-ui', size: 10, weight: '600' } } }
           }
         }
       });
@@ -1835,10 +1964,15 @@ function open3DLightbox(rawUrl, rawTitle) {
 
   if (!modal || !viewer || !rawUrl) return;
 
-  let url = rawUrl;
+  let url = sanitizeUrl(rawUrl);
   let title = rawTitle || 'Interactive 3D Model';
-  try { url = decodeURIComponent(rawUrl); } catch(e) {}
+  try { url = sanitizeUrl(decodeURIComponent(rawUrl)); } catch(e) {}
   try { title = decodeURIComponent(rawTitle); } catch(e) {}
+
+  if (!url) {
+    showToast('Invalid 3D model file URL', '⚠️');
+    return;
+  }
 
   if (titleElem) titleElem.textContent = title;
   if (scaleText) scaleText.textContent = 'Calculating Dimensions...';
@@ -1930,6 +2064,7 @@ function openModalByFilteredIndex(filteredIndex) {
   openModal(row, originalIndex);
 }
 
+// 6. Detail Modal Manager
 function openModal(row, originalIndex) {
   stopAudioGuide();
   const modalContainer = document.getElementById('modalContainer');
@@ -1955,19 +2090,19 @@ function openModal(row, originalIndex) {
     const type = getVal(row, colIdx.type);
     const category = getVal(row, colIdx.category);
     const subcategory = getVal(row, colIdx.subcategory);
-    const ddoc = getVal(row, colIdx.doc);
-    const dweb = getVal(row, colIdx.web);
-    const d3d = get3DUrlForItem(row);
+    const ddoc = sanitizeUrl(formatDocLink(getVal(row, colIdx.doc)));
+    const dweb = sanitizeUrl(getVal(row, colIdx.web));
+    const d3d = sanitizeUrl(get3DUrlForItem(row));
     const { img1, img2 } = getImagesForItem(row);
     const isHot = isItemHot(row);
     const ageBadgeClass = getAgeBadgeStyle(eraDisplay);
     const cleanedDetails = cleanDetailsForModal(details);
     const theme = getCategoryTheme(category || type || subcategory);
 
-    const modalImg1 = formatGoogleLh3Url(img1, 's600');
-    const modalImg2 = formatGoogleLh3Url(img2, 's600');
-    const fullImg1 = formatGoogleLh3Url(img1, 's1000');
-    const fullImg2 = formatGoogleLh3Url(img2, 's1000');
+    const modalImg1 = sanitizeUrl(formatGoogleLh3Url(img1, 's600'));
+    const modalImg2 = sanitizeUrl(formatGoogleLh3Url(img2, 's600'));
+    const fullImg1 = sanitizeUrl(formatGoogleLh3Url(img1, 's1000'));
+    const fullImg2 = sanitizeUrl(formatGoogleLh3Url(img2, 's1000'));
 
     if (modalContainer) {
       modalContainer.style.borderColor = theme.hex; modalContainer.style.borderWidth = '3px';
@@ -2006,7 +2141,7 @@ function openModal(row, originalIndex) {
             </div>
 
             <div class="flex flex-wrap gap-2 text-xs items-center">
-              ${eraDisplay ? `<span class="${ageBadgeClass} px-2.5 py-0.5 rounded-full shadow-sm"><strong>Era:</strong> ${eraDisplay}</span>` : ''}
+              ${eraDisplay ? `<span class="${ageBadgeClass} px-2.5 py-0.5 rounded-full shadow-sm"><strong>Era:</strong> ${escapeHTML(eraDisplay)}</span>` : ''}
               ${category ? createCategoryBadge(category, 'category') : ''}
               ${type ? createCategoryBadge(type, 'type') : ''}
               ${subcategory ? createCategoryBadge(subcategory, 'subcategory') : ''}
@@ -2036,8 +2171,8 @@ function openModal(row, originalIndex) {
 
             <div class="flex flex-wrap gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
               ${d3d ? `<button onclick="open3DLightbox('${encodeURIComponent(d3d)}', '${encodeURIComponent(displayTitle)}')" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-purple-500/25 transition">👓 Fullscreen 3D View ↗</button>` : ''}
-              ${ddoc ? `<a href="${ddoc}" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition">Documentation ↗</a>` : ''}
-              ${dweb ? `<a href="${dweb}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-blue-500/25 transition">Web Link ↗</a>` : ''}
+              ${ddoc ? `<a href="${ddoc}" target="_blank" rel="noopener noreferrer" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition">Documentation ↗</a>` : ''}
+              ${dweb ? `<a href="${dweb}" target="_blank" rel="noopener noreferrer" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-blue-500/25 transition">Web Link ↗</a>` : ''}
             </div>
           </div>
 
@@ -2064,8 +2199,8 @@ function openModal(row, originalIndex) {
               ${img1 ? `
                 <div class="w-full">
                   <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${d3d ? 'Second Media (Image 1)' : 'Primary Image'}</p>
-                  <a href="${fullImg1 || modalImg1}" target="_blank" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
-                    <img src="${modalImg1}" class="w-full ${!img2 ? 'max-h-[520px] min-h-[220px]' : 'h-52 sm:h-56'} object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                  <a href="${fullImg1 || modalImg1}" target="_blank" rel="noopener noreferrer" title="Click to view full image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
+                    <img src="${modalImg1}" class="w-full ${!img2 ? 'max-h-[520px] min-h-[220px]' : 'h-52 sm:h-56'} object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${escapeHTML(displayTitle)}" loading="lazy" />
                     <span class="absolute bottom-2.5 right-2.5 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow pointer-events-none">Full Image ↗</span>
                   </a>
                 </div>` : ''}
@@ -2073,8 +2208,8 @@ function openModal(row, originalIndex) {
               ${img2 ? `
                 <div class="w-full">
                   <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">${d3d ? 'Third Media (Image 2)' : 'Secondary Image'}</p>
-                  <a href="${fullImg2 || modalImg2}" target="_blank" title="Click to view image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
-                    <img src="${modalImg2}" class="w-full h-52 sm:h-56 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${displayTitle}" />
+                  <a href="${fullImg2 || modalImg2}" target="_blank" rel="noopener noreferrer" title="Click to view image" class="block group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-2 shadow-md w-full" style="border-color: ${theme.hex}80;">
+                    <img src="${modalImg2}" class="w-full h-52 sm:h-56 object-contain rounded-xl group-hover:scale-105 transition-transform duration-300 drop-shadow-lg" onError="this.src='${NO_IMAGE_SVG}'" alt="${escapeHTML(displayTitle)}" loading="lazy" />
                     <span class="absolute bottom-2.5 right-2.5 bg-blue-600/90 text-white backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow pointer-events-none">Full Image ↗</span>
                   </a>
                 </div>` : ''}
@@ -2104,11 +2239,8 @@ function openModal(row, originalIndex) {
         }
       };
 
-      if (modalViewer.loaded) {
-        updateModalDims();
-      } else {
-        modalViewer.addEventListener('load', updateModalDims, { once: true });
-      }
+      if (modalViewer.loaded) updateModalDims();
+      else modalViewer.addEventListener('load', updateModalDims, { once: true });
     }
 
   } else {
@@ -2121,11 +2253,11 @@ function openModal(row, originalIndex) {
     const format = unescapeHTML(getVal(row, 4)) || '';
     const released = getVal(row, 6) || '';
     const colMDetails = getVal(row, 12);
-    const discogsUrl = getDiscogsUrl(row);
+    const discogsUrl = sanitizeUrl(getDiscogsUrl(row));
     const hasDiscogsRecording = checkIfHasRecording(row);
     const hasArchiveRecording = getVal(row, 11).toLowerCase().includes('yes');
     const hasAnyRecording = hasDiscogsRecording || hasArchiveRecording;
-    const archiveUrl = buildArchiveSearchUrl(rawTitle, catalogNum);
+    const archiveUrl = sanitizeUrl(buildArchiveSearchUrl(rawTitle, catalogNum));
     const ytQuery = encodeURIComponent(`${unescapeHTML(artist)} ${unescapeHTML(rawTitle)}`.replace(/^[AB][\s\.:-]+/gi, '').trim()).replace(/%20/g, '+');
     const gramTheme = CATEGORY_PALETTE.gramophones;
 
@@ -2161,23 +2293,23 @@ function openModal(row, originalIndex) {
         </div>
 
         <div class="flex flex-wrap items-center gap-2 text-xs mb-4">
-          ${released ? `<span class="bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-400/40 px-3 py-0.5 rounded-full font-black"><strong>Year:</strong> ${released}</span>` : ''}
-          ${label ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 px-3 py-0.5 rounded-full font-medium"><strong>Label:</strong> ${label}</span>` : ''}
-          ${format ? `<span class="bg-blue-500/20 text-blue-900 dark:text-blue-300 border border-blue-400/40 px-3 py-0.5 rounded-full font-medium"><strong>Format:</strong> ${format}</span>` : ''}
+          ${released ? `<span class="bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-400/40 px-3 py-0.5 rounded-full font-black"><strong>Year:</strong> ${escapeHTML(released)}</span>` : ''}
+          ${label ? `<span class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 px-3 py-0.5 rounded-full font-medium"><strong>Label:</strong> ${escapeHTML(label)}</span>` : ''}
+          ${format ? `<span class="bg-blue-500/20 text-blue-900 dark:text-blue-300 border border-blue-400/40 px-3 py-0.5 rounded-full font-medium"><strong>Format:</strong> ${escapeHTML(format)}</span>` : ''}
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 items-stretch">
           <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 rounded-2xl p-6 text-center flex flex-col items-center justify-center relative shadow-inner border border-amber-500/30 h-full min-h-[180px]">
             <div class="w-32 h-32 rounded-full border-4 border-amber-500/30 bg-slate-950 flex items-center justify-center shadow-2xl relative">
-              <div class="w-12 h-12 rounded-full bg-amber-600 border-2 border-amber-300 flex items-center justify-center text-[9px] font-black text-amber-100 text-center p-1 leading-tight">${label}</div>
+              <div class="w-12 h-12 rounded-full bg-amber-600 border-2 border-amber-300 flex items-center justify-center text-[9px] font-black text-amber-100 text-center p-1 leading-tight">${escapeHTML(label)}</div>
             </div>
           </div>
           <div class="bg-slate-50 dark:bg-slate-900/90 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 space-y-2 flex flex-col justify-center">
-            <p><strong>Artist:</strong> <span class="font-bold text-slate-900 dark:text-white">${artist}</span></p>
-            <p><strong>Record Label:</strong> ${label}</p>
-            ${format ? `<p><strong>Format:</strong> ${format}</p>` : ''}
-            <p><strong>Release Year:</strong> ${released || 'Unknown'}</p>
-            ${catalogNum ? `<p><strong>Catalog No.:</strong> <span class="font-mono font-bold text-amber-600 dark:text-amber-300">${catalogNum}</span></p>` : ''}
+            <p><strong>Artist:</strong> <span class="font-bold text-slate-900 dark:text-white">${escapeHTML(artist)}</span></p>
+            <p><strong>Record Label:</strong> ${escapeHTML(label)}</p>
+            ${format ? `<p><strong>Format:</strong> ${escapeHTML(format)}</p>` : ''}
+            <p><strong>Release Year:</strong> ${escapeHTML(released) || 'Unknown'}</p>
+            ${catalogNum ? `<p><strong>Catalog No.:</strong> <span class="font-mono font-bold text-amber-600 dark:text-amber-300">${escapeHTML(catalogNum)}</span></p>` : ''}
           </div>
         </div>
 
@@ -2189,16 +2321,16 @@ function openModal(row, originalIndex) {
 
         <div class="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
           ${discogsUrl ? `
-            <a href="${discogsUrl}" target="_blank" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2">
+            <a href="${discogsUrl}" target="_blank" rel="noopener noreferrer" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2">
               <span>${hasDiscogsRecording ? '📀 Discogs Recording ↗' : '📀 Discogs ↗'}</span>
               ${hasDiscogsRecording ? `<span class="bg-emerald-500 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">🎙️ Recording</span>` : ''}
             </a>` : ''}
 
-          ${hasArchiveRecording ? `<a href="${archiveUrl}" target="_blank" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2"><span>📻 Archives 78s Recording ↗</span></a>` : ''}
+          ${hasArchiveRecording ? `<a href="${archiveUrl}" target="_blank" rel="noopener noreferrer" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-2"><span>📻 Archives 78s Recording ↗</span></a>` : ''}
 
           ${!hasAnyRecording ? `
-            <a href="https://www.youtube.com/results?search_query=${ytQuery}" target="_blank" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-1.5"><span>🎵 Search YouTube ↗</span></a>
-            <a href="${archiveUrl}" target="_blank" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-1.5" title="Search the 78 RPM Collection on Internet Archive"><span>📻 Search Archive 78s ↗</span></a>` : ''}
+            <a href="https://www.youtube.com/results?search_query=${ytQuery}" target="_blank" rel="noopener noreferrer" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-1.5"><span>🎵 Search YouTube ↗</span></a>
+            <a href="${archiveUrl}" target="_blank" rel="noopener noreferrer" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow transition flex items-center gap-1.5" title="Search the 78 RPM Collection on Internet Archive"><span>📻 Search Archive 78s ↗</span></a>` : ''}
         </div>`;
     }
   }
@@ -2215,6 +2347,7 @@ function closeModal() {
   safeReplaceState(`${window.location.pathname}${window.location.search}`);
 }
 
+// 7. Event Listeners & Bootstrapping
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('brandLogoLink')?.addEventListener('click', (e) => { e.preventDefault(); browseAllExhibits(); });
   document.getElementById('btnBrowseAllHeader')?.addEventListener('click', browseAllExhibits);
@@ -2263,7 +2396,6 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleCollapsibleControls(false); scrollToGrid();
   });
 
-  // Search Input with URL query synchronization
   const searchInputElem = document.getElementById('searchInput');
   if (searchInputElem) {
     searchInputElem.addEventListener('input', (e) => {
@@ -2283,7 +2415,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Clear Search button with URL query cleanup
   const clearSearchBtn = document.getElementById('clearSearch');
   if (clearSearchBtn) {
     clearSearchBtn.addEventListener('click', () => {
@@ -2304,6 +2435,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('detailModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('detailModal')) closeModal(); });
   document.getElementById('close3DLightbox')?.addEventListener('click', close3DLightbox);
   document.getElementById('lightbox3DModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('lightbox3DModal')) close3DLightbox(); });
+  document.getElementById('closeEnlargeModal')?.addEventListener('click', closeEnlargeModal);
   document.getElementById('enlargeModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('enlargeModal')) closeEnlargeModal(); });
   document.getElementById('modalPrevBtn')?.addEventListener('click', () => { if (currentModalIndex > 0) openModalByFilteredIndex(currentModalIndex - 1); });
   document.getElementById('modalNextBtn')?.addEventListener('click', () => { if (currentModalIndex < currentFilteredRows.length - 1) openModalByFilteredIndex(currentModalIndex + 1); });
